@@ -1,6 +1,5 @@
- <link rel="stylesheet" href="{{ asset('assets/css/navbar.css') }}">
 
- <nav>
+<nav>
       <div class="nav__header">
         <div class="nav__logo">
           <a href="#" class="logo">Yalla Nemshi</a>
@@ -10,13 +9,11 @@
         </div>
       </div>
       <ul class="nav__links" id="nav-links">
-        <li><a href="#home">HOME</a></li>
-        <li><a href="#about">ABOUT</a></li>
-        <li><a href="#package">PLAN</a></li>
-        <li><a href="#contact">CONTACT</a></li>
-        <li><a href="#book">BOOK TRIP</a></li>
+        <li><a href="{{ route('home') }}">HOME</a></li>
+        <li><a href="{{ route('aboutUs') }}">ABOUT</a></li>
+        <li><a href="{{ route('chatbot') }}">PLAN</a></li>
+        <li><a href="{{ route('contactUs') }}">CONTACT</a></li>
+        <li><a href="">BROWSE</a></li>
       </ul>
-      {{-- <div class="nav__btns">
-        <button class="btn">BOOK TRIP</button>
-      </div> --}}
-    </nav>
+
+</nav>

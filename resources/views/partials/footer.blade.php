@@ -1,6 +1,27 @@
- <link rel="stylesheet" href="{{ asset('assets/css/footer.css') }}">
-
-<div class="footer__col">
+<footer id="contact">
+      <div class="section__container footer__container">
+        <div class="footer__col">
+          <div class="footer__logo">
+            <a href="#" class="logo">Yalla Nemshi</a>
+          </div>
+          <p>
+            Explore the world with ease and excitement through our comprehensive
+            travel platform. Your journey begins here, where seamless planning
+            meets unforgettable experiences.
+          </p>
+          <ul class="footer__socials">
+            <li>
+              <a href="#"><i class="ri-facebook-fill"></i></a>
+            </li>
+            <li>
+              <a href="#"><i class="ri-instagram-line"></i></a>
+            </li>
+            <li>
+              <a href="#"><i class="ri-youtube-line"></i></a>
+            </li>
+          </ul>
+        </div>
+        <div class="footer__col">
           <h4>Quick Links</h4>
           <ul class="footer__links">
             <li><a href="#">Home</a></li> 
@@ -38,6 +59,6 @@
         </div>
       </div>
       <div class="footer__bar">
-        Copyright © 
+        Copyright © 2026 Yalla Nemshi. All Rights Reserved.
       </div>
     </footer>

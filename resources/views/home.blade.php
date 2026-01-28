@@ -1,7 +1,8 @@
 @extends('layout.app')
-@section('content')
+@push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/home.css') }}">
-@include('partials.navbar')
+@endpush
+@section('content')
     <header id="home">
       <div class="header__container">
         <div class="header__content">
@@ -326,32 +327,11 @@
       </div>
     </section>
 
-    <footer id="contact">
-      <div class="section__container footer__container">
-        <div class="footer__col">
-          <div class="footer__logo">
-            <a href="#" class="logo">Yall Nemshi</a>
-          </div>
-          <p>
-            Explore the world with ease and excitement through our comprehensive
-            travel platform. Your journey begins here, where seamless planning
-            meets unforgettable experiences.
-          </p>
-          <ul class="footer__socials">
-            <li>
-              <a href="#"><i class="ri-facebook-fill"></i></a>
-            </li>
-            <li>
-              <a href="#"><i class="ri-instagram-line"></i></a>
-            </li>
-            <li>
-              <a href="#"><i class="ri-youtube-line"></i></a>
-            </li>
-          </ul>
-        </div>
+   
         
-    @include('partials.footer')
     <script src="https://unpkg.com/scrollreveal"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="{{ asset('assets/js/home.js') }}"></script>
 @endsection
+@push('scripts')
+@endpush

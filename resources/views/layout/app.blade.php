@@ -10,7 +10,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
 
-  
+    <link rel="stylesheet" href="{{ asset('assets/css/navbar.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/footer.css') }}">
+
     <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/header.css') }}">
 
@@ -23,15 +25,18 @@
     <div>
 
         <div class="content">
-            @include("layout.header")
+            
 
             <div>
+                @include("partials.navbar")
                 <div id="main">
                     @yield('content')
+                    @include("partials.footer")
                 </div>
+                
             </div>
 
-            @include("layout.footer")
+            
         </div>
 
     </div>

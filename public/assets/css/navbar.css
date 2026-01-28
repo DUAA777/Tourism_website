@@ -28,7 +28,7 @@ nav {
 
 .nav__links {
   position: absolute;
-  bottom: 0;
+  top: 100%;
   left: 0;
   width: 100%;
   padding: 2rem;
@@ -38,12 +38,18 @@ nav {
   flex-direction: column;
   gap: 2rem;
   background-color: var(--primary-color);
-  transition: transform 0.5s;
-  z-index: -1;
+  transition: max-height 0.5s ease;
+  z-index: 10;
+  max-height: 0;
+  overflow: hidden;
+}
+
+.nav__links li {
+  list-style: none;
 }
 
 .nav__links.open {
-  transform: translateY(100%);
+  max-height: 500px;
 }
 
 .nav__links a {
@@ -91,11 +97,15 @@ nav {
 
   .nav__links {
     position: static;
-    width: fit-content;
+    width: auto;
     padding: 0;
     flex-direction: row;
     background-color: transparent;
-    transform: none !important;
+    max-height: none;
+    overflow: visible;
+    gap: 2rem;
+    top: auto;
+    left: auto;
   }
 
   .nav__links a {
@@ -107,7 +117,7 @@ nav {
   }
 
   .nav__links li:last-child {
-    display: none;
+    display: inline-flex;
   }
 
   .nav__btns {
