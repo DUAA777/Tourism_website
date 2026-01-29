@@ -14,9 +14,14 @@
     <link rel="stylesheet" href="{{ asset('assets/css/app.css?v1') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/header.css') }}">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
     @stack('styles')
 
 </head>
+
 
 <body>
 
@@ -43,7 +48,25 @@
         integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
         crossorigin="anonymous"></script>
 
-        
+    
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const sections = document.querySelectorAll(".section-animate");
+
+        const observer = new IntersectionObserver(
+            entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add("show");
+                    }
+                });
+            },
+            { threshold: 0.2 }
+        );
+
+        sections.forEach(section => observer.observe(section));
+    });
+    </script>
     @stack('scripts')
     
 </body>

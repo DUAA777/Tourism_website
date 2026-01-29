@@ -1,0 +1,75 @@
+/* =========================
+   GLOBAL
+========================= */
+.section-animate {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.9s ease;
+}
+
+.section-animate.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* =========================
+   HERO
+========================= */
+.hero-section h1,
+.hero-section p,
+.hero-section a {
+    animation: fadeDown 1s ease forwards;
+}
+
+@keyframes fadeDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================
+   CARDS HOVER
+========================= */
+.card {
+    transition: all 0.35s ease;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+}
+
+/* =========================
+   ICONS
+========================= */
+.card i {
+    transition: transform 0.4s ease;
+}
+
+.card:hover i {
+    transform: scale(1.15);
+}
+
+/* =========================
+   IMAGES
+========================= */
+img {
+    transition: transform 0.6s ease;
+}
+
+img:hover {
+    transform: scale(1.03);
+}
+
+/* =========================
+   STATS
+========================= */
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
