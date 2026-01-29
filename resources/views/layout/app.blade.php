@@ -6,18 +6,14 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
 
-    <!-- BOOTSTRAP -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
 
-    <!--CSS-->    
-    <link rel="stylesheet" href="{{ asset('assets/css/app.css?v1') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/navbar.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/footer.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/header.css') }}">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
-
+   
     @stack('styles')
 
 </head>
@@ -25,49 +21,50 @@
 
 <body>
 
-    <div class="layout-wrapper">
+    <!-- Vanta Background -->
+    <div id="your-element-selector"></div>
 
-        <div class="content">
-            @include("layout.header")
-
-            <div class="container-xxl px-0 body-content">
-                <div id="main" class="main-content">
-                    @yield('content')
-                </div>
+    <div class="content">
+        <div>
+            @include("partials.navbar")
+            <div id="main">
+                @yield('content')
+                @include("partials.footer")
             </div>
-
-            @include("layout.footer")
         </div>
-
     </div>
 
+  <!-- ...existing code... -->
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.dots.min.js"></script>
+    
     <script src="{{ asset('assets/js/header.js') }}"></script>
 
-    <!--BOOTSTRAP -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
         crossorigin="anonymous"></script>
 
-    
     <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const sections = document.querySelectorAll(".section-animate");
-
-        const observer = new IntersectionObserver(
-            entries => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add("show");
-                    }
-                });
-            },
-            { threshold: 0.2 }
-        );
-
-        sections.forEach(section => observer.observe(section));
-    });
-    </script>
+    VANTA.DOTS({
+    el: "#your-element-selector",
+    mouseControls: true,
+    touchControls: true,
+    gyroControls: false,
+    minHeight: 200.00,
+    minWidth: 200.00,
+    scale: 1.00,
+    scaleMobile: 1.00,
+    color: 0x0,
+    color2: 0xffffff,
+    backgroundColor: 0xffffff
+    })
+</script>
+        
     @stack('scripts')
-    
+
+</body>
+</html>
 </body>
 </html>
