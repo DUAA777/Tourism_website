@@ -31,7 +31,7 @@
           <img src="{{ asset('images/destination-1.jpg') }}" alt="destination" />
           <div class="destination__card__details">
             <div>
-              <h4>Tradition and Futurism</h4>
+              <h4>Roman Temple</h4>
               <p>Baalbek, Lebanon</p>
             </div>
             <div class="destination__rating">
@@ -44,7 +44,7 @@
           <img src="{{ asset('images/destination-2.jpg') }}" alt="destination" />
           <div class="destination__card__details">
             <div>
-              <h4>The City of Lights</h4>
+              <h4>Phoenecian Sea Castle</h4>
               <p>Sidon, Lebanon</p>
             </div>
             <div class="destination__rating">
@@ -57,8 +57,8 @@
           <img src="{{ asset('images/destination-3.jpg') }}" alt="destination" />
           <div class="destination__card__details">
             <div>
-              <h4>Island of the Gods</h4>
-              <p>Bekaa, Lebanon</p>
+              <h4>Downton Beirut</h4>
+              <p>Beirut, Lebanon</p>
             </div>
             <div class="destination__rating">
               <span><i class="ri-star-fill"></i></span>

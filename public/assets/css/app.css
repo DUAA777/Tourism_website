@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap");
 
+
 :root {
   --primary-color: #2887ff;
   --primary-color-dark: #2476da;
@@ -11,6 +12,14 @@
   --bg-color: #ffffff;
 }
 
+#your-element-selector {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: -1;
+}
 * {
   padding: 0;
   margin: 0;
