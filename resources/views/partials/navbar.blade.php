@@ -13,7 +13,7 @@
         <li><a href="{{ route('aboutUs') }}">ABOUT</a></li>
         <li><a href="{{ route('chatbot') }}">PLAN</a></li>
         <li><a href="{{ route('contactUs') }}">CONTACT</a></li>
-        <li><a href="">BROWSE</a></li>
+        <li><a href="{{ route('profile') }}">PROFILE</a></li>
       </ul>
 
 </nav>

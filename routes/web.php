@@ -17,3 +17,10 @@ Route::get('/chatbot', function () {
 Route::get('/contactUs', function () {
     return view('contactUs');
 })->name('contactUs');
+
+
+Route::get('/profile', function () {
+    return view('profile');
+})->name('profile');
+
+
