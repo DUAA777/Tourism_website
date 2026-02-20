@@ -20,7 +20,6 @@
 
 <body>
 
-    <!-- Vanta Background -->
     <div id="your-element-selector"></div>
 
     <div class="content">
@@ -33,9 +32,7 @@
         </div>
     </div>
 
-  <!-- ...existing code... -->
 
-    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.dots.min.js"></script>
     
@@ -45,7 +42,7 @@
         integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
         crossorigin="anonymous"></script>
 
-    <script>
+    {{-- <script>
     VANTA.DOTS({
     el: "#your-element-selector",
     mouseControls: true,
@@ -59,7 +56,7 @@
     color2: 0xffffff,
     backgroundColor: 0xffffff
     })
-</script>
+</script> --}}
         
     @stack('scripts')
 

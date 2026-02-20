@@ -87,6 +87,7 @@ header::before {
 .destination__card img {
   border-radius: 1.5rem;
   box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.2);
+  min-height: 300px;
 }
 
 .destination__card__details {
@@ -296,6 +297,14 @@ header::before {
 .swiper {
   margin-top: 4rem;
   width: 100%;
+}
+.swiper-wrapper{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .swiper-slide {

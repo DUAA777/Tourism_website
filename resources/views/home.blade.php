@@ -210,11 +210,8 @@
         Discover the stories of wanderlust and cherished memories through the
         eyes of our valued clients.
       </p>
-      <!-- Slider main container -->
       <div class="swiper">
-        <!-- Additional required wrapper -->
         <div class="swiper-wrapper">
-          <!-- Slides -->
           <div class="swiper-slide">
             <div class="client__card">
               <div class="client__content">
