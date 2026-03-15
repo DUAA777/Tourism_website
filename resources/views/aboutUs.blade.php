@@ -1,4 +1,16 @@
+@section('body-class','about-page')
 @extends('layout.app')
+@push('styles')
+<style>
+body.about-page .nav__links a{
+  color:#000 !important;
+}
+
+body.about-page .nav__links a:hover{
+  color:var(--primary) !important;
+}
+</style>
+@endpush
 
 @push('meta')
   <title>About us | Yalla Nemshi</title>

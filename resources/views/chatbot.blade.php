@@ -1,53 +1,129 @@
 @extends('layout.app')
 
 @push('meta')
-  <title>Plan | Yalla Nemshi</title>
+<title>Plan | Yalla Nemshi</title>
 @endpush
 
 @push('styles')
-  <link rel="stylesheet" href="{{ asset('assets/css/chatbot.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/chatbot.css') }}">
 @endpush
 
 @section('content')
-<section class="askai">
-  <div class="askai__inner">
-<div class="askai__icon" aria-hidden="true">
-  <svg viewBox="0 0 64 64" fill="none">
-    <rect x="30" y="40" width="4" height="10" fill="currentColor"/>
-    <path d="M12 40 L32 26 L52 40 Z" fill="currentColor"/>
-    <path d="M18 32 L32 18 L46 32 Z" fill="currentColor"/>
-    <path d="M24 24 L32 12 L40 24 Z" fill="currentColor"/>
-  </svg>
+
+<section class="planner">
+
+<div class="planner__logo">
+    <a href="{{ route('home') }}" class="planner__logo-text">
+        YALLA NEMSHI
+    </a>
 </div>
-    <h1 class="askai__title">Ask Yalla Nemshi anything</h1>
+  <div class="planner__container">
 
-    <p class="askai__sub">
-      Tell us your mood, budget, time — we’ll build a perfect Lebanon day plan.
-    </p>
-
-    <div class="askai__label">Suggestions on what to ask</div>
-
-    <div class="askai__chips">
-      <button class="askai__chip" type="button">Batroun sunset + coffee</button>
-      <button class="askai__chip" type="button">Beirut night plan 50$</button>
-      <button class="askai__chip" type="button">Byblos history + lunch</button>
+    <div class="planner__header">
+      <p class="planner__kicker">AI TRIP PLANNER</p>
+      <h1 class="planner__title">Plan your perfect day in Lebanon</h1>
+      <p class="planner__subtitle">
+        Tell Yalla Nemshi your mood, city, budget and time — and we'll recommend the best places for your day.
+      </p>
     </div>
 
-    <div class="askai__bar">
-      <input class="askai__input" type="text" placeholder="Ask me anything about your trip" />
-      <button class="askai__send" type="button" aria-label="Send">
-        <svg viewBox="0 0 24 24" fill="none">
-          <path d="M4 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          <path d="M14 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
+    <div class="planner__card">
+      <div class="planner__grid">
+        <div class="planner__field">
+          <label>City</label>
+          <select>
+            <option>Select city</option>
+            <option>Beirut</option>
+            <option>Batroun</option>
+            <option>Byblos</option>
+            <option>Baalbek</option>
+          </select>
+        </div>
+
+        <div class="planner__field">
+          <label>Budget</label>
+          <select>
+            <option>Select budget</option>
+            <option>Under $20</option>
+            <option>$20 - $50</option>
+            <option>$50 - $100</option>
+            <option>$100+</option>
+          </select>
+        </div>
+
+        <div class="planner__field">
+          <label>Available Time</label>
+          <select>
+            <option>Select duration</option>
+            <option>2 Hours</option>
+            <option>Half Day</option>
+            <option>Full Day</option>
+            <option>Weekend</option>
+          </select>
+        </div>
+
+        <div class="planner__field">
+          <label>Category</label>
+          <select>
+            <option>Select category</option>
+            <option>Beach</option>
+            <option>Nature</option>
+            <option>Historic</option>
+            <option>Food</option>
+            <option>City</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="planner__suggestions">
+        <p>Suggestions</p>
+        <div class="planner__chips">
+          <button class="planner__chip">Batroun sunset + coffee</button>
+          <button class="planner__chip">Beirut night plan under $50</button>
+          <button class="planner__chip">Byblos history + lunch</button>
+          <button class="planner__chip">Nature day in Chouf</button>
+        </div>
+      </div>
+
+      <div class="planner__input">
+        <input type="text" placeholder="Ask anything about your trip...">
+        <button>Plan Trip</button>
+      </div>
     </div>
+
+    <div class="planner__preview">
+      <h3>Example Day Plan</h3>
+
+      <div class="preview__step">
+        <span>1</span>
+        <div>
+          <h4>Morning coffee</h4>
+          <p>Start your day at a cozy café and walk through the old streets.</p>
+        </div>
+      </div>
+
+      <div class="preview__step">
+        <span>2</span>
+        <div>
+          <h4>Main destination</h4>
+          <p>Visit a place that matches your vibe and travel style.</p>
+        </div>
+      </div>
+
+      <div class="preview__step">
+        <span>3</span>
+        <div>
+          <h4>Lunch spot</h4>
+          <p>Finish your day with a restaurant recommendation nearby.</p>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
-<script>
 
 @endsection
 
 @push('scripts')
-  <script src="{{ asset('assets/js/chatbot.js') }}"></script>
+<script src="{{ asset('assets/js/chatbot.js') }}"></script>
 @endpush

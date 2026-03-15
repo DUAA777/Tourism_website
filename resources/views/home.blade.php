@@ -1,334 +1,285 @@
 @extends('layout.app')
+
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/home.css') }}">
 @endpush
+
 @section('content')
-    <header id="home">
-      <div class="header__container">
-        <div class="header__content">
-          <p>ELEVATE YOUR TRAVEL JOURNEY</p>
-          <h1>The Best Lebanese Trip Planner!</h1>
-          <div class="header__btns">
-            <button class="btn">Plan A Trip Now</button>
-            <a href="#">
-              <span><i class="ri-play-circle-fill"></i></span>
+
+<section class="home-hero">
+    <div class="home-hero__overlay"></div>
+
+    <div class="home-hero__content">
+        <div class="home-hero__text">
+            <p class="home-hero__eyebrow">Discover Lebanon</p>
+            <h1>Unlock Your Travel Dreams With Us!!!</h1>
+            <p class="home-hero__desc">
+                Discover destinations, build smart itineraries, and explore Lebanon
+                with a cleaner, easier, and more inspiring planning experience.
+            </p>
+<div class="home-hero__actions">
+    <a href="{{ route('chatbot') }}" class="hero-btn hero-btn--primary">Plan My Trip</a>
+
+    <a href="{{ route('places.index') }}" class="hero-btn hero-btn--ghost">
+        Browse Destinations
+    </a>
+<!-- 
+    <a href="{{ route('aboutUs') }}" class="hero-btn hero-btn--ghost">
+        Learn More
+    </a> -->
+</div>
+        </div>
+
+        <div class="home-hero__thumbs">
+            <div class="home-hero__thumb-title">Popular Places</div>
+
+            <div class="home-hero__thumb-slider">
+                <div class="home-hero__thumb-track">
+                    <div class="hero-thumb">
+                        <img src="{{ asset('images/destination-1.jpg') }}" alt="Baalbek">
+                    </div>
+                    <div class="hero-thumb">
+                        <img src="{{ asset('images/destination-2.jpg') }}" alt="Sidon">
+                    </div>
+                    <div class="hero-thumb">
+                        <img src="{{ asset('images/destination-3.jpg') }}" alt="Beirut">
+                    </div>
+                    <div class="hero-thumb">
+                        <img src="{{ asset('images/showcase-bg.jpg') }}" alt="Lebanon">
+                    </div>
+
+                    <div class="hero-thumb">
+                        <img src="{{ asset('images/destination-1.jpg') }}" alt="Baalbek">
+                    </div>
+                    <div class="hero-thumb">
+                        <img src="{{ asset('images/destination-2.jpg') }}" alt="Sidon">
+                    </div>
+                    <div class="hero-thumb">
+                        <img src="{{ asset('images/destination-3.jpg') }}" alt="Beirut">
+                    </div>
+                    <div class="hero-thumb">
+                        <img src="{{ asset('images/showcase-bg.jpg') }}" alt="Lebanon">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="stats-strip">
+    <div class="stats-strip__inner">
+        <div class="stat-pill">
+            <h3>10+</h3>
+            <p>Years Experience</p>
+        </div>
+        <div class="stat-pill">
+            <h3>2K+</h3>
+            <p>Happy Travelers</p>
+        </div>
+        <div class="stat-pill">
+            <h3>10K+</h3>
+            <p>Trips Planned</p>
+        </div>
+        <div class="stat-pill">
+            <h3>4.8</h3>
+            <p>Overall Rating</p>
+        </div>
+    </div>
+</section>
+
+<section class="finder-section">
+    <div class="finder-section__heading">
+        <h2>Find Your Dream Destination</h2>
+        <p>
+            Browse by places, mood, and travel style to discover your next Lebanese escape.
+        </p>
+    </div>
+
+    <div class="finder-toolbar">
+        <div class="finder-search">
+            <span><i class="ri-map-pin-line"></i></span>
+            <input type="text" id="finderSearch" placeholder="Search destinations, cities, or vibes">
+        </div>
+
+        <div class="finder-chips">
+            <button class="chip chip--active" data-filter="all">All</button>
+            <button class="chip" data-filter="beach">Beach</button>
+            <button class="chip" data-filter="nature">Nature</button>
+            <button class="chip" data-filter="historic">Historic</button>
+            <button class="chip" data-filter="food">Food</button>
+            <button class="chip" data-filter="city">City</button>
+        </div>
+    </div>
+
+    <div class="finder-grid" id="finderGrid">
+
+        <article class="place-card" data-category="historic" data-search="baalbek historic temple">
+            <a href="{{ route('places.show', 'roman-temple-baalbek') }}" class="place-card__link">
+                <img src="{{ asset('images/destination-1.jpg') }}" alt="Baalbek">
+                <div class="place-card__overlay"></div>
+                <div class="place-card__content">
+                    <h4>Baalbek</h4>
+                    <p><i class="ri-map-pin-2-fill"></i> Baalbek, Lebanon</p>
+                </div>
             </a>
-          </div>
-        </div>
-        <div class="header__image">
-          <img src="{{ asset('images/header.png') }}" alt="header" />
-        </div>
-      </div>
-    </header>
+        </article>
 
-    <section class="section__container destination__container" id="about">
-      <h2 class="section__header">Popular Destinations</h2>
-      <p class="section__description">
-        Discover the Most Loved Destinations Around Lebanon
-      </p>
-      <div class="destination__grid">
-        <div class="destination__card">
-          <img src="{{ asset('images/destination-1.jpg') }}" alt="destination" />
-          <div class="destination__card__details">
-            <div>
-              <h4>Roman Temple</h4>
-              <p>Baalbek, Lebanon</p>
-            </div>
-            <div class="destination__rating">
-              <span><i class="ri-star-fill"></i></span>
-              4.7
-            </div>
-          </div>
-        </div>
-        <div class="destination__card">
-          <img src="{{ asset('images/destination-2.jpg') }}" alt="destination" />
-          <div class="destination__card__details">
-            <div>
-              <h4>Phoenecian Sea Castle</h4>
-              <p>Sidon, Lebanon</p>
-            </div>
-            <div class="destination__rating">
-              <span><i class="ri-star-fill"></i></span>
-              4.5
-            </div>
-          </div>
-        </div>
-        <div class="destination__card">
-          <img src="{{ asset('images/destination-3.jpg') }}" alt="destination" />
-          <div class="destination__card__details">
-            <div>
-              <h4>Downton Beirut</h4>
-              <p>Beirut, Lebanon</p>
-            </div>
-            <div class="destination__rating">
-              <span><i class="ri-star-fill"></i></span>
-              4.8
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+        <article class="place-card" data-category="beach" data-search="sidon sea castle beach coast">
+            <a href="{{ route('places.show', 'sidon-sea-castle') }}" class="place-card__link">
+                <img src="{{ asset('images/destination-2.jpg') }}" alt="Sidon">
+                <div class="place-card__overlay"></div>
+                <div class="place-card__content">
+                    <h4>Sidon</h4>
+                    <p><i class="ri-map-pin-2-fill"></i> Sidon, Lebanon</p>
+                </div>
+            </a>
+        </article>
 
-    <section class="section__container journey__container" id="tour">
-      <h2 class="section__header">Journey Around Lebanon Made Simple!</h2>
-      <p class="section__description">
-        Effortless Planning for Your Next Adventure
-      </p>
-      <div class="journey__grid">
-        <div class="journey__card">
-          <div class="journey__card__bg">
-            <span><i class="ri-bookmark-3-line"></i></span>
-            <h4>Seamless Booking Process</h4>
-          </div>
-          <div class="journey__card__content">
-            <span><i class="ri-bookmark-3-line"></i></span>
-            <h4>Easy Reservations, One Click Away</h4>
-            <p>
-              From flights and accommodations to activities and transfers,
-              everything you need is available at your fingertips, making travel
-              planning effortless.
-            </p>
-          </div>
-        </div>
-        <div class="journey__card">
-          <div class="journey__card__bg">
-            <span><i class="ri-landscape-fill"></i></span>
-            <h4>Tailored Itineraries</h4>
-          </div>
-          <div class="journey__card__content">
-            <span><i class="ri-landscape-fill"></i></span>
-            <h4>Customized Plans Just for You</h4>
-            <p>
-              Enjoy personalized travel plans designed to match your preferences
-              and interests. Whether you seek adventure or cultural immersion,
-              our tailored itineraries ensure your journey is uniquely yours.
-            </p>
-          </div>
-        </div>
-        <div class="journey__card">
-          <div class="journey__card__bg">
-            <span><i class="ri-map-2-line"></i></span>
-            <h4>Expert Local Insights</h4>
-          </div>
-          <div class="journey__card__content">
-            <span><i class="ri-map-2-line"></i></span>
-            <h4>Insider Tips and Recommendations</h4>
-            <p>
-              We provide curated recommendations for dining, sightseeing, and
-              hidden gems, so you can experience each destination like a local.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
+        <article class="place-card" data-category="city" data-search="downtown beirut city">
+            <a href="{{ route('places.show', 'downtown-beirut') }}" class="place-card__link">
+                <img src="{{ asset('images/destination-3.jpg') }}" alt="Beirut">
+                <div class="place-card__overlay"></div>
+                <div class="place-card__content">
+                    <h4>Downtown Beirut</h4>
+                    <p><i class="ri-map-pin-2-fill"></i> Beirut, Lebanon</p>
+                </div>
+            </a>
+        </article>
 
-    <section class="section__container showcase__container" id="package">
-      <div class="showcase__image">
-        <img src="{{ asset('images/showcase.jpg') }}" alt="showcase" />
-      </div>  
-      <div class="showcase__content">
-        <h4>UNLEASH WANDERLUST WITH YALLA NEMSHI</h4>
-        <p>
-          Embark on a journey like no other with Yalla Nemshi, where your travel
-          dreams come to life. Our mission is to inspire and facilitate your
-          adventures, whether you seek the vibrant energy of bustling
-          cityscapes, the serene beauty of pristine beaches, or the captivating
-          history of ancient landmarks. At Yalla Nemshi, we provide expertly curated
-          destinations and personalized itineraries, ensuring that every trip is
-          tailored to your unique preferences. Discover hidden gems, immerse
-          yourself in diverse cultures, and create unforgettable memories that
-          will last a lifetime.
+        <article class="place-card" data-category="nature" data-search="mountain escape north lebanon nature">
+            <a href="{{ route('places.show', 'mountain-escape') }}" class="place-card__link">
+                <img src="{{ asset('images/showcase-bg.jpg') }}" alt="Mountain escape">
+                <div class="place-card__overlay"></div>
+                <div class="place-card__content">
+                    <h4>Mountain Escape</h4>
+                    <p><i class="ri-map-pin-2-fill"></i> North Lebanon</p>
+                </div>
+            </a>
+        </article>
+
+        <article class="place-card" data-category="beach" data-search="coastal sunset batroun beach">
+            <a href="{{ route('places.show', 'coastal-sunset-batroun') }}" class="place-card__link">
+                <img src="{{ asset('images/destination-2.jpg') }}" alt="Coastal sunset">
+                <div class="place-card__overlay"></div>
+                <div class="place-card__content">
+                    <h4>Coastal Sunset</h4>
+                    <p><i class="ri-map-pin-2-fill"></i> Batroun, Lebanon</p>
+                </div>
+            </a>
+        </article>
+
+        <article class="place-card" data-category="historic" data-search="temple view beqaa historic">
+            <a href="{{ route('places.show', 'temple-view-beqaa') }}" class="place-card__link">
+                <img src="{{ asset('images/destination-1.jpg') }}" alt="Temple view">
+                <div class="place-card__overlay"></div>
+                <div class="place-card__content">
+                    <h4>Temple View</h4>
+                    <p><i class="ri-map-pin-2-fill"></i> Beqaa, Lebanon</p>
+                </div>
+            </a>
+        </article>
+
+        <article class="place-card" data-category="city" data-search="city lights beirut nightlife city">
+            <a href="{{ route('places.show', 'city-lights-beirut') }}" class="place-card__link">
+                <img src="{{ asset('images/destination-3.jpg') }}" alt="City lights">
+                <div class="place-card__overlay"></div>
+                <div class="place-card__content">
+                    <h4>City Lights</h4>
+                    <p><i class="ri-map-pin-2-fill"></i> Beirut, Lebanon</p>
+                </div>
+            </a>
+        </article>
+
+        <article class="place-card" data-category="nature" data-search="nature retreat chouf nature forest">
+            <a href="{{ route('places.show', 'nature-retreat-chouf') }}" class="place-card__link">
+                <img src="{{ asset('images/showcase-bg.jpg') }}" alt="Nature retreat">
+                <div class="place-card__overlay"></div>
+                <div class="place-card__content">
+                    <h4>Nature Retreat</h4>
+                    <p><i class="ri-map-pin-2-fill"></i> Chouf, Lebanon</p>
+                </div>
+            </a>
+        </article>
+
+    </div>
+</section>
+
+<section class="why-us-section">
+    <div class="why-us__text">
+        <p class="why-us__eyebrow">Why Choose Us</p>
+        <h2>Why Should You Choose Us</h2>
+        <p class="why-us__desc">
+            We combine local insight, clean planning tools, and curated experiences
+            to help you travel smarter and discover more of Lebanon.
         </p>
-        <p>
-          With Yalla Nemshi as your ultimate travel companion, exploring the wonders
-          of the world has never been easier. Our insider tips and local
-          insights give you the tools to navigate new places with confidence and
-          excitement. From the moment you start planning to the day you return
-          home, we are dedicated to making your travel experience seamless and
-          enriching.
-        </p>
-        <div class="showcase__btn">
-          <button class="btn">
-           Plan a Trip Now
-            <span><i class="ri-arrow-right-line"></i></span>
-          </button>
-        </div>
-      </div>
-    </section>
 
-    <section class="section__container banner__container">
-      <div class="banner__card">
-        <h4>10+</h4>
-        <p>Years Experience</p>
-      </div>
-      <div class="banner__card">
-        <h4>12K</h4>
-        <p>Happy Clients</p>
-      </div>
-      <div class="banner__card">
-        <h4>4.8</h4>
-        <p>Overall Ratings</p>  
-      </div>
-    </section>
+        <div class="why-us__list">
+            <div class="why-item">
+                <span><i class="ri-checkbox-circle-fill"></i></span>
+                <div>
+                    <h4>Smart trip planning</h4>
+                    <p>Easy route discovery, destination inspiration, and cleaner travel decisions.</p>
+                </div>
+            </div>
 
-    <section class="section__container discover__container">
-      <h2 class="section__header">Discover Lebanon From Above</h2>
-      <p class="section__description">
-        Experience Breathtaking Views and Unique Perspectives
-      </p>
-      <div class="discover__grid">
-        <div class="discover__card">
-          <span><i class="ri-camera-lens-line"></i></span>
-          <h4>Aerial Cityscapes</h4>
-          <p>
-            Witness the architectural marvels and bustling streets from
-            bird's-eye view, offering a unique perspective.
-          </p>
-        </div>
-        <div class="discover__card">
-          <span><i class="ri-ship-line"></i></span>
-          <h4>Coastal Wonders</h4>
-          <p>
-            Fly over pristine coastlines and turquoise waters, revealing hidden
-            coves and vibrant coral reefs.
-          </p>
-        </div>
-        <div class="discover__card">
-          <span><i class="ri-landscape-line"></i></span>
-          <h4>Historic Landmarks</h4>
-          <p>
-            Observe the grandeur of ancient castles and other significant sites
-            in a way that ground tours can't offer.
-          </p>
-        </div>
-      </div>
-    </section>
+            <div class="why-item">
+                <span><i class="ri-checkbox-circle-fill"></i></span>
+                <div>
+                    <h4>Local-first recommendations</h4>
+                    <p>Explore real places, authentic experiences, and memorable local gems.</p>
+                </div>
+            </div>
 
-    <section class="section__container client__container">
-      <h2 class="section__header">Loved By Over Thousand Travelers</h2>
-      <p class="section__description">
-        Discover the stories of wanderlust and cherished memories through the
-        eyes of our valued clients.
-      </p>
-      <div class="swiper">
-        <div class="swiper-wrapper">
-          <div class="swiper-slide">
-            <div class="client__card">
-              <div class="client__content">
-                <div class="client__rating">
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                </div>
-                <p>
-                  Skywings has completely transformed my travel experience. From
-                  finding hidden gems in bustling cities to discovering serene
-                  retreats off the beaten path, every detail was thoughtfully
-                  arranged. I can't recommend Skywings enough for anyone looking
-                  to elevate their travel experience!
-                </p>
-              </div>
-              <div class="client__details">
-                <img src="{{ asset('images/client-1.jpg') }}" alt="client" />
+            <div class="why-item">
+                <span><i class="ri-checkbox-circle-fill"></i></span>
                 <div>
-                  <h4>John Adams</h4>
-                  <h5>Travel Blogger</h5>
+                    <h4>Beautiful user experience</h4>
+                    <p>A lightweight and modern interface built to make planning enjoyable.</p>
                 </div>
-              </div>
             </div>
-          </div>
-          <div class="swiper-slide">
-            <div class="client__card">
-              <div class="client__content">
-                <div class="client__rating">
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                </div>
-                <p>
-                  My recent adventure with Skywings was nothing short of
-                  spectacular. The personalized itineraries and recommendations
-                  they provided led me to extraordinary locations that I would
-                  never have found on my own. I'm already planning my next
-                  adventure with them!
-                </p>
-              </div>
-              <div class="client__details">
-                <img src="{{ asset('images/client-2.jpg') }}" alt="client" />
-                <div>
-                  <h4>Emily Thompson</h4>
-                  <h5>Adventure Enthusiast</h5>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="swiper-slide">
-            <div class="client__card">
-              <div class="client__content">
-                <div class="client__rating">
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                </div>
-                <p>
-                  Skywings offered a transformative experience for my research
-                  into historical landmarks. The unique aerial perspectives and
-                  provided a new level of appreciation and insight into the
-                  sites I studied. I highly recommend their services to fellow
-                  historians and cultural enthusiasts.
-                </p>
-              </div>
-              <div class="client__details">
-                <img src="{{ asset('images/client-3.jpg') }}" alt="client" />
-                <div>
-                  <h4>Sarah Lee</h4>
-                  <h5>Cultural Historian</h5>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="swiper-slide">
-            <div class="client__card">
-              <div class="client__content">
-                <div class="client__rating">
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                  <span><i class="ri-star-fill"></i></span>
-                </div>
-                <p>
-                  Finding a balance between work and travel can be challenging,
-                  but Skywings made it effortless. Their efficient planning and
-                  excellent recommendations helped me maximize my downtime and
-                  enjoy every moment of my trip. I look forward to working with
-                  them again on future travels.
-                </p>
-              </div>
-              <div class="client__details">
-                <img src="{{ asset('images/client-4.jpg') }}" alt="client" />
-                <div>
-                  <h4>David Patel</h4>
-                  <h5>Business Executive</h5>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
-    </section>
+    </div>
 
-   
-        
-    <script src="https://unpkg.com/scrollreveal"></script>
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script src="{{ asset('assets/js/home.js') }}"></script>
+    <div class="why-us__image-wrap">
+        <img src="{{ asset('images/showcase-bg.jpg') }}" alt="Why choose us">
+    </div>
+</section>
+
 @endsection
+
 @push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const chips = document.querySelectorAll('.chip');
+    const cards = document.querySelectorAll('.place-card');
+    const searchInput = document.getElementById('finderSearch');
+
+    let activeFilter = 'all';
+
+    function filterCards() {
+        const searchTerm = searchInput.value.trim().toLowerCase();
+
+        cards.forEach(card => {
+            const category = card.dataset.category;
+            const searchText = card.dataset.search;
+
+            const matchesFilter = activeFilter === 'all' || category === activeFilter;
+            const matchesSearch = !searchTerm || searchText.includes(searchTerm);
+
+            card.style.display = (matchesFilter && matchesSearch) ? 'block' : 'none';
+        });
+    }
+
+    chips.forEach(chip => {
+        chip.addEventListener('click', function () {
+            chips.forEach(btn => btn.classList.remove('chip--active'));
+            this.classList.add('chip--active');
+            activeFilter = this.dataset.filter;
+            filterCards();
+        });
+    });
+
+    searchInput.addEventListener('input', filterCards);
+});
+</script>
 @endpush
