@@ -1,0 +1,220 @@
+:root{
+  --lebanon-red: #d21f2b;
+  --cedar-green: #1f8a52;
+  --primary: #ff6b2c;
+  --ink: #0a0a0a;
+  --muted: #6b7280;
+  --line: rgba(0,0,0,0.10);
+  --card: rgba(255,255,255,0.90);
+}
+
+.contact{
+  position: relative;
+  padding: 5.5rem 0 4rem;
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(14, 31, 57, 0.78) 0%,
+      rgba(14, 31, 57, 0.56) 38%,
+      rgba(14, 31, 57, 0.24) 100%
+    ),
+    url("/images/contactusback.jpg") center center / cover no-repeat;
+}
+
+.contact::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(900px circle at 18% 35%, rgba(210,31,43,0.10), transparent 60%),
+    radial-gradient(900px circle at 82% 40%, rgba(31,138,82,0.10), transparent 60%);
+  pointer-events: none;
+}
+
+.contact .section__container{
+  position: relative;
+  z-index: 1;
+}
+
+.contact__wrap{
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.contact__info{
+  padding-left: 0;
+  padding: 0.75rem 0;
+}
+
+.contact__card{
+  width: 100%;
+  max-width: 540px;
+  margin-left: auto;
+  border-radius: 24px;
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 30px 120px rgba(0,0,0,0.18);
+  padding: 1.7rem;
+  backdrop-filter: blur(10px);
+}
+
+.contact__title{
+  margin: 0 0 0.5rem;
+  font-size: clamp(2rem, 3.6vw, 2.75rem);
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.contact__subtitle{
+  margin: 0 0 1.5rem;
+  color: rgba(255,255,255,0.82);
+  line-height: 1.8;
+  max-width: 52ch;
+  font-weight: 600;
+}
+
+.contact__list{
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  margin-top: 1rem;
+}
+
+.contact__item{
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.contact__icon{
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.14);
+  flex: 0 0 auto;
+  backdrop-filter: blur(8px);
+}
+
+.contact__icon svg{
+  width: 20px;
+  height: 20px;
+}
+
+.contact__label{
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.58);
+  margin-bottom: 0.15rem;
+}
+
+.contact__value{
+  color: rgba(255,255,255,0.92);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+a.contact__value:hover{
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* RIGHT CARD */
+.contact__form{
+  display: grid;
+  gap: 0.9rem;
+}
+
+.field{
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field__label{
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: rgba(10,10,10,0.65);
+}
+
+.field__input{
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(255,255,255,0.88);
+  outline: none;
+  font-weight: 650;
+  color: rgba(10,10,10,0.80);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.field__input::placeholder{
+  color: rgba(10,10,10,0.35);
+  font-weight: 650;
+}
+
+.field__input:focus{
+  border-color: rgba(0,0,0,0.20);
+  box-shadow: 0 0 0 4px rgba(210,31,43,0.10);
+}
+
+.field__textarea{
+  min-height: 140px;
+  resize: vertical;
+}
+
+.contact__submit{
+  margin-top: 0.35rem;
+  padding: 0.95rem 1rem;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.02em;
+  background: var(--primary);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.12);
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.contact__submit:hover{
+  transform: translateY(-2px);
+  filter: brightness(1.02);
+}
+
+.contact__small{
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: rgba(10,10,10,0.45);
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 900px){
+  .contact__wrap{
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    align-items: stretch;
+  }
+
+  .contact{
+    padding-top: 4.2rem;
+    background-position: center center;
+  }
+
+  .contact__card{
+    padding: 1.3rem;
+    margin-left: 0;
+    max-width: 100%;
+  }
+}
