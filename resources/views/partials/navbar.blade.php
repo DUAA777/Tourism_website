@@ -18,3 +18,8 @@
       </ul>
 
 </nav>
+
+
+@push('scripts')
+  <script src="{{ asset('assets/js/navbar.js') }}"></script>
+@endpush

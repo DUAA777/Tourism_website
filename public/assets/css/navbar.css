@@ -4,108 +4,173 @@ nav {
   position: fixed;
   top: 0;
   left: 0;
+  right: 0;
   width: 100%;
   z-index: 1000;
 
   background: transparent;
   box-shadow: none;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition: background 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease;
 }
 
-/* default text on top of hero */
 nav .nav__logo .logo,
 nav .nav__links a,
 nav .nav__menu__btn {
-  color: #ffffff;
+  color: #ff6b2c;
   transition: color 0.3s ease;
 }
 
-/* SCROLLED STATE */
+/* white navbar after scroll */
 nav.scrolled {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
 }
 
 nav.scrolled .nav__logo .logo,
 nav.scrolled .nav__links a,
 nav.scrolled .nav__menu__btn {
-  color: var(--text-dark);
+  color: var(--primary);
 }
 
-/* ================= MOBILE ================= */
+/* ================= NAV HEADER ================= */
 
 .nav__header {
-  padding: 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 1rem 1.25rem;
+}
+
+.nav__logo {
+  display: flex;
+  align-items: center;
 }
 
 .nav__logo .logo {
-  font-size: 1.5rem;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  font-size: 1.75rem;
+  font-weight: 800;
   text-decoration: none;
-  line-height: 1; /* helps baseline alignment */
+  line-height: 1;
 }
 
 .nav__menu__btn {
-  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  line-height: 1;
   cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0.25rem;
 }
 
-/* Dropdown menu */
+/* ================= MOBILE MENU ================= */
+
 .nav__links {
   position: absolute;
   top: 100%;
   left: 0;
   width: 100%;
-  padding: 2rem;
 
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  gap: 1.25rem;
 
-  background-color: #ffffff;
+  margin: 0;
+  padding: 0 1.5rem;
+
+  list-style: none;
+  background: #ffffff;
 
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.4s ease;
+  opacity: 0;
+  visibility: hidden;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+
+  transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.25s ease;
 }
 
 .nav__links.open {
   max-height: 500px;
+  opacity: 1;
+  visibility: visible;
+  padding: 1.25rem 1.5rem 1.5rem;
 }
 
 .nav__links li {
-  list-style: none;
+  width: 100%;
+  text-align: center;
 }
 
-/* Dropdown links MUST be dark because dropdown background is white */
 .nav__links a {
-  font-weight: 600;
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0;
+  font-size: 1rem;
+  font-weight: 700;
   text-decoration: none;
   color: var(--text-dark);
+  line-height: 1.2;
 }
 
 .nav__links a:hover {
-  color: var(--primary-color);
+  color: var(--primary);
+}
+
+/* ================= MOBILE: NO SCROLL TRANSITION ================= */
+
+@media (max-width: 768px) {
+  nav {
+    background: #ffffff;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    backdrop-filter: none;
+    transition: none;
+  }
+
+  nav .nav__logo .logo,
+  nav .nav__links a,
+  nav .nav__menu__btn,
+  nav.scrolled .nav__logo .logo,
+  nav.scrolled .nav__links a,
+  nav.scrolled .nav__menu__btn {
+    color: var(--text-dark);
+    transition: none;
+  }
+
+  nav.scrolled {
+    background: #ffffff;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    backdrop-filter: none;
+  }
 }
 
 /* ================= DESKTOP ================= */
 
-@media (width > 768px) {
+@media (min-width: 769px) {
   nav {
     display: flex;
-    align-items: center; /* keeps logo + links on same x-axis */
+    align-items: center;
     justify-content: space-between;
-    padding: 1.5rem 4rem;
+    height: 84px;
+    padding: 0 4rem;
   }
 
   .nav__header {
+    height: 100%;
     padding: 0;
+  }
+
+  .nav__logo,
+  .nav__logo .logo {
+    height: 100%;
     display: flex;
-    align-items: center; /* aligns logo properly */
+    align-items: center;
   }
 
   .nav__menu__btn {
@@ -115,24 +180,54 @@ nav.scrolled .nav__menu__btn {
   .nav__links {
     position: static;
     width: auto;
-    padding: 0;
+    height: 100%;
 
-    display: flex;
     flex-direction: row;
-    align-items: center; /* aligns with logo */
+    align-items: center;
+    justify-content: flex-end;
+    gap: 3rem;
 
-    gap: 5rem;
+    margin: 0;
+    padding: 0;
 
     max-height: none;
     overflow: visible;
+    opacity: 1;
+    visibility: visible;
     background: transparent;
-
-    /* lower the words slightly WITHOUT misaligning logo */
-    transform: translateY(6px);
+    box-shadow: none;
   }
 
-  /* On desktop, links should follow nav state (white top, dark scrolled) */
+  .nav__links li {
+    width: auto;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+
   .nav__links a {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    width: auto;
+    padding: 0;
+    line-height: 1;
     color: inherit;
+  }
+}
+
+/* ================= SMALLER MOBILE TWEAK ================= */
+
+@media (max-width: 480px) {
+  .nav__header {
+    padding: 1.25rem 1.25rem;
+  }
+
+  .nav__logo .logo {
+    font-size: 1.45rem;
+  }
+
+  .nav__menu__btn {
+    font-size: 1.55rem;
   }
 }

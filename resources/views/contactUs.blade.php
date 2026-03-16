@@ -66,7 +66,7 @@
 
 
     <div class="contact__card">
-      <form class="contact__form" action="#" method="POST">
+      <form class="contact__form" action="{{ route('contactUs') }}">
         @csrf
 
         <div class="field">

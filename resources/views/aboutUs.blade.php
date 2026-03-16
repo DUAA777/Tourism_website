@@ -39,7 +39,7 @@ body.about-page .nav__links a:hover{
         </p>
 
         <div class="about-hero__actions">
-          <a href="{{ url('/trip-planner') }}" class="btn">Plan a Trip Now</a>
+          <a href="{{ route('chatbot') }}" class="btn">Plan a Trip Now</a>
           <a href="#different" class="about-link">What makes us different →</a>
         </div>
 
@@ -129,8 +129,8 @@ body.about-page .nav__links a:hover{
       </p>
 
       <div class="final-actions">
-        <a href="{{ url('/trip-planner') }}" class="btn">Plan a Trip Now</a>
-        <a href="{{ url('/contact') }}" class="btn btn-outline-light">Contact us</a>
+        <a href="{{ route('chatbot') }}" class="btn">Plan a Trip Now</a>
+        <a href="{{ route('contactUs') }}" class="btn btn-outline-light">Contact us</a>
       </div>
     </div>
   </div>

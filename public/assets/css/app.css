@@ -2,8 +2,8 @@
 
 
 :root {
-  --primary-color: #2887ff;
-  --primary-color-dark: #2476da;
+  --primary-color: #ff6b2c;
+  --primary-color-dark: #e85d22;
   --text-dark: #0a0a0a;
   --text-light: #737373;
   --extra-light: #f3f4f6;
@@ -93,13 +93,3 @@ body {
   font-family: "DM Sans", sans-serif;
 }
 
-
-.content {
-  padding-top: 80px; 
-}
-
-@media (width > 768px) {
-  .content {
-    padding-top: 0; 
-  }
-}

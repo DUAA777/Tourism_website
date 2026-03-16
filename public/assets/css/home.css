@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap");
 
-
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
 }
@@ -37,6 +37,7 @@ body {
   overflow: hidden;
   background: url("/images/showcase-bg.jpg") center center / cover no-repeat;
 }
+
 .home-hero__overlay {
   position: absolute;
   inset: 0;
@@ -124,49 +125,39 @@ body {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.home-hero__thumbs {
-  width: 100%;
-  max-width: none;
-}
-
-.home-hero__thumb-title {
-  margin-bottom: 14px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #fff;
-  margin-top: 20px;
-}
+/* ===== HERO THUMBS ===== */
 
 .home-hero__thumbs {
   position: absolute;
   bottom: -20px;
   left: 0;
-  width: 100vw;
-  margin-left: 53px;
-
+  width: 100%;
+  overflow: hidden;
 }
 
 .home-hero__thumb-title {
-  margin-bottom: 14px;
+  margin: 20px 0 14px;
+  padding-left: 56px;
   font-size: 0.95rem;
   font-weight: 700;
   color: #fff;
 }
 
 .home-hero__thumb-slider {
+  width: 100%;
   overflow: hidden;
-  width: 100vw;
 }
 
 .home-hero__thumb-track {
   display: flex;
   gap: 18px;
-  padding-left: 56px;
   width: max-content;
-  animation: heroThumbSlide 25s linear infinite;
+  will-change: transform;
+  animation: heroThumbSlide 28s linear infinite;
 }
+
 .hero-thumb {
-  flex: 0 0 300px; /* wider cards */
+  flex: 0 0 300px;
   height: 110px;
   border-radius: 20px;
   overflow: hidden;
@@ -182,11 +173,11 @@ body {
 
 @keyframes heroThumbSlide {
   from {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
- to {
-  transform: translateX(-50%);
-}
+  to {
+    transform: translate3d(calc(-50% - 9px), 0, 0);
+  }
 }
 
 /* ===== STATS ===== */
@@ -325,6 +316,7 @@ body {
   box-shadow: var(--shadow-card);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   background: #ddd;
+  display: block;
 }
 
 .place-card:hover {
@@ -373,6 +365,18 @@ body {
 
 .place-card__content i {
   margin-right: 4px;
+}
+
+.place-card__link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.place-card.hidden {
+  display: none;
 }
 
 /* ===== WHY US ===== */
@@ -474,10 +478,6 @@ body {
     min-height: 650px;
   }
 
-  .home-hero__thumb-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .stats-strip__inner {
     border-radius: 28px;
     grid-template-columns: repeat(2, 1fr);
@@ -486,21 +486,35 @@ body {
   .finder-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .home-hero__thumb-title {
+    padding-left: 28px;
+  }
+
+  .hero-thumb {
+    flex: 0 0 260px;
+  }
 }
 
 @media (max-width: 640px) {
   .home-hero {
-    width: calc(100% - 20px);
-    border-radius: 26px;
+    width: 100%;
+    border-radius: 0;
   }
 
   .home-hero__content {
     padding: 100px 18px 24px;
   }
 
-  .home-hero__thumb-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+  .home-hero__thumb-title {
+    padding-left: 18px;
+    font-size: 0.9rem;
+  }
+
+  .hero-thumb {
+    flex: 0 0 220px;
+    height: 96px;
+    border-radius: 16px;
   }
 
   .stats-strip__inner {
@@ -522,20 +536,4 @@ body {
   .why-us__image-wrap img {
     min-height: 360px;
   }
-}
-
-.place-card__link {
-  display: block;
-  width: 100%;
-  height: 100%;
-  color: inherit;
-  text-decoration: none;
-}
-
-.place-card {
-  display: block;
-}
-
-.place-card.hidden {
-  display: none;
 }
