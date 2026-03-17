@@ -24,14 +24,14 @@ Route::post('/register', [AuthController::class, 'register']);
 // 3. Logout
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-<<<<<<< HEAD
+
 Route::middleware(['auth'])->group(function () {
     // Routes that only logged-in users can see
     Route::get('/dashboard', function () { return view('dashboard'); });
 });
 Route::get('auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
-=======
+
 Route::get('/contactUs', function () {
     return view('contactUs');
 })->name('contactUs');
@@ -290,4 +290,3 @@ Route::get('/places/{slug}', function ($slug) use ($places) {
     ]);
 
 })->name('places.show');
->>>>>>> ef04397ac5f9b5aaa837d40accd44563fe94b238
