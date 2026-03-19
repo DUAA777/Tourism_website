@@ -208,8 +208,8 @@ nav.scrolled .nav__menu__btn {
   .nav__links a {
     display: flex;
     align-items: center;
-    height: 100%;
-    width: auto;
+    height: 50%;
+    width: 80px;
     padding: 0;
     line-height: 1;
     color: inherit;
@@ -230,4 +230,27 @@ nav.scrolled .nav__menu__btn {
   .nav__menu__btn {
     font-size: 1.55rem;
   }
+}
+
+.nav__auth {
+  margin-left: auto;
+}
+
+.nav__login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.2rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff !important;
+  font-weight: 700;
+  text-decoration: none;
+  transition: 0.25s ease;
+}
+
+.nav__login:hover {
+  background: var(--primary-dark);
+  color: #fff !important;
+  transform: translateY(-1px);
 }

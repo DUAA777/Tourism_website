@@ -1,77 +1,67 @@
-/* const menuBtn = document.getElementById("menu-btn");
-const navLinks = document.getElementById("nav-links");
-const menuBtnIcon = menuBtn.querySelector("i");
+document.addEventListener("DOMContentLoaded", function () {
+    const statNumbers = document.querySelectorAll(".stat-number");
 
-menuBtn.addEventListener("click", (e) => {
-  navLinks.classList.toggle("open");
+    if (!statNumbers.length) return;
 
-  const isOpen = navLinks.classList.contains("open");
-  menuBtnIcon.setAttribute("class", isOpen ? "ri-close-line" : "ri-menu-line");
-});
+    let started = false;
 
-navLinks.addEventListener("click", (e) => {
-  navLinks.classList.remove("open");
-  menuBtnIcon.setAttribute("class", "ri-menu-line");
-});
+    function animateNumber(element) {
+        const target = parseFloat(element.getAttribute("data-target")) || 0;
+        const suffix = element.getAttribute("data-suffix") || "";
+        const decimals = parseInt(element.getAttribute("data-decimals") || "0", 10);
 
-const scrollRevealOption = {
-  origin: "bottom",
-  distance: "50px",
-  duration: 1000,
-};
+        let start = 0;
+        const duration = 1800;
+        const increment = target / (duration / 16);
 
-ScrollReveal().reveal(".header__image img", {
-  ...scrollRevealOption,
-  origin: "right",
-});
-ScrollReveal().reveal(".header__content p", {
-  ...scrollRevealOption,
-  delay: 500,
-});
-ScrollReveal().reveal(".header__content h1", {
-  ...scrollRevealOption,
-  delay: 1000,
-});
-ScrollReveal().reveal(".header__btns", {
-  ...scrollRevealOption,
-  delay: 1500,
-});
+        function updateCounter() {
+            start += increment;
 
-ScrollReveal().reveal(".destination__card", {
-  ...scrollRevealOption,
-  interval: 500,
-});
+            if (start >= target) {
+                if (decimals > 0) {
+                    element.textContent = target.toFixed(decimals) + suffix;
+                } else {
+                    element.textContent = Math.floor(target).toLocaleString() + suffix;
+                }
+                return;
+            }
 
-ScrollReveal().reveal(".showcase__image img", {
-  ...scrollRevealOption,
-  origin: "left",
-});
-ScrollReveal().reveal(".showcase__content h4", {
-  ...scrollRevealOption,
-  delay: 500,
-});
-ScrollReveal().reveal(".showcase__content p", {
-  ...scrollRevealOption,
-  delay: 1000,
-});
-ScrollReveal().reveal(".showcase__btn", {
-  ...scrollRevealOption,
-  delay: 1500,
-});
+            if (decimals > 0) {
+                element.textContent = start.toFixed(decimals) + suffix;
+            } else {
+                element.textContent = Math.floor(start).toLocaleString() + suffix;
+            }
 
-ScrollReveal().reveal(".banner__card", {
-  ...scrollRevealOption,
-  interval: 500,
-});
+            requestAnimationFrame(updateCounter);
+        }
 
-ScrollReveal().reveal(".discover__card", {
-  ...scrollRevealOption,
-  interval: 500,
-});
+        updateCounter();
+    }
 
-const swiper = new Swiper(".swiper", {
-  slidesPerView: 3,
-  spaceBetween: 20,
-  loop: true,
+    function startCounters() {
+        if (started) return;
+        started = true;
+        statNumbers.forEach((number) => animateNumber(number));
+    }
+
+    const statsSection = document.querySelector(".stats-strip");
+
+    if (!statsSection) {
+        startCounters();
+        return;
+    }
+
+    const observer = new IntersectionObserver(
+        function (entries) {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    startCounters();
+                    observer.unobserve(statsSection);
+                }
+            });
+        },
+        { threshold: 0.2 }
+    );
+
+    observer.observe(statsSection);
 });
- */

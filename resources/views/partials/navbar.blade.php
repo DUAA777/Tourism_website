@@ -7,14 +7,17 @@
           <i class="ri-menu-line"></i>
         </div>
       </div>
-      <ul class="nav__links" id="nav-links">
-        <li><a href="{{ route('home') }}">HOME</a></li>
-        <li><a href="{{ route('places.index') }}">EXPLORE</a></li>
-        <li><a href="{{ route('aboutUs') }}">ABOUT</a></li>
-        <li><a href="{{ route('chatbot') }}">PLAN</a></li>
-        <li><a href="{{ route('contactUs') }}">CONTACT</a></li>
-        <li><a href="{{ route('profile') }}">PROFILE</a></li>
-      </ul>
+     <ul class="nav__links" id="nav-links">
+  <li><a href="{{ route('home') }}">HOME</a></li>
+  <li><a href="{{ route('aboutUs') }}">ABOUT</a></li>
+  <li><a href="{{ route('chatbot') }}">PLAN</a></li>
+  <li><a href="{{ route('places.index') }}">PLACES</a></li>
+  <li><a href="{{ route('contactUs') }}">CONTACT</a></li>
+
+  <li class="nav__auth">
+    <a href="{{ route('login') }}" class="nav__login">LOGIN</a>
+  </li>
+</ul>
 
 </nav>
 

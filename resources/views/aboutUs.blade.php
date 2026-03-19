@@ -24,7 +24,7 @@ body.about-page .nav__links a:hover{
 
     
 {{-- HERO SECTION --}}
-<section class="hero-section section-animate text-white d-flex align-items-center"
+<!-- <section class="hero-section section-animate text-white d-flex align-items-center"
     style="
     min-height: 70vh;
     background:
@@ -38,7 +38,7 @@ body.about-page .nav__links a:hover{
         </p>
         <a href="#who-we-are" class="btn btn-warning btn-lg mt-4">Discover More</a>
     </div>
-</section>
+</section> -->
 
 <header class="about-hero">
   <div class="section__container">
