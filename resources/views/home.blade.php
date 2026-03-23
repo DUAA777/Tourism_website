@@ -12,7 +12,7 @@
     <div class="home-hero__content">
         <div class="home-hero__text">
             <p class="home-hero__eyebrow">Discover Lebanon</p>
-            <h1>Unlock Your Travel Dreams With Us!!!</h1>
+            <h1>Unlock Your Travel Dreams With Us</h1>
             <p class="home-hero__desc">
                 Discover destinations, build smart itineraries, and explore Lebanon
                 with a cleaner, easier, and more inspiring planning experience.
@@ -31,7 +31,7 @@
         </div>
 
         <div class="home-hero__thumbs">
-            <div class="home-hero__thumb-title">Popular Places</div>
+            <!-- <div class="home-hero__thumb-title">Popular Places</div> -->
 
             <div class="home-hero__thumb-slider">
                 <div class="home-hero__thumb-track">
@@ -69,24 +69,23 @@
 <section class="stats-strip">
     <div class="stats-strip__inner">
         <div class="stat-pill">
-            <h3>10+</h3>
+            <h3 class="stat-number" data-target="10" data-suffix="+">0</h3>
             <p>Years Experience</p>
         </div>
         <div class="stat-pill">
-            <h3>2K+</h3>
+            <h3 class="stat-number" data-target="2000" data-suffix="+">0</h3>
             <p>Happy Travelers</p>
         </div>
         <div class="stat-pill">
-            <h3>10K+</h3>
+            <h3 class="stat-number" data-target="10000" data-suffix="+">0</h3>
             <p>Trips Planned</p>
         </div>
         <div class="stat-pill">
-            <h3>4.8</h3>
+            <h3 class="stat-number" data-target="4.8" data-decimals="1">0</h3>
             <p>Overall Rating</p>
         </div>
     </div>
 </section>
-
 <section class="finder-section">
     <div class="finder-section__heading">
         <h2>Find Your Dream Destination</h2>
@@ -204,6 +203,97 @@
     </div>
 </section>
 
+<section class="plan-cta-section">
+    <div class="plan-cta__content">
+        <p class="plan-cta__kicker">READY TO GO?</p>
+        <h2>Let Yalla Nemshi build your perfect Lebanon day</h2>
+        <p>
+            Pick your city, mood, budget, and available time — then get a smart plan
+            tailored to your vibe.
+        </p>
+
+        <div class="plan-cta__actions">
+            <a href="{{ route('chatbot') }}" class="hero-btn hero-btn--primary">Plan My Trip</a>
+            <a href="{{ route('places.index') }}" class="hero-btn hero-btn--ghost">Browse Places</a>
+        </div>
+    </div>
+</section>
+
+<section class="reviews-section">
+    <div class="reviews-section__heading">
+        <p class="reviews-section__kicker">TRAVELER REVIEWS</p>
+        <h2>What people are saying</h2>
+        <p>
+            See how Yalla Nemshi helps travelers discover better places and plan smoother days out.
+        </p>
+    </div>
+
+    <div class="reviews-grid">
+        <article class="review-card">
+            <div class="review-stars">
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+            </div>
+            <p class="review-text">
+                Yalla Nemshi made planning my Batroun day so much easier. The suggestions actually matched
+                my vibe and budget.
+            </p>
+            <div class="review-user">
+                <img src="{{ asset('images/client-1.jpg') }}" alt="Reviewer">
+                <div>
+                    <h4>Rana K.</h4>
+                    <span>Weekend Traveler</span>
+                </div>
+            </div>
+        </article>
+
+        <article class="review-card">
+            <div class="review-stars">
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+            </div>
+            <p class="review-text">
+                I liked how clean everything felt. Instead of wasting time deciding where to go, I got a
+                full idea in minutes.
+            </p>
+            <div class="review-user">
+                <img src="{{ asset('images/client-2.jpg') }}" alt="Reviewer">
+                <div>
+                    <h4>Karim M.</h4>
+                    <span>City Explorer</span>
+                </div>
+            </div>
+        </article>
+
+        <article class="review-card">
+            <div class="review-stars">
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+                <i class="ri-star-fill"></i>
+            </div>
+            <p class="review-text">
+                Super helpful for finding places I didn’t know about before. It feels modern, simple, and
+                actually useful.
+            </p>
+            <div class="review-user">
+                <img src="{{ asset('images/client-3.jpg') }}" alt="Reviewer">
+                <div>
+                    <h4>Lina S.</h4>
+                    <span>Food & Nature Lover</span>
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+
 <section class="why-us-section">
     <div class="why-us__text">
         <p class="why-us__eyebrow">Why Choose Us</p>
@@ -281,5 +371,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     searchInput.addEventListener('input', filterCards);
 });
+
+@push('scripts')
+<script src="{{ asset('assets/js/home.js') }}"></script>
+@endpush
 </script>
 @endpush

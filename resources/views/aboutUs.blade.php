@@ -24,7 +24,7 @@ body.about-page .nav__links a:hover{
 
     
 {{-- HERO SECTION --}}
-<section class="hero-section section-animate text-white d-flex align-items-center"
+<!-- <section class="hero-section section-animate text-white d-flex align-items-center"
     style="
     min-height: 70vh;
     background:
@@ -38,7 +38,7 @@ body.about-page .nav__links a:hover{
         </p>
         <a href="#who-we-are" class="btn btn-warning btn-lg mt-4">Discover More</a>
     </div>
-</section>
+</section> -->
 
 {{-- WHO WE ARE --}}
 <section id="who-we-are" class="py-5 section-animate">
@@ -74,6 +74,7 @@ body.about-page .nav__links a:hover{
             <p class="text-muted">Everything you need to plan your visit to Lebanon</p>
         </div>
 
+<<<<<<< HEAD
         <div class="row g-4">
             <div class="col-md-4">
                 <div class="card h-100 shadow-sm text-center p-4">
@@ -190,6 +191,14 @@ body.about-page .nav__links a:hover{
         </div>
     </div>
 </section>
+=======
+<section id="different" class="about-section about-section--alt">
+  <div class="section__container">
+    <h2 class="section__header">What makes us different</h2>
+    <p class="section__description">
+      Simple, focused, and built around how people actually plan a day out in Lebanon.
+    </p>
+>>>>>>> 60aaf51669052e95574285667333597a9773e021
 
     <div class="row g-4 mt-4">
       <div class="col-12 col-md-6 col-lg-4">
