@@ -34,10 +34,6 @@ Route::middleware(['auth'])->group(function () {
 });
 Route::get('auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
-<<<<<<< HEAD
-=======
-
->>>>>>> 60aaf51669052e95574285667333597a9773e021
 Route::get('/contactUs', function () {
     return view('contactUs');
 })->name('contactUs');

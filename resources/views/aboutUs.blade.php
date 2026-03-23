@@ -74,7 +74,6 @@ body.about-page .nav__links a:hover{
             <p class="text-muted">Everything you need to plan your visit to Lebanon</p>
         </div>
 
-<<<<<<< HEAD
         <div class="row g-4">
             <div class="col-md-4">
                 <div class="card h-100 shadow-sm text-center p-4">
@@ -191,14 +190,6 @@ body.about-page .nav__links a:hover{
         </div>
     </div>
 </section>
-=======
-<section id="different" class="about-section about-section--alt">
-  <div class="section__container">
-    <h2 class="section__header">What makes us different</h2>
-    <p class="section__description">
-      Simple, focused, and built around how people actually plan a day out in Lebanon.
-    </p>
->>>>>>> 60aaf51669052e95574285667333597a9773e021
 
     <div class="row g-4 mt-4">
       <div class="col-12 col-md-6 col-lg-4">
