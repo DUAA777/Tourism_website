@@ -40,7 +40,6 @@ body.about-page .nav__links a:hover{
     </div>
 </section>
 
-<<<<<<< HEAD
 {{-- WHO WE ARE --}}
 <section id="who-we-are" class="py-5 section-animate">
     <div class="container">
@@ -66,67 +65,6 @@ body.about-page .nav__links a:hover{
         </div>
     </div>
 </section>
-=======
-<header class="about-hero">
-  <div class="section__container">
-    <div class="row align-items-center g-4">
-      <div class="col-12 col-lg-6">
-        <p class="about-kicker">ABOUT US • YALLA NEMSHI</p>
-
-        <h1 class="about-title">
-          Plan Lebanon like a local — fast, simple, and fun.
-        </h1>
-
-        <p class="about-subtitle">
-          Yalla Nemshi helps you build a perfect day out in Lebanon based on your city, budget, time, and interests —
-          then suggests places you’ll actually enjoy.
-        </p>
-
-        <div class="about-hero__actions">
-          <a href="{{ route('chatbot') }}" class="btn">Plan a Trip Now</a>
-          <a href="#different" class="about-link">What makes us different →</a>
-        </div>
-
-        <div class="about-stats">
-          <div class="about-stat">
-            <span class="about-stat__num">3+</span>
-            <span class="about-stat__label">Cities covered</span>
-          </div>
-          <div class="about-stat">
-            <span class="about-stat__num">10+</span>
-            <span class="about-stat__label">Categories</span>
-          </div>
-          <div class="about-stat">
-            <span class="about-stat__num">Smart</span>
-            <span class="about-stat__label">Recommendations</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-lg-6">
-        <div class="mission-card">
-  <p class="mission-kicker">Our mission</p>
-
-  <h3 class="mission-title">
-    Make discovering activities in Lebanon effortless.
-  </h3>
-
-  <p class="mission-text">
-    So anyone can turn “I don’t know what to do today” into a clear plan in minutes.
-  </p>
-
-  <div class="mission-tags">
-    <span class="tag tag--red">City-based suggestions</span>
-    <span class="tag tag--green">Budget filtering</span>
-    <span class="tag tag--neutral">Tags &amp; interests</span>
-  </div>
-</div>
-      </div>
-
-    </div>
-  </div>
-</header>
->>>>>>> ef04397ac5f9b5aaa837d40accd44563fe94b238
 
 {{-- WHAT WE OFFER --}}
 <section class="py-5 bg-light section-animate">
@@ -136,7 +74,6 @@ body.about-page .nav__links a:hover{
             <p class="text-muted">Everything you need to plan your visit to Lebanon</p>
         </div>
 
-<<<<<<< HEAD
         <div class="row g-4">
             <div class="col-md-4">
                 <div class="card h-100 shadow-sm text-center p-4">
@@ -253,14 +190,6 @@ body.about-page .nav__links a:hover{
         </div>
     </div>
 </section>
-=======
-<section id="different" class="about-section about-section--alt">
-  <div class="section__container">
-    <h2 class="section__header">What makes us different</h2>
-    <p class="section__description">
-      Simple, focused, and built around how people actually plan a day out in Lebanon.
-    </p>
->>>>>>> ef04397ac5f9b5aaa837d40accd44563fe94b238
 
     <div class="row g-4 mt-4">
       <div class="col-12 col-md-6 col-lg-4">

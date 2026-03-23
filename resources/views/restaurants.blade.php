@@ -187,6 +187,10 @@
         border: 1px solid #f1f5f9;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         position: relative;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        display: block;
     }
 
     .res-card:hover { 
@@ -199,6 +203,16 @@
         height: 200px; 
         object-fit: cover; 
         background: #eee; 
+        transition: transform 0.5s ease;
+    }
+
+    .res-card:hover .res-image {
+        transform: scale(1.05);
+    }
+
+    .res-image-container {
+        overflow: hidden;
+        position: relative;
     }
 
     .res-badge {
@@ -262,20 +276,21 @@
         border-top: 1px solid #f1f5f9;
     }
 
-    .view-btn {
-        display: inline-block;
-        padding: 8px 16px;
-        background: #1e293b;
-        color: white;
-        border-radius: 8px;
-        text-decoration: none;
+    .view-details-hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--primary);
         font-weight: 600;
         font-size: 13px;
-        transition: background 0.2s ease;
     }
 
-    .view-btn:hover {
-        background: #0f172a;
+    .view-details-hint i {
+        transition: transform 0.2s ease;
+    }
+
+    .res-card:hover .view-details-hint i {
+        transform: translateX(5px);
     }
 
     .loading-skeleton {
@@ -417,13 +432,16 @@
     <div id="restaurantGrid" class="restaurant-grid">
         <!-- Results will be loaded here -->
         <div style="grid-column: 1/-1; text-align:center; padding: 60px; color: var(--text-muted);">
-            Select your preferences and click "Discover" to see personalized recommendations
+            Select your preferences and click "Generate AI Recommendations" to see personalized results
         </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Get the base URL for restaurant details
+    const baseUrl = '{{ url("/restaurants") }}';
+    
     // Map sort_by to recommendation_type
     const sortBySelect = document.querySelector('select[name="sort_by"]');
     const recTypeInput = document.getElementById('recommendationType');
@@ -438,6 +456,13 @@ document.addEventListener('DOMContentLoaded', function() {
         recTypeInput.value = mapping[this.value] || 'smart';
     });
 
+    // Function to handle card click navigation
+    function navigateToRestaurant(restaurantId) {
+        if (restaurantId) {
+            window.location.href = `${baseUrl}/${restaurantId}`;
+        }
+    }
+
     // Form submission
     document.getElementById('aiFilterForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -446,6 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const btnLoading = btn.querySelector('.btn-loading');
         const grid = document.getElementById('restaurantGrid');
         const resultsCount = document.getElementById('resultsCount');
+        const resultsHeader = document.querySelector('.results-header h3');
         
         // UI Loading State
         btn.disabled = true;
@@ -480,9 +506,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify(data)
             });
 
-            const results = await response.json();
-            renderResults(results);
-            resultsCount.textContent = `${results.length} restaurants`;
+            const responseData = await response.json();
+            
+            // Check if response has the new format with recommendations array
+            if (responseData.recommendations) {
+                // New format: { recommendations: [...], metadata: {...} }
+                renderResults(responseData.recommendations);
+                resultsCount.textContent = `${responseData.recommendations.length} restaurants`;
+                
+                // Optionally display metadata
+                if (responseData.metadata) {
+                    console.log('Recommendation Quality:', responseData.metadata);
+                    // You could add a small badge showing similarity score
+                    const similarityInfo = document.createElement('small');
+                    similarityInfo.style.display = 'block';
+                    similarityInfo.style.color = 'var(--text-muted)';
+                    similarityInfo.style.fontSize = '12px';
+                    similarityInfo.style.marginTop = '5px';
+                    similarityInfo.textContent = `🎯 Avg. Match: ${responseData.metadata.avg_similarity} (Threshold: ${responseData.metadata.similarity_threshold_used})`;
+                    
+                    // Add to results header if you want to show this info
+                    const existingInfo = document.querySelector('.similarity-info');
+                    if (existingInfo) existingInfo.remove();
+                    
+                    similarityInfo.classList.add('similarity-info');
+                    document.querySelector('.results-header').appendChild(similarityInfo);
+                }
+            } else if (Array.isArray(responseData)) {
+                // Old format: direct array
+                renderResults(responseData);
+                resultsCount.textContent = `${responseData.length} restaurants`;
+            } else {
+                // Unexpected format
+                console.error('Unexpected response format:', responseData);
+                throw new Error('Invalid response format');
+            }
         } catch (error) {
             console.error("AI Service Error:", error);
             grid.innerHTML = `
@@ -501,10 +559,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function renderResults(list) {
+    function renderResults(restaurants) {
         const grid = document.getElementById('restaurantGrid');
         
-        if (!list || list.length === 0) {
+        if (!restaurants || restaurants.length === 0) {
             grid.innerHTML = `
                 <div style="grid-column: 1/-1; text-align:center; padding: 60px;">
                     <div style="font-size: 48px; margin-bottom: 20px;">🔍</div>
@@ -515,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        grid.innerHTML = list.map(item => {
+        grid.innerHTML = restaurants.map(item => {
             // Handle tags safely
             const tags = item.tags ? item.tags.split(',').slice(0, 4) : [];
             
@@ -524,13 +582,22 @@ document.addEventListener('DOMContentLoaded', function() {
                                item.price_tier === 'mid-range' ? '$$' : 
                                item.price_tier === 'premium' ? '$$$' : '';
             
+            // Get restaurant ID (assuming your API returns an id field)
+            const restaurantId = item.id || '';
+            
+            // Check if this is a fallback recommendation (optional)
+            const isFallback = item.is_fallback ? ' (Popular Pick)' : '';
+            
             return `
-            <div class="res-card">
-                ${item.rating >= 4.5 ? '<div class="res-badge">⭐ Top Rated</div>' : ''}
-                <img src="${item.image || 'https://via.placeholder.com/400x200?text=Restaurant'}" 
-                     class="res-image" 
-                     alt="${item.restaurant_name}"
-                     onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
+            <div class="res-card" onclick="navigateToRestaurant('${restaurantId}')" data-restaurant-id="${restaurantId}">
+                <div class="res-image-container">
+                    ${item.rating >= 4.5 ? '<div class="res-badge">⭐ Top Rated</div>' : ''}
+                    ${isFallback ? '<div class="res-badge" style="background: var(--info);">🔥 Popular</div>' : ''}
+                    <img src="${item.image || 'https://via.placeholder.com/400x200?text=Restaurant'}" 
+                         class="res-image" 
+                         alt="${item.restaurant_name}"
+                         onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
+                </div>
                 <div class="res-content">
                     <div style="display:flex; justify-content:space-between; align-items:start;">
                         <h3 class="res-title">${item.restaurant_name || 'Unnamed Restaurant'}</h3>
@@ -541,21 +608,40 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="res-meta">
                         ${item.location || 'Location TBA'} 
                         ${priceSymbol ? '• ' + priceSymbol : ''}
+                        ${item.similarity_percentage ? `• Match: ${item.similarity_percentage}%` : ''}
                     </p>
                     <div style="margin-bottom: 15px;">
                         ${tags.map(tag => `<span class="tag-pill">${tag.trim()}</span>`).join('')}
                         ${item.food_type ? `<span class="tag-pill" style="background: #fef3c7; color: #92400e;">${item.food_type}</span>` : ''}
                     </div>
                     <div class="res-footer">
-                        <a href="${item.directory_url || '#'}" target="_blank" class="view-btn">
-                            View Details →
-                        </a>
+                        <span class="view-details-hint">
+                            Click for details <i class="ri-arrow-right-line"></i>
+                        </span>
                         ${item.phone_number ? `<span style="color: var(--text-muted); font-size: 12px;">📞 ${item.phone_number}</span>` : ''}
                     </div>
                 </div>
             </div>
         `}).join('');
     }
+
+    // Make navigateToRestaurant globally available for onclick handler
+    window.navigateToRestaurant = function(restaurantId) {
+        if (restaurantId) {
+            window.location.href = `{{ url("/restaurants") }}/${restaurantId}`;
+        }
+    };
+
+    // Add click event listeners dynamically (alternative to inline onclick)
+    document.addEventListener('click', function(e) {
+        const card = e.target.closest('.res-card');
+        if (card && !e.target.closest('a')) {
+            const restaurantId = card.dataset.restaurantId;
+            if (restaurantId) {
+                window.location.href = `{{ url("/restaurants") }}/${restaurantId}`;
+            }
+        }
+    });
 
     // Load initial recommendations
     async function loadInitialRecommendations() {
@@ -565,10 +651,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({}) // Empty params for default recommendations
             });
-            const results = await response.json();
-            if (results.length > 0) {
-                renderResults(results);
-                document.getElementById('resultsCount').textContent = `${results.length} restaurants`;
+            
+            const responseData = await response.json();
+            console.log('Initial Recommendations:', responseData);
+            
+            if (responseData.recommendations && responseData.recommendations.length > 0) {
+                renderResults(responseData.recommendations);
+                document.getElementById('resultsCount').textContent = `${responseData.recommendations.length} restaurants`;
+                
+                // Show metadata if available
+                if (responseData.metadata) {
+                    console.log('Initial metadata:', responseData.metadata);
+                }
+            } else if (Array.isArray(responseData) && responseData.length > 0) {
+                // Handle old format
+                renderResults(responseData);
+                document.getElementById('resultsCount').textContent = `${responseData.length} restaurants`;
             }
         } catch (error) {
             console.log('Using default empty state');

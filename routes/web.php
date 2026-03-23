@@ -3,7 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController; // Don't forget to import the controller!
-
+use App\Http\Controllers\RestaurantController;
+use App\Http\Controllers\HotelController;
 // Static Pages
 Route::get('/', function () { return view('home'); })->name('home');
 Route::get('/aboutUs', function () { return view('aboutUs'); })->name('aboutUs');
@@ -12,6 +13,9 @@ Route::get('/contactUs', function () { return view('contactUs'); })->name('conta
 Route::get('/destinations', function () { return view('destinations'); })->name('destinations');
 Route::get('/hotels', function () { return view('hotels'); })->name('hotels');
 Route::get('/restaurants', function () { return view('restaurants'); })->name('restaurants');
+Route::get('/restaurants/{id}', [RestaurantController::class, 'show'])->name('restaurants.show');
+Route::get('/hotels', function () { return view('hotels'); })->name('hotels');
+Route::get('/hotels/{id}', [HotelController::class, 'show'])->name('hotels.show');
 // Authentication Routes
 // 1. Show the forms
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -24,14 +28,12 @@ Route::post('/register', [AuthController::class, 'register']);
 // 3. Logout
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-<<<<<<< HEAD
 Route::middleware(['auth'])->group(function () {
     // Routes that only logged-in users can see
     Route::get('/dashboard', function () { return view('dashboard'); });
 });
 Route::get('auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
-=======
 Route::get('/contactUs', function () {
     return view('contactUs');
 })->name('contactUs');
@@ -290,4 +292,3 @@ Route::get('/places/{slug}', function ($slug) use ($places) {
     ]);
 
 })->name('places.show');
->>>>>>> ef04397ac5f9b5aaa837d40accd44563fe94b238
