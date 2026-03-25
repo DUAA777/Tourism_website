@@ -5,10 +5,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController; // Don't forget to import the controller!
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\HotelController;
-// Static Pages
+use App\Http\Controllers\ChatbotController;
+
+Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot');
+Route::post('/chatbot/message', [ChatbotController::class, 'send'])->name('chatbot.send');
+Route::post('/chatbot/new-session', [ChatbotController::class, 'newSession'])->name('chatbot.newSession');
 Route::get('/', function () { return view('home'); })->name('home');
 Route::get('/aboutUs', function () { return view('aboutUs'); })->name('aboutUs');
-Route::get('/chatbot', function () { return view('chatbot'); })->name('chatbot');
 Route::get('/contactUs', function () { return view('contactUs'); })->name('contactUs');
 Route::get('/destinations', function () { return view('destinations'); })->name('destinations');
 Route::get('/hotels', function () { return view('hotels'); })->name('hotels');
