@@ -32,6 +32,9 @@ class Hotel extends Model
         'review_count',
         'stay_details',
         'description',
+        'vibe_tags',
+        'audience_tags',
+        'search_text',
     ];
 
     protected $casts = [
@@ -39,5 +42,7 @@ class Hotel extends Model
         'review_count' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'vibe_tags' => 'array',
+        'audience_tags' => 'array',
     ];
 }

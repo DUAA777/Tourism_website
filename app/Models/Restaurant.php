@@ -22,12 +22,18 @@ class Restaurant extends Model
         'phone_number',
         'opening_hours',
         'website',
-        'directory_url'
+        'directory_url',
+        'vibe_tags',
+        'occasion_tags',
+        'search_text',
     ];
 
     protected $casts = [
         'rating' => 'decimal:1',
-        'tags' => 'array'
+        'tags' => 'array',
+        'vibe_tags',
+        'occasion_tags',
+        'search_text',
     ];
 
     public function getTagsArrayAttribute()
