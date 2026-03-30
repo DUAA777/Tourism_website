@@ -9,8 +9,12 @@ use App\Http\Controllers\HomeController;
 
 // Static Pages
 Route::get('/', [HomeController::class, 'index'])->name('home'); // Updated to use HomeController
+use App\Http\Controllers\ChatbotController;
+
+Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot');
+Route::post('/chatbot/message', [ChatbotController::class, 'send'])->name('chatbot.send');
+Route::post('/chatbot/new-session', [ChatbotController::class, 'newSession'])->name('chatbot.newSession');
 Route::get('/aboutUs', function () { return view('aboutUs'); })->name('aboutUs');
-Route::get('/chatbot', function () { return view('chatbot'); })->name('chatbot');
 Route::get('/contactUs', function () { return view('contactUs'); })->name('contactUs');
 Route::get('/destinations', function () { return view('destinations'); })->name('destinations');
 Route::get('/hotels', function () { return view('hotels'); })->name('hotels');
