@@ -1,137 +1,602 @@
 @extends('layout.app')
 
-@push('meta')
-<title>Login | Yalla Nemshi</title>
-@endpush
-
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/login.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/home.css') }}">
+<style>
+    :root {
+        --login-bg: #f6f7fb;
+        --login-card-bg: #ffffff;
+        --login-text-dark: #1b1b1f;
+        --login-text-soft: #6f7380;
+        --login-primary: #ff6b2c;
+        --login-primary-dark: #e85d22;
+        --login-error: #dc3545;
+        --login-success: #28a745;
+        --login-google: #db4437;
+        --login-google-dark: #c53929;
+        --login-shadow: 0 20px 50px rgba(16, 24, 40, 0.08);
+        --login-shadow-hover: 0 30px 60px rgba(16, 24, 40, 0.12);
+        --login-radius: 30px;
+        --login-radius-md: 16px;
+        --login-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .login-page {
+        min-height: 100vh;
+        background: linear-gradient(135deg, var(--home-bg) 0%, #ffffff 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Animated background elements */
+    .login-page::before,
+    .login-page::after {
+        content: '';
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(255, 107, 44, 0.05) 0%, rgba(255, 107, 44, 0.02) 100%);
+        pointer-events: none;
+    }
+
+    .login-page::before {
+        top: -100px;
+        right: -100px;
+        animation: float 20s ease-in-out infinite;
+    }
+
+    .login-page::after {
+        bottom: -100px;
+        left: -100px;
+        animation: float 15s ease-in-out infinite reverse;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(30px, -30px) scale(1.1); }
+    }
+
+    .login-container {
+        max-width: 780px;
+        width: 100%;
+        background: var(--login-card-bg);
+        border-radius: var(--login-radius);
+        box-shadow: var(--login-shadow);
+        padding: 48px 40px;
+        margin-top:100px;
+        position: relative;
+        z-index: 1;
+        animation: slideUp 0.5s ease-out;
+        backdrop-filter: blur(0px);
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Header Section */
+    .login-header {
+        text-align: center;
+        margin-bottom: 36px;
+    }
+
+    .login-header h2 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--login-text-dark);
+        margin: 0 0 12px 0;
+        background: linear-gradient(135deg, var(--login-text-dark) 0%, var(--login-primary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .login-subtitle {
+        color: var(--login-text-soft);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    /* Form Styles */
+    .login-form {
+        margin-top: 32px;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+        position: relative;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--login-text-dark);
+        font-size: 0.9rem;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: var(--login-radius-md);
+        font-size: 1rem;
+        font-family: inherit;
+        transition: var(--login-transition);
+        background: #fafbfc;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: var(--login-primary);
+        box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.1);
+        background: white;
+    }
+
+    .form-group input:hover {
+        border-color: #d1d5db;
+    }
+
+    /* Input with icon */
+    .input-icon {
+        position: relative;
+    }
+
+    .input-icon i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--login-text-soft);
+        font-size: 1.2rem;
+        pointer-events: none;
+    }
+
+    .input-icon input {
+        padding-left: 46px;
+    }
+
+    /* Password toggle */
+    .password-toggle {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: var(--login-text-soft);
+        transition: var(--login-transition);
+        z-index: 2;
+    }
+
+    .password-toggle:hover {
+        color: var(--login-primary);
+    }
+
+    /* Remember me & Forgot password */
+    .form-options {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--login-primary);
+    }
+
+    .checkbox-group span {
+        font-size: 0.9rem;
+        color: var(--login-text-soft);
+    }
+
+    .forgot-link {
+        font-size: 0.9rem;
+        color: var(--login-primary);
+        text-decoration: none;
+        font-weight: 600;
+        transition: var(--login-transition);
+    }
+
+    .forgot-link:hover {
+        color: var(--login-primary-dark);
+        text-decoration: underline;
+    }
+
+    /* Login Button */
+    .btn-login {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, var(--login-primary) 0%, var(--login-primary-dark) 100%);
+        color: white;
+        border: none;
+        border-radius: var(--login-radius-md);
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--login-transition);
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-login::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+
+    .btn-login:hover::before {
+        width: 300px;
+        height: 300px;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(255, 107, 44, 0.3);
+    }
+
+    .btn-login:active {
+        transform: translateY(0);
+    }
+
+    /* Divider */
+    .divider {
+        margin: 28px 0;
+        text-align: center;
+        border-bottom: 1px solid #e5e7eb;
+        line-height: 0.1em;
+        position: relative;
+    }
+
+    .divider span {
+        background: var(--login-card-bg);
+        padding: 0 16px;
+        color: var(--login-text-soft);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    /* Google Button */
+    .btn-google {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        width: 100%;
+        padding: 14px;
+        background: white;
+        color: #5f6368;
+        border: 2px solid #e5e7eb;
+        border-radius: var(--login-radius-md);
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--login-transition);
+        text-decoration: none;
+        margin-bottom: 20px;
+    }
+
+    .btn-google:hover {
+        background: #f8f9fa;
+        border-color: var(--login-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-google i {
+        font-size: 1.2rem;
+    }
+
+    /* Register Link */
+    .register-link {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .register-link p {
+        color: var(--login-text-soft);
+        margin: 0 0 8px 0;
+        font-size: 0.9rem;
+    }
+
+    .register-link a {
+        color: var(--login-primary);
+        text-decoration: none;
+        font-weight: 700;
+        transition: var(--login-transition);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .register-link a:hover {
+        color: var(--login-primary-dark);
+        gap: 10px;
+    }
+
+    /* Error Messages */
+    .error-msg {
+        background: #fee2e2;
+        border-left: 4px solid var(--login-error);
+        border-radius: var(--login-radius-md);
+        padding: 16px;
+        margin-bottom: 24px;
+        animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    .error-msg p {
+        margin: 0;
+        color: var(--login-error);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .error-msg p::before {
+        content: '⚠️';
+        font-size: 1rem;
+    }
+
+    /* Success Message (optional) */
+    .success-msg {
+        background: #d4edda;
+        border-left: 4px solid var(--login-success);
+        border-radius: var(--login-radius-md);
+        padding: 16px;
+        margin-bottom: 24px;
+    }
+
+    .success-msg p {
+        margin: 0;
+        color: var(--login-success);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Loading State */
+    .btn-login.loading {
+        position: relative;
+        color: transparent;
+    }
+
+    .btn-login.loading::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        top: 50%;
+        left: 50%;
+        margin-left: -10px;
+        margin-top: -10px;
+        border: 2px solid white;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spinner 0.6s linear infinite;
+    }
+
+    @keyframes spinner {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 640px) {
+        .login-container {
+            padding: 32px 24px;
+        }
+
+        .login-header h2 {
+            font-size: 1.75rem;
+        }
+
+        .form-options {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .btn-login,
+        .btn-google {
+            padding: 14px;
+        }
+    }
+
+    /* Animation for form elements */
+    .form-group {
+        animation: fadeInUp 0.4s ease-out forwards;
+        opacity: 0;
+    }
+
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.2s; }
+    .form-options { animation: fadeInUp 0.4s ease-out 0.3s forwards; opacity: 0; }
+    .btn-login { animation: fadeInUp 0.4s ease-out 0.4s forwards; opacity: 0; }
+    .divider { animation: fadeInUp 0.4s ease-out 0.5s forwards; opacity: 0; }
+    .btn-google { animation: fadeInUp 0.4s ease-out 0.6s forwards; opacity: 0; }
+    .register-link { animation: fadeInUp 0.4s ease-out 0.7s forwards; opacity: 0; }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
 @endpush
 
 @section('content')
-
-<section class="auth-page">
-  <div class="auth-shell">
-
-    <div class="auth-brand">
-      <a href="{{ route('home') }}" class="auth-brand__logo">YALLA NEMSHI</a>
-      <p class="auth-brand__kicker">WELCOME BACK</p>
-      <h1 class="auth-brand__title">Log in to continue planning your next Lebanon adventure</h1>
-      <p class="auth-brand__subtitle">
-        Access your saved places, preferences, and personalized travel plans in one clean dashboard.
-      </p>
-
-      <div class="auth-brand__highlights">
-        <div class="auth-highlight">
-          <span><i class="ri-map-pin-line"></i></span>
-          <div>
-            <h4>Saved destinations</h4>
-            <p>Quickly return to your favorite places and travel ideas.</p>
-          </div>
+<div class="login-page">
+    <div class="login-container">
+        <div class="login-header">
+            <h2>Welcome Back</h2>
+            <p class="login-subtitle">Sign in to continue your culinary journey</p>
         </div>
 
-        <div class="auth-highlight">
-          <span><i class="ri-road-map-line"></i></span>
-          <div>
-            <h4>Smart trip planning</h4>
-            <p>Continue building custom outings based on your mood and budget.</p>
-          </div>
-        </div>
+        @if ($errors->any())
+            <div class="error-msg">
+                @foreach ($errors->all() as $error)
+                    <p>{{ $error }}</p>
+                @endforeach
+            </div>
+        @endif
 
-        <div class="auth-highlight">
-          <span><i class="ri-user-heart-line"></i></span>
-          <div>
-            <h4>Your travel profile</h4>
-            <p>Keep your preferences ready for faster and better recommendations.</p>
-          </div>
-        </div>
-      </div>
-    </div>
+        @if(session('success'))
+            <div class="success-msg">
+                <p>{{ session('success') }}</p>
+            </div>
+        @endif
 
-    <div class="auth-card">
-      <div class="auth-card__head">
-        <p class="auth-card__kicker">ACCOUNT LOGIN</p>
-        <h2>Sign In</h2>
-        <p>Use your account details to continue.</p>
-      </div>
+        <form class="login-form" method="POST" action="{{ route('login') }}" id="loginForm">
+            @csrf
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <div class="input-icon">
+                    <i class="ri-mail-line"></i>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        value="{{ old('email') }}" 
+                        placeholder="Enter your email"
+                        required 
+                        autocomplete="email"
+                        autofocus
+                    >
+                </div>
+            </div>
 
-      <form class="auth-form" id="loginForm">
-        <div class="auth-field">
-          <label for="loginEmail">Email Address</label>
-          <input id="loginEmail" type="email" placeholder="Enter your email" required>
-        </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-icon">
+                    <i class="ri-lock-line"></i>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Enter your password"
+                        required 
+                        autocomplete="current-password"
+                    >
+                </div>
+            </div>
 
-        <div class="auth-field">
-          <label for="loginPassword">Password</label>
-          <div class="auth-password">
-            <input id="loginPassword" type="password" placeholder="Enter your password" required minlength="6">
-            <button type="button" class="auth-password__toggle" id="togglePassword">
-              <i class="ri-eye-line"></i>
+            <div class="form-options">
+                <label class="checkbox-group">
+                    <input type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
+                    <span>Remember me</span>
+                </label>
+                @if (Route::has('password.request'))
+                    <a href="{{ route('password.request') }}" class="forgot-link">
+                        Forgot Password?
+                    </a>
+                @endif
+            </div>
+
+            <button class="btn-login" type="submit" id="loginBtn">
+                Sign In
             </button>
-          </div>
+            
+            <div class="divider">
+                <span>Or continue with</span>
+            </div>
+            
+            <a href="{{ url('auth/google') }}" class="btn-google">
+                <i class="ri-google-fill"></i>
+                Sign in with Google
+            </a>
+        </form>
+
+        <div class="register-link">
+            <p>Don't have an account?</p>
+            <a href="{{ route('register') }}">
+                Create an account
+                <i class="ri-arrow-right-line"></i>
+            </a>
         </div>
-
-        <div class="auth-row">
-          <label class="auth-check">
-            <input type="checkbox" id="rememberMe">
-            <span>Remember me</span>
-          </label>
-
-          <a href="#" class="auth-link">Forgot password?</a>
-        </div>
-
-        <button type="submit" class="auth-btn auth-btn--primary">Log In</button>
-
-        <a href="{{ route('home') }}" class="auth-btn auth-btn--ghost">Back to Home</a>
-      </form>
-
-      <div class="auth-divider">
-        <span>New here?</span>
-      </div>
-
-      <a href="{{ route('register') }}" class="auth-register-link">
-        Create an account
-      </a>
     </div>
+</div>
 
-  </div>
-</section>
-
-@endsection
-
-@push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const togglePassword = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('loginPassword');
-    const loginForm = document.getElementById('loginForm');
-
-    togglePassword.addEventListener('click', function () {
-        const isPassword = passwordInput.type === 'password';
-        passwordInput.type = isPassword ? 'text' : 'password';
-        this.innerHTML = isPassword
-            ? '<i class="ri-eye-off-line"></i>'
-            : '<i class="ri-eye-line"></i>';
-    });
-
-    loginForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = passwordInput.value.trim();
-
-        if (!email || !password) {
-            alert('Please fill in all required fields.');
-            return;
+    // Password visibility toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        
+        if (togglePassword && passwordInput) {
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.classList.toggle('ri-eye-line');
+                this.classList.toggle('ri-eye-off-line');
+            });
         }
 
-        if (password.length < 6) {
-            alert('Password must be at least 6 characters.');
-            return;
+        // Form loading state
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+
+        if (loginForm && loginBtn) {
+            loginForm.addEventListener('submit', function() {
+                loginBtn.classList.add('loading');
+                loginBtn.disabled = true;
+            });
         }
 
-        alert('Login form submitted successfully.');
+        // Input validation styling
+        const inputs = document.querySelectorAll('.form-group input');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.value.trim() !== '') {
+                    this.style.borderColor = '#28a745';
+                } else {
+                    this.style.borderColor = '#e5e7eb';
+                }
+            });
+        });
     });
-});
 </script>
-@endpush
+@endsection

@@ -4,53 +4,102 @@
 <link rel="stylesheet" href="{{ asset('assets/css/chatbot.css') }}">
 <style>
     :root {
-        --primary: #6366f1;
-        --primary-hover: #4f46e5;
-        --bg-main: #f8fafc;
-        --bg-card: #ffffff;
-        --text-main: #1e293b;
-        --text-muted: #64748b;
-        --accent: #f59e0b;
-        --success: #10b981;
-        --info: #3b82f6;
+        --resto-bg: #f6f7fb;
+        --resto-card-bg: #ffffff;
+        --resto-text-dark: #1b1b1f;
+        --resto-text-soft: #6f7380;
+        --resto-primary: #ff6b2c;
+        --resto-primary-dark: #e85d22;
+        --resto-success: #10b981;
+        --resto-warning: #f59e0b;
+        --resto-info: #3b82f6;
+        --resto-purple: #8b5cf6;
+        --resto-shadow: 0 20px 50px rgba(16, 24, 40, 0.08);
+        --resto-shadow-hover: 0 30px 60px rgba(16, 24, 40, 0.12);
+        --resto-radius: 30px;
+        --resto-radius-lg: 22px;
+        --resto-radius-md: 16px;
+        --resto-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     body { 
-        background-color: var(--bg-main); 
-        font-family: 'Inter', sans-serif; 
+        background-color: var(--resto-bg); 
+        font-family: 'DM Sans', sans-serif; 
     }
 
+    /* Hero Section */
+    .resto-hero {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        padding: 80px 20px;
+        text-align: center;
+        color: white;
+        margin-bottom: 40px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .resto-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="rgba(255,255,255,0.03)" d="M50 0L61.8 38.2L100 50L61.8 61.8L50 100L38.2 61.8L0 50L38.2 38.2L50 0z"/></svg>') repeat;
+        opacity: 0.3;
+    }
+
+    .resto-hero h1 {
+        font-size: 56px;
+        font-weight: 800;
+        margin-bottom: 16px;
+        position: relative;
+        letter-spacing: -0.02em;
+    }
+
+    .resto-hero p {
+        font-size: 18px;
+        opacity: 0.9;
+        max-width: 600px;
+        margin: 0 auto;
+        position: relative;
+        line-height: 1.6;
+    }
+
+    /* Filter Section */
     .filter-grid-container {
-        max-width: 1200px;
-        margin: 40px auto;
-        padding: 35px;
-        background: var(--bg-card);
-        border-radius: 24px;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.04);
-        border: 1px solid #e2e8f0;
+        max-width: 1280px;
+        margin: 40px auto 40px;
+        padding: 40px;
+        background: var(--resto-card-bg);
+        border-radius: var(--resto-radius);
+        box-shadow: var(--resto-shadow);
+        position: relative;
+        z-index: 10;
     }
 
     .filter-header { 
-        margin-bottom: 25px; 
+        margin-bottom: 32px; 
         text-align: center; 
     }
     
     .filter-header h2 { 
-        font-size: 28px; 
+        font-size: 32px; 
         font-weight: 800; 
-        color: var(--text-main); 
-        margin-bottom: 8px;
+        color: var(--resto-text-dark); 
+        margin-bottom: 12px;
+        letter-spacing: -0.01em;
     }
     
     .filter-header p {
-        color: var(--text-muted);
+        color: var(--resto-text-soft);
         font-size: 16px;
     }
 
     .filter-form {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
+        gap: 24px;
     }
 
     .filter-group { 
@@ -59,85 +108,106 @@
     }
     
     .filter-group label {
-        font-weight: 700;
+        font-weight: 600;
         margin-bottom: 8px;
-        color: var(--text-main);
+        color: var(--resto-text-dark);
         font-size: 13px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
-    .filter-group select, .filter-group input {
+    .filter-group select, 
+    .filter-group input {
         width: 100%;
         padding: 12px 16px;
-        border: 2px solid #f1f5f9;
-        border-radius: 12px;
-        background-color: #f8fafc;
+        border: 2px solid #e5e7eb;
+        border-radius: var(--resto-radius-md);
+        background-color: #fafbfc;
         font-size: 14px;
-        color: var(--text-main);
-        appearance: none;
+        color: var(--resto-text-dark);
+        transition: var(--resto-transition);
+        font-family: inherit;
         cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .filter-group select:focus, .filter-group input:focus {
-        border-color: var(--primary);
+    .filter-group select:focus, 
+    .filter-group input:focus {
+        border-color: var(--resto-primary);
         background-color: #fff;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.1);
         outline: none;
     }
 
+    .filter-group select:hover,
+    .filter-group input:hover {
+        border-color: #d1d5db;
+    }
+
+    /* Recommendation Type Selector */
     .rec-type-selector {
         grid-column: span 4;
         display: flex;
-        gap: 15px;
+        gap: 16px;
         justify-content: center;
-        margin: 15px 0;
+        margin: 20px 0 10px;
         flex-wrap: wrap;
     }
 
     .rec-type-btn {
-        padding: 12px 24px;
-        border: 2px solid #e2e8f0;
+        padding: 12px 28px;
+        border: 2px solid #e5e7eb;
         border-radius: 40px;
         background: white;
-        color: var(--text-main);
+        color: var(--resto-text-dark);
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: var(--resto-transition);
         flex: 1;
         min-width: 140px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+
+    .rec-type-btn:hover {
+        border-color: var(--resto-primary);
+        transform: translateY(-2px);
     }
 
     .rec-type-btn.active {
-        background: var(--primary);
+        background: var(--resto-primary);
         color: white;
-        border-color: var(--primary);
+        border-color: var(--resto-primary);
     }
 
-    .rec-type-btn.smart.active { background: var(--primary); }
-    .rec-type-btn.popular.active { background: #f59e0b; border-color: #f59e0b; }
-    .rec-type-btn.rated.active { background: #10b981; border-color: #10b981; }
-    .rec-type-btn.diverse.active { background: #8b5cf6; border-color: #8b5cf6; }
+    .rec-type-btn.smart.active { background: var(--resto-primary); border-color: var(--resto-primary); }
+    .rec-type-btn.popular.active { background: var(--resto-warning); border-color: var(--resto-warning); }
+    .rec-type-btn.rated.active { background: var(--resto-success); border-color: var(--resto-success); }
+    .rec-type-btn.diverse.active { background: var(--resto-purple); border-color: var(--resto-purple); }
 
     .submit-btn {
         grid-column: span 4;
-        background: var(--primary);
+        background: linear-gradient(135deg, var(--resto-primary) 0%, var(--resto-primary-dark) 100%);
         color: white;
-        padding: 16px;
+        padding: 16px 24px;
         border: none;
-        border-radius: 12px;
-        font-weight: 800;
+        border-radius: var(--resto-radius-md);
+        font-weight: 700;
         font-size: 16px;
         cursor: pointer;
         margin-top: 10px;
-        transition: all 0.3s ease;
+        transition: var(--resto-transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
     }
 
     .submit-btn:hover { 
-        background: var(--primary-hover); 
         transform: translateY(-2px); 
-        box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+        box-shadow: 0 10px 25px rgba(255, 107, 44, 0.3);
     }
     
     .submit-btn:disabled { 
@@ -148,44 +218,58 @@
 
     /* RESULTS GRID */
     .results-container {
-        max-width: 1200px;
-        margin: 40px auto 60px;
+        max-width: 1280px;
+        margin: 48px auto 80px;
         padding: 0 20px;
     }
 
     .results-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 25px;
+        align-items: baseline;
+        margin-bottom: 32px;
+        flex-wrap: wrap;
+        gap: 16px;
     }
 
     .results-header h3 {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--text-main);
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--resto-text-dark);
+        margin: 0;
+        letter-spacing: -0.01em;
     }
 
     .results-count {
-        background: #e2e8f0;
-        padding: 6px 12px;
+        background: #f1f5f9;
+        padding: 6px 14px;
         border-radius: 40px;
         font-size: 14px;
         font-weight: 600;
+        color: var(--resto-text-dark);
+    }
+
+    .similarity-info {
+        background: #fef3e8;
+        padding: 6px 14px;
+        border-radius: 40px;
+        font-size: 12px;
+        color: var(--resto-primary);
+        font-weight: 500;
     }
 
     .restaurant-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 30px;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 32px;
     }
 
     .res-card {
         background: white;
-        border-radius: 20px;
+        border-radius: var(--resto-radius-lg);
         overflow: hidden;
         border: 1px solid #f1f5f9;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        transition: var(--resto-transition);
         position: relative;
         cursor: pointer;
         text-decoration: none;
@@ -194,138 +278,301 @@
     }
 
     .res-card:hover { 
-        transform: translateY(-10px); 
-        box-shadow: 0 20px 40px rgba(0,0,0,0.08); 
+        transform: translateY(-8px); 
+        box-shadow: var(--resto-shadow-hover); 
+        border-color: transparent;
+    }
+
+    .res-image-container {
+        position: relative;
+        overflow: hidden;
+        height: 240px;
     }
 
     .res-image { 
         width: 100%; 
-        height: 200px; 
+        height: 100%; 
         object-fit: cover; 
-        background: #eee; 
         transition: transform 0.5s ease;
     }
 
     .res-card:hover .res-image {
-        transform: scale(1.05);
-    }
-
-    .res-image-container {
-        overflow: hidden;
-        position: relative;
+        transform: scale(1.08);
     }
 
     .res-badge {
         position: absolute;
-        top: 15px;
-        right: 15px;
-        background: var(--accent);
-        color: white;
-        padding: 5px 12px;
+        top: 16px;
+        right: 16px;
+        padding: 6px 14px;
         border-radius: 40px;
         font-size: 12px;
         font-weight: 700;
         z-index: 2;
+        backdrop-filter: blur(8px);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+    }
+
+    .res-badge.top-rated {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    }
+
+    .res-badge.popular {
+        background: linear-gradient(135deg, var(--resto-info), #2563eb);
     }
 
     .res-content { 
-        padding: 20px; 
+        padding: 24px; 
+    }
+    
+    .res-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
     }
     
     .res-title { 
-        font-size: 18px; 
+        font-size: 20px; 
         font-weight: 800; 
-        color: var(--text-main); 
-        margin-bottom: 5px; 
+        color: var(--resto-text-dark); 
+        margin: 0;
+        line-height: 1.3;
+        flex: 1;
+    }
+    
+    .rating-score {
+        font-weight: 800;
+        background: #fef3e8;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 13px;
+        color: var(--resto-primary);
+        white-space: nowrap;
+        margin-left: 12px;
     }
     
     .res-meta { 
-        font-size: 13px; 
-        color: var(--text-muted); 
-        margin-bottom: 15px; 
+        font-size: 14px; 
+        color: var(--resto-text-soft); 
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
     }
     
-    .tag-pill {
-        display: inline-block;
-        padding: 4px 10px;
-        background: #eef2ff;
-        color: var(--primary);
-        border-radius: 8px;
-        font-size: 11px;
-        font-weight: 700;
-        margin-right: 5px;
-        margin-bottom: 5px;
-    }
-
     .price-indicator {
         display: inline-block;
         padding: 2px 8px;
         background: #f1f5f9;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 11px;
         font-weight: 700;
-        color: var(--text-main);
+        color: var(--resto-text-dark);
+    }
+
+    .match-percentage {
+        display: inline-block;
+        padding: 2px 8px;
+        background: #fef3e8;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--resto-primary);
+    }
+
+    .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+
+    .tag-pill {
+        display: inline-block;
+        padding: 6px 12px;
+        background: #f8f9fc;
+        color: var(--resto-text-soft);
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        transition: var(--resto-transition);
+    }
+
+    .tag-pill:hover {
+        background: #fef3e8;
+        color: var(--resto-primary);
+    }
+
+    .food-type-pill {
+        background: #fef3e8;
+        color: var(--resto-primary);
+        font-weight: 600;
     }
 
     .res-footer {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 15px;
-        padding-top: 15px;
+        margin-top: 20px;
+        padding-top: 20px;
         border-top: 1px solid #f1f5f9;
     }
 
     .view-details-hint {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        color: var(--primary);
+        gap: 8px;
+        color: var(--resto-primary);
         font-weight: 600;
-        font-size: 13px;
+        font-size: 14px;
+        transition: var(--resto-transition);
     }
 
-    .view-details-hint i {
-        transition: transform 0.2s ease;
+    .res-card:hover .view-details-hint {
+        gap: 12px;
     }
 
-    .res-card:hover .view-details-hint i {
-        transform: translateX(5px);
+    .contact-info {
+        color: var(--resto-text-soft);
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
 
-    .loading-skeleton {
-        animation: pulse 1.5s infinite;
+    /* Loading State */
+    .loading-container {
+        grid-column: 1/-1;
+        padding: 60px 20px;
+        text-align: center;
     }
 
-    @keyframes pulse {
-        0% { opacity: 0.6; }
-        50% { opacity: 1; }
-        100% { opacity: 0.6; }
+    .loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 3px solid #f1f5f9;
+        border-top-color: var(--resto-primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 20px;
     }
 
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        color: var(--resto-text-soft);
+        font-size: 14px;
+    }
+
+    /* Empty State */
+    .empty-state {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 80px 20px;
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        margin-bottom: 24px;
+        opacity: 0.5;
+    }
+
+    .empty-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--resto-text-dark);
+        margin-bottom: 12px;
+    }
+
+    .empty-message {
+        color: var(--resto-text-soft);
+        margin-bottom: 24px;
+    }
+
+    .reset-btn {
+        padding: 12px 28px;
+        background: var(--resto-primary);
+        color: white;
+        border: none;
+        border-radius: var(--resto-radius-md);
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--resto-transition);
+    }
+
+    .reset-btn:hover {
+        background: var(--resto-primary-dark);
+        transform: translateY(-2px);
+    }
+
+    /* Error State */
+    .error-state {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 80px 20px;
+    }
+
+    .error-icon {
+        font-size: 64px;
+        margin-bottom: 24px;
+    }
+
+    .error-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #ef4444;
+        margin-bottom: 12px;
+    }
+
+    .error-message {
+        color: var(--resto-text-soft);
+        margin-bottom: 24px;
+    }
+
+    /* Responsive Design */
     @media (max-width: 1000px) {
         .filter-form { grid-template-columns: repeat(2, 1fr); }
         .rec-type-selector, .submit-btn { grid-column: span 2; }
+        .resto-hero h1 { font-size: 40px; }
+        .resto-hero { padding: 60px 20px; }
+        .restaurant-grid { gap: 24px; }
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 640px) {
+        .filter-grid-container { padding: 24px; }
         .filter-form { grid-template-columns: 1fr; }
         .rec-type-selector, .submit-btn { grid-column: span 1; }
         .rec-type-selector { flex-direction: column; }
+        .rec-type-btn { width: 100%; }
+        .resto-hero h1 { font-size: 32px; }
+        .resto-hero p { font-size: 14px; }
+        .results-header { flex-direction: column; align-items: flex-start; }
+        .results-header h3 { font-size: 24px; }
+        .restaurant-grid { gap: 20px; }
+        .res-title { font-size: 18px; }
+        .res-header { flex-direction: column; gap: 8px; }
+        .rating-score { margin-left: 0; align-self: flex-start; }
     }
 </style>
 @endpush
 
 @section('content')
+
+<!-- Filter Section -->
 <div class="filter-grid-container">
     <div class="filter-header">
-        <h2>🍽️ Find Your Perfect Spot</h2>
-        <p>40+ smart recommendations tailored to your taste</p>
+        <h2>Smart Restaurant Recommendations</h2>
+        <p>Tell us what you're looking for and let us find your ideal dining experience</p>
     </div>
     
     <form id="aiFilterForm" class="filter-form">
         <div class="filter-group">
-            <label>🍕 Food Type</label>
+            <label>Cuisine Type</label>
             <select name="food_type">
                 <option value="">All Cuisines</option>
                 <option value="lebanese">Lebanese</option>
@@ -340,7 +587,7 @@
         </div>
 
         <div class="filter-group">
-            <label>📍 Location</label>
+            <label>Location</label>
             <select name="location">
                 <option value="">All Locations</option>
                 <option value="beirut">Beirut</option>
@@ -349,21 +596,26 @@
                 <option value="jounieh">Jounieh</option>
                 <option value="tripoli">Tripoli</option>
                 <option value="tyre">Tyre</option>
+                <option value="sidon">Sidon</option>
+                <option value="zahleh">Zahle</option>
+                <option value="deir el qamar">Deir El Qamar</option>
+                <option value="faraya">Faraya</option>
+                
             </select>
         </div>
 
         <div class="filter-group">
-            <label>💰 Price Range</label>
+            <label>Price Range</label>
             <select name="price_tier">
                 <option value="">Any Price</option>
-                <option value="budget">Budget ($)</option>
-                <option value="mid-range">Mid-range ($$)</option>
-                <option value="premium">Premium ($$$)</option>
+                <option value="budget">Budget</option>
+                <option value="mid-range">Mid-range</option>
+                <option value="premium">Premium</option>
             </select>
         </div>
 
         <div class="filter-group">
-            <label>⭐ Minimum Rating</label>
+            <label>Minimum Rating</label>
             <select name="rating">
                 <option value="0">Any Rating</option>
                 <option value="4.5">4.5+ Stars</option>
@@ -374,7 +626,7 @@
         </div>
 
         <div class="filter-group">
-            <label>🏠 Setting</label>
+            <label>Dining Setting</label>
             <select name="restaurant_type">
                 <option value="">Any Setting</option>
                 <option value="outdoor">Outdoor</option>
@@ -386,9 +638,9 @@
         </div>
 
         <div class="filter-group">
-            <label>🎭 Vibe & Tags</label>
+            <label>Atmosphere</label>
             <select name="tags">
-                <option value="">All Vibes</option>
+                <option value="">All Atmospheres</option>
                 <option value="romantic">Romantic</option>
                 <option value="beach">Beach & Sea</option>
                 <option value="family-friendly">Family Friendly</option>
@@ -400,12 +652,12 @@
         </div>
 
         <div class="filter-group">
-            <label>🔍 Search (optional)</label>
+            <label>Search Keywords</label>
             <input type="text" name="custom_query" placeholder="e.g., sushi, terrace, wifi..." />
         </div>
 
         <div class="filter-group">
-            <label>🎯 Sort By</label>
+            <label>Sort By</label>
             <select name="sort_by">
                 <option value="smart">Smart (Recommended)</option>
                 <option value="rating">Highest Rated</option>
@@ -414,49 +666,55 @@
             </select>
         </div>
 
-        <!-- Hidden field for recommendation type (mapped from sort_by) -->
+        <!-- Hidden field for recommendation type -->
         <input type="hidden" name="recommendation_type" id="recommendationType" value="smart">
 
         <button type="submit" class="submit-btn" id="submitBtn">
-            <span class="btn-text">🔍 Generate AI Recommendations</span>
-            <span class="btn-loading" style="display:none;">⏳ Finding perfect spots...</span>
+            <span class="btn-text">Find Restaurants</span>
+            <span class="btn-loading" style="display:none;">Finding the best spots...</span>
         </button>
     </form>
 </div>
 
+<!-- Results Section -->
 <div class="results-container">
     <div class="results-header">
-        <h3>✨ Top Picks For You</h3>
-        <span class="results-count" id="resultsCount">0 restaurants</span>
+        <h3>Recommended for You</h3>
+        <div class="results-stats">
+            <span class="results-count" id="resultsCount">0 restaurants</span>
+            <span class="similarity-info" id="similarityInfo" style="display: none;"></span>
+        </div>
     </div>
     <div id="restaurantGrid" class="restaurant-grid">
         <!-- Results will be loaded here -->
-        <div style="grid-column: 1/-1; text-align:center; padding: 60px; color: var(--text-muted);">
-            Select your preferences and click "Generate AI Recommendations" to see personalized results
+        <div class="empty-state">
+            <div class="empty-icon">🍽️</div>
+            <div class="empty-title">Ready to find your perfect dining experience?</div>
+            <div class="empty-message">Select your preferences above and click "Find Restaurants" to see personalized recommendations</div>
         </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Get the base URL for restaurant details
     const baseUrl = '{{ url("/restaurants") }}';
     
     // Map sort_by to recommendation_type
     const sortBySelect = document.querySelector('select[name="sort_by"]');
     const recTypeInput = document.getElementById('recommendationType');
     
-    sortBySelect.addEventListener('change', function() {
-        const mapping = {
-            'smart': 'smart',
-            'rating': 'highly_rated',
-            'popular': 'popular',
-            'diverse': 'diverse'
-        };
-        recTypeInput.value = mapping[this.value] || 'smart';
-    });
+    if (sortBySelect && recTypeInput) {
+        sortBySelect.addEventListener('change', function() {
+            const mapping = {
+                'smart': 'smart',
+                'rating': 'highly_rated',
+                'popular': 'popular',
+                'diverse': 'diverse'
+            };
+            recTypeInput.value = mapping[this.value] || 'smart';
+        });
+    }
 
-    // Function to handle card click navigation
     function navigateToRestaurant(restaurantId) {
         if (restaurantId) {
             window.location.href = `${baseUrl}/${restaurantId}`;
@@ -464,217 +722,163 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Form submission
-    document.getElementById('aiFilterForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const btn = document.getElementById('submitBtn');
-        const btnText = btn.querySelector('.btn-text');
-        const btnLoading = btn.querySelector('.btn-loading');
-        const grid = document.getElementById('restaurantGrid');
-        const resultsCount = document.getElementById('resultsCount');
-        const resultsHeader = document.querySelector('.results-header h3');
-        
-        // UI Loading State
-        btn.disabled = true;
-        btnText.style.display = 'none';
-        btnLoading.style.display = 'inline';
-        grid.innerHTML = `
-            <div style="grid-column: 1/-1; padding: 40px;">
-                <div style="text-align:center; color: var(--text-muted);">
-                    <div style="font-size: 48px; margin-bottom: 20px;">🔍</div>
-                    <div class="loading-skeleton">Analyzing restaurants matching your preferences...</div>
-                </div>
-            </div>
-        `;
-
-        // Build Payload
-        const formData = new FormData(this);
-        const data = Object.fromEntries(formData.entries());
-        
-        // Add custom query to tags if present
-        if (data.custom_query && data.custom_query.trim()) {
-            data.tags = data.tags ? data.tags + ',' + data.custom_query : data.custom_query;
-        }
-
-        try {
-            // Call Flask recommendation engine
-            const response = await fetch('http://127.0.0.1:5000/recommend', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-
-            const responseData = await response.json();
+    const form = document.getElementById('aiFilterForm');
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const btnText = btn.querySelector('.btn-text');
+            const btnLoading = btn.querySelector('.btn-loading');
+            const grid = document.getElementById('restaurantGrid');
+            const resultsCount = document.getElementById('resultsCount');
+            const similarityInfo = document.getElementById('similarityInfo');
             
-            // Check if response has the new format with recommendations array
-            if (responseData.recommendations) {
-                // New format: { recommendations: [...], metadata: {...} }
-                renderResults(responseData.recommendations);
-                resultsCount.textContent = `${responseData.recommendations.length} restaurants`;
-                
-                // Optionally display metadata
-                if (responseData.metadata) {
-                    console.log('Recommendation Quality:', responseData.metadata);
-                    // You could add a small badge showing similarity score
-                    const similarityInfo = document.createElement('small');
-                    similarityInfo.style.display = 'block';
-                    similarityInfo.style.color = 'var(--text-muted)';
-                    similarityInfo.style.fontSize = '12px';
-                    similarityInfo.style.marginTop = '5px';
-                    similarityInfo.textContent = `🎯 Avg. Match: ${responseData.metadata.avg_similarity} (Threshold: ${responseData.metadata.similarity_threshold_used})`;
-                    
-                    // Add to results header if you want to show this info
-                    const existingInfo = document.querySelector('.similarity-info');
-                    if (existingInfo) existingInfo.remove();
-                    
-                    similarityInfo.classList.add('similarity-info');
-                    document.querySelector('.results-header').appendChild(similarityInfo);
-                }
-            } else if (Array.isArray(responseData)) {
-                // Old format: direct array
-                renderResults(responseData);
-                resultsCount.textContent = `${responseData.length} restaurants`;
-            } else {
-                // Unexpected format
-                console.error('Unexpected response format:', responseData);
-                throw new Error('Invalid response format');
-            }
-        } catch (error) {
-            console.error("AI Service Error:", error);
+            // UI Loading State
+            btn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline';
+            similarityInfo.style.display = 'none';
+            
             grid.innerHTML = `
-                <div style="grid-column: 1/-1; text-align:center; padding: 60px;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">😕</div>
-                    <h3 style="color: #ef4444; margin-bottom: 10px;">Connection Error</h3>
-                    <p style="color: var(--text-muted);">AI recommendation engine is temporarily unavailable.</p>
-                    <p style="color: var(--text-muted); font-size: 14px; margin-top: 20px;">Please try again in a few moments.</p>
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Analyzing restaurants matching your preferences...</div>
                 </div>
             `;
-            resultsCount.textContent = `0 restaurants`;
-        } finally {
-            btn.disabled = false;
-            btnText.style.display = 'inline';
-            btnLoading.style.display = 'none';
-        }
-    });
+
+            // Build Payload
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Add custom query to tags if present
+            if (data.custom_query && data.custom_query.trim()) {
+                data.tags = data.tags ? data.tags + ',' + data.custom_query : data.custom_query;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/recommend', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const responseData = await response.json();
+                
+                if (responseData.recommendations) {
+                    renderResults(responseData.recommendations);
+                    resultsCount.textContent = `${responseData.recommendations.length} restaurants`;
+                    
+                    if (responseData.metadata && responseData.metadata.avg_similarity) {
+                        similarityInfo.textContent = `Average Match: ${responseData.metadata.avg_similarity}`;
+                        similarityInfo.style.display = 'inline-block';
+                    }
+                } else if (Array.isArray(responseData)) {
+                    renderResults(responseData);
+                    resultsCount.textContent = `${responseData.length} restaurants`;
+                } else {
+                    throw new Error('Invalid response format');
+                }
+            } catch (error) {
+                console.error("AI Service Error:", error);
+                grid.innerHTML = `
+                    <div class="error-state">
+                        <div class="error-icon">⚠️</div>
+                        <div class="error-title">Connection Error</div>
+                        <div class="error-message">Unable to fetch restaurant recommendations at the moment. Please check if the recommendation server is running and try again.</div>
+                        <button onclick="location.reload()" class="reset-btn">Try Again</button>
+                    </div>
+                `;
+                resultsCount.textContent = `0 restaurants`;
+                similarityInfo.style.display = 'none';
+            } finally {
+                btn.disabled = false;
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+            }
+        });
+    }
 
     function renderResults(restaurants) {
         const grid = document.getElementById('restaurantGrid');
         
         if (!restaurants || restaurants.length === 0) {
             grid.innerHTML = `
-                <div style="grid-column: 1/-1; text-align:center; padding: 60px;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">🔍</div>
-                    <h3 style="color: var(--text-main); margin-bottom: 10px;">No matches found</h3>
-                    <p style="color: var(--text-muted);">Try adjusting your filters for more results.</p>
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <div class="empty-title">No matches found</div>
+                    <div class="empty-message">Try adjusting your filters for more results.</div>
+                    <button onclick="document.getElementById('aiFilterForm').reset()" class="reset-btn">Reset Filters</button>
                 </div>
             `;
             return;
         }
 
         grid.innerHTML = restaurants.map(item => {
-            // Handle tags safely
             const tags = item.tags ? item.tags.split(',').slice(0, 4) : [];
             
-            // Format price tier
-            const priceSymbol = item.price_tier === 'budget' ? '$' : 
-                               item.price_tier === 'mid-range' ? '$$' : 
-                               item.price_tier === 'premium' ? '$$$' : '';
+            const priceSymbol = item.price_tier === 'budget' ? 'Budget' : 
+                               item.price_tier === 'mid-range' ? 'Mid-range' : 
+                               item.price_tier === 'premium' ? 'Premium' : '';
             
-            // Get restaurant ID (assuming your API returns an id field)
             const restaurantId = item.id || '';
-            
-            // Check if this is a fallback recommendation (optional)
-            const isFallback = item.is_fallback ? ' (Popular Pick)' : '';
+            const isTopRated = item.rating >= 4.5;
+            const isPopular = item.is_fallback;
             
             return `
-            <div class="res-card" onclick="navigateToRestaurant('${restaurantId}')" data-restaurant-id="${restaurantId}">
-                <div class="res-image-container">
-                    ${item.rating >= 4.5 ? '<div class="res-badge">⭐ Top Rated</div>' : ''}
-                    ${isFallback ? '<div class="res-badge" style="background: var(--info);">🔥 Popular</div>' : ''}
-                    <img src="${item.image || 'https://via.placeholder.com/400x200?text=Restaurant'}" 
-                         class="res-image" 
-                         alt="${item.restaurant_name}"
-                         onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
+                <div class="res-card" onclick="navigateToRestaurant('${restaurantId}')" data-restaurant-id="${restaurantId}">
+                    <div class="res-image-container">
+                        ${isTopRated ? '<div class="res-badge top-rated">Top Rated</div>' : ''}
+                        ${isPopular && !isTopRated ? '<div class="res-badge popular">Popular</div>' : ''}
+                        <img src="${item.image || 'https://via.placeholder.com/400x240?text=Restaurant'}" 
+                             class="res-image" 
+                             alt="${item.restaurant_name || 'Restaurant'}"
+                             onerror="this.src='https://via.placeholder.com/400x240?text=Image+Not+Available'">
+                    </div>
+                    <div class="res-content">
+                        <div class="res-header">
+                            <h3 class="res-title">${item.restaurant_name || 'Unnamed Restaurant'}</h3>
+                            <span class="rating-score">${item.rating || 'N/A'} ★</span>
+                        </div>
+                        <div class="res-meta">
+                            <span>📍 ${item.location || 'Location not specified'}</span>
+                            ${priceSymbol ? `<span class="price-indicator">${priceSymbol}</span>` : ''}
+                            ${item.similarity_percentage ? `<span class="match-percentage">Match: ${item.similarity_percentage}%</span>` : ''}
+                        </div>
+                        <div class="tags-container">
+                            ${tags.map(tag => `<span class="tag-pill">${tag.trim()}</span>`).join('')}
+                            ${item.food_type ? `<span class="tag-pill food-type-pill">${item.food_type}</span>` : ''}
+                        </div>
+                        <div class="res-footer">
+                            <span class="view-details-hint">
+                                View Details →
+                            </span>
+                            ${item.phone_number ? `<span class="contact-info">📞 ${item.phone_number}</span>` : ''}
+                        </div>
+                    </div>
                 </div>
-                <div class="res-content">
-                    <div style="display:flex; justify-content:space-between; align-items:start;">
-                        <h3 class="res-title">${item.restaurant_name || 'Unnamed Restaurant'}</h3>
-                        <span style="font-weight:800; color:var(--accent); background: #fef3c7; padding: 4px 8px; border-radius: 20px; font-size: 13px;">
-                            ⭐ ${item.rating || 'N/A'}
-                        </span>
-                    </div>
-                    <p class="res-meta">
-                        ${item.location || 'Location TBA'} 
-                        ${priceSymbol ? '• ' + priceSymbol : ''}
-                        ${item.similarity_percentage ? `• Match: ${item.similarity_percentage}%` : ''}
-                    </p>
-                    <div style="margin-bottom: 15px;">
-                        ${tags.map(tag => `<span class="tag-pill">${tag.trim()}</span>`).join('')}
-                        ${item.food_type ? `<span class="tag-pill" style="background: #fef3c7; color: #92400e;">${item.food_type}</span>` : ''}
-                    </div>
-                    <div class="res-footer">
-                        <span class="view-details-hint">
-                            Click for details <i class="ri-arrow-right-line"></i>
-                        </span>
-                        ${item.phone_number ? `<span style="color: var(--text-muted); font-size: 12px;">📞 ${item.phone_number}</span>` : ''}
-                    </div>
-                </div>
-            </div>
-        `}).join('');
+            `;
+        }).join('');
     }
 
-    // Make navigateToRestaurant globally available for onclick handler
-    window.navigateToRestaurant = function(restaurantId) {
-        if (restaurantId) {
-            window.location.href = `{{ url("/restaurants") }}/${restaurantId}`;
-        }
-    };
+    window.navigateToRestaurant = navigateToRestaurant;
 
-    // Add click event listeners dynamically (alternative to inline onclick)
+    // Delegate click events for restaurant cards
     document.addEventListener('click', function(e) {
         const card = e.target.closest('.res-card');
         if (card && !e.target.closest('a')) {
             const restaurantId = card.dataset.restaurantId;
             if (restaurantId) {
-                window.location.href = `{{ url("/restaurants") }}/${restaurantId}`;
+                window.location.href = `${baseUrl}/${restaurantId}`;
             }
         }
     });
-
-    // Load initial recommendations
-    async function loadInitialRecommendations() {
-        try {
-            const response = await fetch('http://127.0.0.1:5000/recommend', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({}) // Empty params for default recommendations
-            });
-            
-            const responseData = await response.json();
-            console.log('Initial Recommendations:', responseData);
-            
-            if (responseData.recommendations && responseData.recommendations.length > 0) {
-                renderResults(responseData.recommendations);
-                document.getElementById('resultsCount').textContent = `${responseData.recommendations.length} restaurants`;
-                
-                // Show metadata if available
-                if (responseData.metadata) {
-                    console.log('Initial metadata:', responseData.metadata);
-                }
-            } else if (Array.isArray(responseData) && responseData.length > 0) {
-                // Handle old format
-                renderResults(responseData);
-                document.getElementById('resultsCount').textContent = `${responseData.length} restaurants`;
-            }
-        } catch (error) {
-            console.log('Using default empty state');
-        }
-    }
-
-    // Uncomment to load initial recommendations on page load
-    // loadInitialRecommendations();
 });
 </script>
 @endsection

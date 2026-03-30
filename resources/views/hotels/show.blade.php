@@ -3,26 +3,44 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/restaurant-details.css') }}">
 <style>
-    /* Hotel-specific styles */
+    /* Hotel-specific styles aligned with restaurant theme */
+    :root {
+        --hotel-details-bg: #f6f7fb;
+        --hotel-details-card: #ffffff;
+        --hotel-details-text-dark: #1b1b1f;
+        --hotel-details-text-soft: #6f7380;
+        --hotel-details-primary: #ff6b2c;
+        --hotel-details-primary-dark: #e85d22;
+        --hotel-details-shadow: 0 20px 50px rgba(16, 24, 40, 0.08);
+        --hotel-details-shadow-hover: 0 30px 60px rgba(16, 24, 40, 0.12);
+        --hotel-details-radius: 30px;
+        --hotel-details-radius-lg: 22px;
+        --hotel-details-radius-md: 16px;
+        --hotel-details-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     .hotel-details-hero {
+        width: min(1280px, calc(100% - 32px));
+        margin: 32px auto 0;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        min-height: 600px;
-        background: var(--bg-main);
-        position: relative;
-        overflow: hidden;
+        gap: 28px;
+        align-items: stretch;
     }
 
     .hotel-details-hero__image {
-        position: relative;
+        border-radius: var(--hotel-details-radius);
         overflow: hidden;
-        background: #f0f0f0;
+        box-shadow: var(--hotel-details-shadow);
+        min-height: 520px;
     }
 
     .hotel-details-hero__image img {
         width: 100%;
         height: 100%;
+        min-height: 520px;
         object-fit: cover;
+        display: block;
         transition: transform 0.5s ease;
     }
 
@@ -31,56 +49,63 @@
     }
 
     .hotel-details-hero__content {
-        padding: 48px;
-        background: white;
+        background: var(--hotel-details-card);
+        border-radius: var(--hotel-details-radius);
+        box-shadow: var(--hotel-details-shadow);
+        padding: 34px;
         display: flex;
         flex-direction: column;
-        justify-content: center;
     }
 
     .back-link {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        color: var(--text-muted);
         text-decoration: none;
-        margin-bottom: 24px;
-        font-weight: 500;
-        transition: color 0.2s ease;
+        color: var(--hotel-details-text-soft);
+        margin-bottom: 18px;
+        font-weight: 600;
+        transition: transform 0.2s ease, color 0.2s ease;
         width: fit-content;
     }
 
     .back-link:hover {
-        color: var(--primary);
+        color: var(--hotel-details-primary);
+        transform: translateX(-5px);
     }
 
     .hotel-details-meta {
         display: flex;
         gap: 12px;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
         flex-wrap: wrap;
     }
 
     .hotel-type {
-        background: var(--primary);
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 34px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: rgba(255, 107, 44, 0.12);
+        color: var(--hotel-details-primary);
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: capitalize;
     }
 
     .hotel-rating {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        background: #fef3c7;
-        padding: 4px 12px;
-        border-radius: 20px;
+        color: #f59e0b;
         font-weight: 700;
-        font-size: 14px;
-        color: #92400e;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #fef3e8;
+        padding: 4px 12px;
+        border-radius: 999px;
     }
 
     .hotel-rating i {
@@ -88,45 +113,38 @@
     }
 
     .price-tier {
-        display: inline-flex;
+        color: var(--hotel-details-primary);
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
         gap: 2px;
-        background: #f1f5f9;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        color: var(--text-muted);
     }
 
     h1 {
-        font-size: 36px;
+        margin: 0 0 10px;
+        font-size: clamp(2rem, 4vw, 3rem);
+        color: var(--hotel-details-text-dark);
+        line-height: 1.1;
         font-weight: 800;
-        color: var(--text-main);
-        margin-bottom: 16px;
-        line-height: 1.2;
     }
 
     .hotel-location {
+        margin: 0 0 20px;
+        color: var(--hotel-details-text-soft);
+        font-size: 1rem;
         display: flex;
         align-items: center;
-        gap: 8px;
-        color: var(--text-muted);
-        margin-bottom: 24px;
-        font-size: 16px;
-    }
-
-    .hotel-location i {
-        color: var(--primary);
-        font-size: 18px;
+        gap: 6px;
     }
 
     .hotel-info-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-bottom: 32px;
-        padding: 24px 0;
-        border-top: 1px solid #f1f5f9;
-        border-bottom: 1px solid #f1f5f9;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+        padding: 20px;
+        background: #f8f9fc;
+        border-radius: 20px;
     }
 
     .info-item {
@@ -136,35 +154,35 @@
     }
 
     .info-item i {
-        font-size: 24px;
-        color: var(--primary);
-        background: #eff6ff;
-        padding: 10px;
-        border-radius: 12px;
+        font-size: 1.5rem;
+        color: var(--hotel-details-primary);
+        width: 32px;
     }
 
     .info-item div {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+        flex: 1;
     }
 
     .info-label {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-muted);
+        display: block;
+        font-size: 0.75rem;
+        color: var(--hotel-details-text-soft);
+        margin-bottom: 2px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        font-weight: 600;
     }
 
     .info-value {
-        font-size: 14px;
+        display: block;
         font-weight: 600;
-        color: var(--text-main);
+        color: var(--hotel-details-text-dark);
+        text-decoration: none;
+        font-size: 0.9rem;
     }
 
     .info-value a {
-        color: var(--primary);
+        color: var(--hotel-details-primary);
         text-decoration: none;
     }
 
@@ -173,123 +191,155 @@
     }
 
     .hotel-details-description {
-        color: var(--text-muted);
-        line-height: 1.6;
-        margin-bottom: 24px;
-        font-size: 15px;
+        color: var(--hotel-details-text-soft);
+        line-height: 1.8;
+        margin: 0 0 24px;
     }
 
     .hotel-feature-list {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        margin-bottom: 32px;
+        margin-bottom: 26px;
     }
 
     .feature-pill {
-        padding: 6px 14px;
-        background: #f1f5f9;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: #f3f4f7;
+        color: var(--hotel-details-text-dark);
+        font-weight: 600;
+        font-size: 0.92rem;
+    }
+
+    .review-quote {
+        background: #f8f9fc;
+        padding: 20px;
         border-radius: 20px;
-        font-size: 13px;
-        color: var(--text-main);
-        font-weight: 500;
+        margin-bottom: 24px;
+        border-left: 4px solid var(--hotel-details-primary);
+    }
+
+    .review-quote i {
+        color: var(--hotel-details-primary);
+        font-size: 1.2rem;
+        margin-right: 8px;
+    }
+
+    .review-text {
+        color: var(--hotel-details-text-dark);
+        font-style: italic;
+        line-height: 1.6;
+        margin: 8px 0 0 0;
     }
 
     .hotel-actions {
         display: flex;
         gap: 16px;
-        margin-top: 16px;
+        margin-top: auto;
     }
 
     .btn-primary {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
-        background: var(--primary);
+        flex: 1;
+        padding: 14px 24px;
+        background: linear-gradient(135deg, var(--hotel-details-primary) 0%, var(--hotel-details-primary-dark) 100%);
         color: white;
-        padding: 12px 24px;
-        border-radius: 12px;
         text-decoration: none;
-        font-weight: 600;
-        transition: all 0.3s ease;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        transition: var(--hotel-details-transition);
+        border: none;
+        cursor: pointer;
     }
 
     .btn-primary:hover {
-        background: var(--primary-hover);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        box-shadow: 0 10px 20px rgba(255, 107, 44, 0.3);
     }
 
     .btn-secondary {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
+        padding: 14px 24px;
         background: white;
-        color: var(--primary);
-        padding: 12px 24px;
-        border-radius: 12px;
+        color: var(--hotel-details-primary);
         text-decoration: none;
-        font-weight: 600;
-        border: 2px solid var(--primary);
-        transition: all 0.3s ease;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        border: 2px solid var(--hotel-details-primary);
+        transition: var(--hotel-details-transition);
+        cursor: pointer;
     }
 
     .btn-secondary:hover {
-        background: var(--primary);
+        background: var(--hotel-details-primary);
         color: white;
         transform: translateY(-2px);
     }
 
     /* Amenities Section */
     .hotel-amenities-section {
-        max-width: 1200px;
+        width: min(1280px, calc(100% - 32px));
         margin: 60px auto;
-        padding: 0 20px;
     }
 
     .amenities-header {
         text-align: center;
-        margin-bottom: 40px;
+        margin-bottom: 32px;
     }
 
     .amenities-header h2 {
-        font-size: 28px;
+        font-size: 2rem;
         font-weight: 800;
-        color: var(--text-main);
+        color: var(--hotel-details-text-dark);
         margin-bottom: 12px;
+        letter-spacing: -0.01em;
     }
 
     .amenities-header p {
-        color: var(--text-muted);
-        font-size: 16px;
+        color: var(--hotel-details-text-soft);
+        font-size: 1rem;
     }
 
     .amenities-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
         background: white;
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 32px;
+        border-radius: var(--hotel-details-radius-lg);
+        box-shadow: var(--hotel-details-shadow);
     }
 
     .amenity-item {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
         padding: 12px;
-        border-radius: 12px;
-        transition: background 0.2s ease;
+        border-radius: var(--hotel-details-radius-md);
+        transition: var(--hotel-details-transition);
     }
 
     .amenity-item:hover {
-        background: #f8fafc;
+        background: #f8f9fc;
+        transform: translateX(4px);
     }
 
     .amenity-item i {
-        font-size: 24px;
-        color: var(--primary);
+        font-size: 1.5rem;
+        color: var(--hotel-details-primary);
         width: 40px;
         text-align: center;
     }
@@ -299,76 +349,83 @@
     }
 
     .amenity-name {
-        font-weight: 600;
-        color: var(--text-main);
+        font-weight: 700;
+        color: var(--hotel-details-text-dark);
         margin-bottom: 4px;
     }
 
     .amenity-description {
-        font-size: 12px;
-        color: var(--text-muted);
+        font-size: 0.8rem;
+        color: var(--hotel-details-text-soft);
     }
 
     /* Room Types Section */
     .room-types-section {
-        max-width: 1200px;
+        width: min(1280px, calc(100% - 32px));
         margin: 60px auto;
-        padding: 0 20px;
     }
 
     .room-types-header {
         text-align: center;
-        margin-bottom: 40px;
+        margin-bottom: 32px;
     }
 
     .room-types-header h2 {
-        font-size: 28px;
+        font-size: 2rem;
         font-weight: 800;
-        color: var(--text-main);
+        color: var(--hotel-details-text-dark);
         margin-bottom: 12px;
+        letter-spacing: -0.01em;
     }
 
     .room-types-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
         gap: 30px;
     }
 
     .room-card {
         background: white;
-        border-radius: 16px;
+        border-radius: var(--hotel-details-radius-lg);
         overflow: hidden;
         border: 1px solid #f1f5f9;
-        transition: all 0.3s ease;
+        transition: var(--hotel-details-transition);
     }
 
     .room-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        transform: translateY(-6px);
+        box-shadow: var(--hotel-details-shadow-hover);
+        border-color: transparent;
     }
 
     .room-image {
-        height: 200px;
-        background: #f0f0f0;
         position: relative;
+        height: 200px;
+        overflow: hidden;
     }
 
     .room-image img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .room-card:hover .room-image img {
+        transform: scale(1.08);
     }
 
     .room-price {
         position: absolute;
         bottom: 16px;
         right: 16px;
-        background: rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.85);
         color: white;
-        padding: 6px 12px;
-        border-radius: 8px;
+        padding: 6px 14px;
+        border-radius: 40px;
         font-weight: 700;
-        font-size: 14px;
+        font-size: 0.9rem;
+        backdrop-filter: blur(4px);
     }
 
     .room-content {
@@ -376,9 +433,9 @@
     }
 
     .room-name {
-        font-size: 18px;
+        font-size: 1.25rem;
         font-weight: 800;
-        color: var(--text-main);
+        color: var(--hotel-details-text-dark);
         margin-bottom: 8px;
     }
 
@@ -387,8 +444,8 @@
         flex-wrap: wrap;
         gap: 12px;
         margin: 12px 0;
-        font-size: 13px;
-        color: var(--text-muted);
+        font-size: 0.8rem;
+        color: var(--hotel-details-text-soft);
     }
 
     .room-details span {
@@ -398,8 +455,8 @@
     }
 
     .room-description {
-        color: var(--text-muted);
-        font-size: 14px;
+        color: var(--hotel-details-text-soft);
+        font-size: 0.85rem;
         line-height: 1.5;
         margin-bottom: 16px;
     }
@@ -407,46 +464,48 @@
     .book-now-btn {
         display: block;
         text-align: center;
-        background: var(--primary);
+        background: var(--hotel-details-primary);
         color: white;
-        padding: 10px;
-        border-radius: 8px;
+        padding: 10px 16px;
+        border-radius: 40px;
         text-decoration: none;
         font-weight: 600;
-        transition: background 0.2s ease;
+        font-size: 0.9rem;
+        transition: var(--hotel-details-transition);
     }
 
     .book-now-btn:hover {
-        background: var(--primary-hover);
+        background: var(--hotel-details-primary-dark);
+        transform: translateY(-2px);
     }
 
     /* Similar Hotels Section */
     .similar-hotels-section {
-        max-width: 1200px;
-        margin: 60px auto;
-        padding: 0 20px 60px;
+        width: min(1280px, calc(100% - 32px));
+        margin: 60px auto 80px;
     }
 
     .similar-hotels-section h2 {
-        font-size: 28px;
+        font-size: 2rem;
         font-weight: 800;
-        color: var(--text-main);
+        color: var(--hotel-details-text-dark);
         margin-bottom: 32px;
         text-align: center;
+        letter-spacing: -0.01em;
     }
 
     .similar-hotels-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 30px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 28px;
     }
 
     .similar-hotel-card {
         background: white;
-        border-radius: 16px;
+        border-radius: var(--hotel-details-radius-lg);
         overflow: hidden;
         border: 1px solid #f1f5f9;
-        transition: all 0.3s ease;
+        transition: var(--hotel-details-transition);
         cursor: pointer;
         text-decoration: none;
         color: inherit;
@@ -454,12 +513,13 @@
     }
 
     .similar-hotel-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        transform: translateY(-6px);
+        box-shadow: var(--hotel-details-shadow-hover);
+        border-color: transparent;
     }
 
     .similar-hotel-image {
-        height: 180px;
+        height: 200px;
         overflow: hidden;
     }
 
@@ -467,28 +527,29 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.3s ease;
+        transition: transform 0.5s ease;
     }
 
     .similar-hotel-card:hover .similar-hotel-image img {
-        transform: scale(1.05);
+        transform: scale(1.08);
     }
 
     .similar-hotel-content {
-        padding: 16px;
+        padding: 20px;
     }
 
     .similar-hotel-name {
-        font-size: 16px;
-        font-weight: 700;
-        color: var(--text-main);
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--hotel-details-text-dark);
         margin-bottom: 6px;
+        line-height: 1.3;
     }
 
     .similar-hotel-location {
-        font-size: 12px;
-        color: var(--text-muted);
-        margin-bottom: 8px;
+        font-size: 0.8rem;
+        color: var(--hotel-details-text-soft);
+        margin-bottom: 10px;
         display: flex;
         align-items: center;
         gap: 4px;
@@ -498,22 +559,32 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        background: #fef3c7;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 12px;
+        background: #fef3e8;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
         font-weight: 600;
-        color: #92400e;
-        margin-bottom: 8px;
+        color: var(--hotel-details-primary);
+        margin-bottom: 10px;
     }
 
     .similar-hotel-price {
-        font-size: 14px;
+        font-size: 1rem;
         font-weight: 700;
-        color: var(--primary);
-        margin-top: 8px;
+        color: var(--hotel-details-primary);
+        margin-top: 10px;
     }
 
+    .similar-hotel-room-type {
+        font-size: 0.75rem;
+        color: var(--hotel-details-text-soft);
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    /* Loading State */
     .loading-similar {
         grid-column: 1/-1;
         text-align: center;
@@ -521,37 +592,29 @@
     }
 
     .loading-spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid var(--primary);
+        width: 48px;
+        height: 48px;
+        border: 3px solid #f1f5f9;
+        border-top-color: var(--hotel-details-primary);
         border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 16px;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 20px;
     }
 
     @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        to { transform: rotate(360deg); }
     }
 
-    @media (max-width: 768px) {
+    /* Responsive Design */
+    @media (max-width: 1000px) {
         .hotel-details-hero {
             grid-template-columns: 1fr;
         }
-        
-        .hotel-details-hero__image {
-            height: 300px;
+
+        .similar-hotels-grid {
+            grid-template-columns: repeat(2, 1fr);
         }
-        
-        .hotel-details-hero__content {
-            padding: 32px;
-        }
-        
-        h1 {
-            font-size: 28px;
-        }
-        
+
         .hotel-info-grid {
             grid-template-columns: 1fr;
         }
@@ -559,13 +622,39 @@
         .amenities-grid {
             grid-template-columns: 1fr;
         }
-        
-        .room-types-grid {
-            grid-template-columns: 1fr;
+    }
+
+    @media (max-width: 640px) {
+        .hotel-details-hero,
+        .hotel-amenities-section,
+        .room-types-section,
+        .similar-hotels-section {
+            width: calc(100% - 20px);
         }
-        
+
+        .hotel-details-hero__image,
+        .hotel-details-hero__image img {
+            min-height: 320px;
+        }
+
+        .hotel-details-hero__content {
+            padding: 24px;
+        }
+
         .similar-hotels-grid {
             grid-template-columns: 1fr;
+        }
+
+        .hotel-actions {
+            flex-direction: column;
+        }
+        
+        .amenities-grid {
+            padding: 20px;
+        }
+        
+        .room-types-grid {
+            gap: 20px;
         }
     }
 </style>
@@ -584,35 +673,24 @@
 
         <div class="hotel-details-meta">
             @if($hotel->price_tier)
-                <span class="hotel-type">
-                    @if($hotel->price_tier == 'luxury')
-                        💎 Luxury Hotel
-                    @elseif($hotel->price_tier == 'premium')
-                        ✨ Premium Hotel
-                    @elseif($hotel->price_tier == 'mid-range')
-                        🏨 Mid-Range Hotel
-                    @else
-                        💰 Budget Hotel
-                    @endif
-                </span>
+                <span class="hotel-type">{{ ucfirst($hotel->price_tier) }} Hotel</span>
             @endif
             
             <span class="hotel-rating">
                 <i class="ri-star-fill"></i> {{ number_format($hotel->rating_score, 1) }}
                 @if($hotel->review_count)
-                    <span style="font-weight: normal;">({{ $hotel->review_count }} reviews)</span>
+                    ({{ $hotel->review_count }} reviews)
                 @endif
             </span>
             
             <span class="price-tier">
                 @for($i = 1; $i <= 4; $i++)
                     @php
-                        $priceLevel = '';
+                        $priceLevel = 0;
                         if($hotel->price_tier == 'budget') $priceLevel = 1;
                         elseif($hotel->price_tier == 'mid-range') $priceLevel = 2;
                         elseif($hotel->price_tier == 'premium') $priceLevel = 3;
                         elseif($hotel->price_tier == 'luxury') $priceLevel = 4;
-                        else $priceLevel = 0;
                     @endphp
                     @if($i <= $priceLevel)
                         <i class="ri-money-dollar-circle-fill"></i>
@@ -644,7 +722,7 @@
             <div class="info-item">
                 <i class="ri-bed-fill"></i>
                 <div>
-                    <span class="info-label">Bed Info</span>
+                    <span class="info-label">Bed Configuration</span>
                     <span class="info-value">{{ $hotel->bed_info }}</span>
                 </div>
             </div>
@@ -716,35 +794,29 @@
         @endif
 
         @if($hotel->review_text)
-        <div class="hotel-feature-list">
-            <div class="info-item" style="margin-bottom: 16px;">
-                <i class="ri-chat-quote-fill"></i>
-                <div>
-                    <span class="info-label">Guest Review</span>
-                    <span class="info-value" style="font-style: italic;">"{{ $hotel->review_text }}"</span>
-                </div>
-            </div>
+        <div class="review-quote">
+            <i class="ri-chat-quote-fill"></i>
+            <span class="info-label">Rating</span>
+            <p class="review-text">"{{ $hotel->review_text }}"</p>
         </div>
         @endif
 
         <div class="hotel-actions">
             @if($hotel->hotel_url)
             <a href="{{ $hotel->hotel_url }}" class="btn-primary" target="_blank">
-                <i class="ri-external-link-line"></i> Book Now
+                <i class="ri-external-link-line"></i> More Details
             </a>
             @endif
-            <a href="#" class="btn-secondary" onclick="window.print(); return false;">
-                <i class="ri-printer-line"></i> Print Details
-            </a>
+
         </div>
     </div>
 </section>
 
-<!-- Amenities Section (if you have amenities data) -->
+<!-- Amenities Section -->
 @if(isset($amenities) && count($amenities) > 0)
 <section class="hotel-amenities-section">
     <div class="amenities-header">
-        <h2>🏨 Hotel Amenities</h2>
+        <h2>Hotel Amenities</h2>
         <p>Everything you need for a comfortable stay</p>
     </div>
     <div class="amenities-grid">
@@ -765,7 +837,7 @@
 @if(isset($roomTypes) && count($roomTypes) > 0)
 <section class="room-types-section">
     <div class="room-types-header">
-        <h2>🛏️ Available Room Types</h2>
+        <h2>Available Room Types</h2>
         <p>Choose the perfect room for your stay</p>
     </div>
     <div class="room-types-grid">
@@ -808,11 +880,11 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Get the current hotel ID from Laravel
-    const hotelId = {{ $hotel->id }};
+    const hotelId = {{ $hotel->id ?? 0 }};
     
-    // Load and render similar hotels
-    loadSimilarHotels(hotelId);
+    if (hotelId) {
+        loadSimilarHotels(hotelId);
+    }
 });
 
 async function loadSimilarHotels(hotelId) {
@@ -831,17 +903,17 @@ async function loadSimilarHotels(hotelId) {
             renderSimilarHotels(data.similar_hotels);
         } else {
             grid.innerHTML = `
-                <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
-                    <p style="color: var(--text-muted);">No similar hotels found at the moment.</p>
+                <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
+                    <p style="color: var(--hotel-details-text-soft);">No similar hotels found at the moment.</p>
                 </div>
             `;
         }
     } catch (error) {
         console.error('Error loading similar hotels:', error);
         grid.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
-                <p style="color: #ef4444;">Unable to load similar hotels. Please try again later.</p>
-                <button onclick="location.reload()" style="margin-top: 16px; padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">
+            <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
+                <p style="color: #ef4444; margin-bottom: 16px;">Unable to load similar hotels. Please try again later.</p>
+                <button onclick="location.reload()" style="padding: 10px 24px; background: var(--hotel-details-primary); color: white; border: none; border-radius: 40px; cursor: pointer; font-weight: 600;">
                     Retry
                 </button>
             </div>
@@ -852,17 +924,19 @@ async function loadSimilarHotels(hotelId) {
 function renderSimilarHotels(hotels) {
     const grid = document.getElementById('similarHotelsGrid');
     
+    if (!grid) return;
+    
     grid.innerHTML = hotels.map(hotel => `
         <a href="/hotels/${hotel.id}" class="similar-hotel-card">
             <div class="similar-hotel-image">
                 <img src="${hotel.hotel_image || '{{ asset('images/default-hotel.jpg') }}'}" 
-                     alt="${hotel.hotel_name}"
+                     alt="${hotel.hotel_name || 'Hotel'}"
                      onerror="this.src='{{ asset('images/default-hotel.jpg') }}'">
             </div>
             <div class="similar-hotel-content">
-                <h3 class="similar-hotel-name">${hotel.hotel_name || 'Unnamed Hotel'}</h3>
+                <h3 class="similar-hotel-name">${escapeHtml(hotel.hotel_name || 'Unnamed Hotel')}</h3>
                 <div class="similar-hotel-location">
-                    <i class="ri-map-pin-line"></i> ${hotel.address || 'Location not specified'}
+                    <i class="ri-map-pin-line"></i> ${escapeHtml(hotel.address || 'Location not specified')}
                 </div>
                 ${hotel.rating_score ? `
                 <div class="similar-hotel-rating">
@@ -871,17 +945,24 @@ function renderSimilarHotels(hotels) {
                 ` : ''}
                 ${hotel.price_per_night ? `
                 <div class="similar-hotel-price">
-                    ${hotel.price_per_night} <span style="font-weight: normal;">/ night</span>
+                    ${escapeHtml(hotel.price_per_night)} <span style="font-weight: normal;">/ night</span>
                 </div>
                 ` : ''}
                 ${hotel.room_type ? `
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
-                    🛏️ ${hotel.room_type}
+                <div class="similar-hotel-room-type">
+                    <i class="ri-hotel-bed-line"></i> ${escapeHtml(hotel.room_type)}
                 </div>
                 ` : ''}
             </div>
         </a>
     `).join('');
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 </script>
 @endpush
