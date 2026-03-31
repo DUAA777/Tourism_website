@@ -84,6 +84,33 @@ class ChatbotControllerTest extends TestCase
         $this->assertStringContainsString('Sea Deck', $reply);
     }
 
+    public function test_it_returns_clickable_entity_links_for_recommended_hotels_and_restaurants(): void
+    {
+        $this->mockRecommendationService($this->recommendationPayload());
+
+        Http::fake([
+            'http://127.0.0.1:5000/chat' => Http::response([
+                'reply' => 'You should look at Harbor Stay and Sea Deck.',
+            ], 200),
+        ]);
+
+        $response = $this->postJson(route('chatbot.send'), [
+            'message' => 'Recommend a hotel and dinner in Beirut',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonFragment([
+                'type' => 'hotel',
+                'name' => 'Harbor Stay',
+                'url' => route('hotels.show', ['id' => 82]),
+            ])
+            ->assertJsonFragment([
+                'type' => 'restaurant',
+                'name' => 'Sea Deck',
+                'url' => route('restaurants.show', ['id' => 17]),
+            ]);
+    }
+
     public function test_it_creates_a_new_session_when_the_requested_session_belongs_to_someone_else(): void
     {
         $owner = $this->createUser('owner@example.com');
@@ -149,6 +176,7 @@ class ChatbotControllerTest extends TestCase
             ],
             'hotels' => [
                 [
+                    'id' => 82,
                     'hotel_name' => 'Harbor Stay',
                     'address' => 'Beirut Marina',
                     'price_per_night' => '120$',
@@ -158,6 +186,7 @@ class ChatbotControllerTest extends TestCase
             ],
             'restaurants' => [
                 [
+                    'id' => 17,
                     'restaurant_name' => 'Sea Deck',
                     'location' => 'Beirut Waterfront',
                     'food_type' => 'Seafood',
@@ -190,6 +219,7 @@ class ChatbotControllerTest extends TestCase
             ],
             'hotels' => [
                 [
+                    'id' => 12,
                     'hotel_name' => 'Sunset Stay',
                     'address' => 'Batroun Seafront',
                     'price_per_night' => '110$',
@@ -198,12 +228,14 @@ class ChatbotControllerTest extends TestCase
             ],
             'restaurants' => [
                 [
+                    'id' => 24,
                     'restaurant_name' => 'Harbor Lunch',
                     'location' => 'Batroun Port',
                     'food_type' => 'Seafood',
                     'price_tier' => 'Mid-range',
                 ],
                 [
+                    'id' => 25,
                     'restaurant_name' => 'Old Town Dinner',
                     'location' => 'Batroun Old Town',
                     'food_type' => 'Lebanese',

@@ -551,6 +551,22 @@
   overflow-wrap: anywhere;
 }
 
+.chatbot-entity-link {
+  display: inline;
+  color: inherit;
+  font-weight: 800;
+  text-decoration-line: underline;
+  text-decoration-color: var(--primary-color);
+  text-decoration-thickness: 0.14em;
+  text-underline-offset: 0.2em;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+
+.chatbot-entity-link:hover {
+  color: var(--primary-color-dark);
+  text-decoration-color: var(--primary-color-dark);
+}
+
 .bot-message {
   align-self: flex-start;
 }

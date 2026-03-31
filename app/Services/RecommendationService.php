@@ -528,6 +528,7 @@ class RecommendationService
     private function transformHotel($hotel, float $score, array $reasons): array
     {
         return [
+            'id' => $hotel->id,
             'hotel_name' => $hotel->hotel_name,
             'address' => $hotel->address,
             'distance_from_beach' => $hotel->distance_from_beach,
@@ -547,6 +548,7 @@ class RecommendationService
     private function transformRestaurant($restaurant, float $score, array $reasons): array
     {
         return [
+            'id' => $restaurant->id,
             'restaurant_name' => $restaurant->restaurant_name,
             'location' => $restaurant->location,
             'rating' => $restaurant->rating,

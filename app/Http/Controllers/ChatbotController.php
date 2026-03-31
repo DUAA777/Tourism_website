@@ -107,6 +107,7 @@ class ChatbotController extends Controller
         return response()->json([
             'reply' => $reply,
             'session_id' => $session->id,
+            'entity_links' => $this->buildEntityLinks($recommendations),
         ]);
     }
 
@@ -463,5 +464,42 @@ class ChatbotController extends Controller
         }
 
         return implode(', ', array_slice($reasons, 0, 3));
+    }
+
+    private function buildEntityLinks(array $recommendations): array
+    {
+        $links = [];
+
+        foreach (($recommendations['hotels'] ?? []) as $hotel) {
+            $hotelId = $hotel['id'] ?? null;
+            $hotelName = trim((string) ($hotel['hotel_name'] ?? ''));
+
+            if (!$hotelId || $hotelName === '') {
+                continue;
+            }
+
+            $links['hotel:' . $hotelName] = [
+                'type' => 'hotel',
+                'name' => $hotelName,
+                'url' => route('hotels.show', ['id' => $hotelId]),
+            ];
+        }
+
+        foreach (($recommendations['restaurants'] ?? []) as $restaurant) {
+            $restaurantId = $restaurant['id'] ?? null;
+            $restaurantName = trim((string) ($restaurant['restaurant_name'] ?? ''));
+
+            if (!$restaurantId || $restaurantName === '') {
+                continue;
+            }
+
+            $links['restaurant:' . $restaurantName] = [
+                'type' => 'restaurant',
+                'name' => $restaurantName,
+                'url' => route('restaurants.show', ['id' => $restaurantId]),
+            ];
+        }
+
+        return array_values($links);
     }
 }

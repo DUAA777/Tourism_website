@@ -317,6 +317,7 @@ async function sendMessage() {
         });
 
         const data = await response.json();
+        const entityLinks = Array.isArray(data.entity_links) ? data.entity_links : [];
 
         removeTypingMessage(typingId);
 
@@ -326,12 +327,12 @@ async function sendMessage() {
         }
 
         if (!response.ok) {
-            addMessage(data.reply || 'Request failed.', 'bot-message', 'Yalla Nemshi');
+            addMessage(data.reply || 'Request failed.', 'bot-message', 'Yalla Nemshi', entityLinks);
             console.error('Backend error:', data);
             return;
         }
 
-        addMessage(data.reply || 'No reply returned.', 'bot-message', 'Yalla Nemshi');
+        addMessage(data.reply || 'No reply returned.', 'bot-message', 'Yalla Nemshi', entityLinks);
     } catch (error) {
         removeTypingMessage(typingId);
         addMessage('Something went wrong while contacting the chatbot.', 'bot-message', 'Yalla Nemshi');
@@ -347,17 +348,20 @@ function removeTypingMessage(typingId) {
     if (typing) typing.remove();
 }
 
-function addMessage(text, className, label) {
+function addMessage(text, className, label, entityLinks = []) {
     const avatar = className === 'user-message' ? 'Y' : 'YN';
     const avatarClass = className === 'user-message' ? 'user-avatar' : 'bot-avatar';
     const cleanText = String(text || '').trim();
+    const formattedText = className === 'bot-message'
+        ? formatBotText(cleanText, entityLinks)
+        : formatPlainText(cleanText);
 
     chatBox.innerHTML += `
         <div class="message ${className}">
             <div class="message-avatar ${avatarClass}">${escapeHtml(avatar)}</div>
             <div class="message-body">
                 <div class="message-label">${escapeHtml(label)}</div>
-                <div class="message-text">${formatPlainText(cleanText)}</div>
+                <div class="message-text">${formattedText}</div>
             </div>
         </div>
     `;
@@ -366,6 +370,53 @@ function addMessage(text, className, label) {
 
 function formatPlainText(text) {
     return escapeHtml(text).replace(/\n/g, '<br>');
+}
+
+function formatBotText(text, entityLinks = []) {
+    const links = Array.isArray(entityLinks)
+        ? entityLinks
+            .filter(link => link && link.name && link.url)
+            .sort((a, b) => String(b.name).length - String(a.name).length)
+        : [];
+
+    if (!links.length) {
+        return formatPlainText(text);
+    }
+
+    let tokenizedText = String(text || '');
+    const appliedTokens = [];
+
+    links.forEach((link, index) => {
+        const linkName = String(link.name || '');
+        if (!linkName || !tokenizedText.includes(linkName)) {
+            return;
+        }
+
+        const token = `__ENTITY_LINK_${index}__`;
+        tokenizedText = tokenizedText.split(linkName).join(token);
+        appliedTokens.push({ token, link });
+    });
+
+    let html = formatPlainText(tokenizedText);
+
+    appliedTokens.forEach(({ token, link }) => {
+        const safeToken = escapeHtml(token);
+        const safeName = escapeHtml(String(link.name || ''));
+        const safeUrl = escapeHtml(String(link.url || ''));
+        const safeType = escapeHtml(String(link.type || 'entity'));
+        const tokenPattern = new RegExp(escapeRegExp(safeToken), 'g');
+
+        html = html.replace(
+            tokenPattern,
+            `<a class="chatbot-entity-link chatbot-entity-link--${safeType}" href="${safeUrl}">${safeName}</a>`
+        );
+    });
+
+    return html;
+}
+
+function escapeRegExp(text) {
+    return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function scrollChatToBottom() {
