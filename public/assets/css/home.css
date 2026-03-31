@@ -597,6 +597,7 @@ body {
 .reviews-section {
   width: min(1180px, calc(100% - 32px));
   margin: 80px auto 0;
+  margin-bottom: 30px;
 }
 
 .reviews-section__heading {
