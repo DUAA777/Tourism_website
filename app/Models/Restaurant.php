@@ -31,9 +31,8 @@ class Restaurant extends Model
     protected $casts = [
         'rating' => 'decimal:1',
         'tags' => 'array',
-        'vibe_tags',
-        'occasion_tags',
-        'search_text',
+        'vibe_tags' => 'array',
+        'occasion_tags' => 'array',
     ];
 
     public function getTagsArrayAttribute()
