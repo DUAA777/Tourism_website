@@ -34,11 +34,6 @@
                         </article>
                     </div>
 
-                    <div class="chatbot-hero-strip__highlights">
-                        <span class="chatbot-highlight"><i class="ri-route-line"></i> Multi-day itinerary ideas</span>
-                        <span class="chatbot-highlight"><i class="ri-restaurant-line"></i> Food and activity matching</span>
-                        <span class="chatbot-highlight"><i class="ri-map-pin-line"></i> Lebanon-focused planning</span>
-                    </div>
                 </div>
 
                 <div class="chatbot-hero-strip__visual">

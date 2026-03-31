@@ -18,7 +18,7 @@ class ChatbotController extends Controller
 
     public function index(Request $request)
     {
-        return view('chatbot');
+        return view('chatbot_fullscreen');
     }
 
     public function newSession(Request $request)
