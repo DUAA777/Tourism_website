@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             HotelsTableSeeder::class,
             RestaurantsTableSeeder::class,
             RecommendationTagsSeeder::class,
+            ActivitiesTableSeeder::class,
         ]);
 
         User::factory()->create([

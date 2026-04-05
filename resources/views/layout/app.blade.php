@@ -30,7 +30,9 @@
             @include("partials.navbar")
             <div id="main">
                 @yield('content')
-                @include("partials.footer")
+                @if(trim($__env->yieldContent('hideFooter')) !== '1')
+                    @include("partials.footer")
+                @endif
             </div>
         </div>
     </div>
