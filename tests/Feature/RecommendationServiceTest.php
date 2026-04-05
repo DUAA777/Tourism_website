@@ -265,4 +265,193 @@ class RecommendationServiceTest extends TestCase
         $this->assertCount(4, $results['trip_plan']['days']);
         $this->assertSame('4-Day Trip in Byblos', $results['trip_plan']['title']);
     }
+
+    public function test_it_keeps_trip_stays_when_hotel_city_is_not_in_address(): void
+    {
+        Hotel::create([
+            'hotel_name' => 'Batroun Bay Stay',
+            'address' => 'Sea Road',
+            'distance_from_beach' => '150 m',
+            'rating_score' => 4.5,
+            'review_count' => 120,
+            'price_per_night' => '110$',
+            'description' => 'A seaside stay close to Batroun sunsets.',
+            'stay_details' => 'Small coastal rooms.',
+            'vibe_tags' => ['relaxing', 'beach'],
+            'audience_tags' => ['couple', 'friends'],
+            'search_text' => 'batroun seaside stay near the old town and sunset spots',
+        ]);
+
+        Restaurant::create([
+            'restaurant_name' => 'Harbor Seafood Table',
+            'location' => 'Batroun Port',
+            'rating' => 4.6,
+            'price_tier' => 'Premium',
+            'food_type' => 'Seafood',
+            'description' => 'Fresh seafood by the water.',
+            'vibe_tags' => ['beach', 'sunset'],
+            'occasion_tags' => ['dinner', 'casual'],
+            'search_text' => 'batroun seafood lunch dinner by the port',
+        ]);
+
+        Activity::create([
+            'name' => 'Batroun Sunset Walk',
+            'city' => 'batroun',
+            'category' => 'scenic',
+            'description' => 'A seaside sunset walk.',
+            'location' => 'Batroun Seafront',
+            'best_time' => 'sunset',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['relaxing', 'sunset', 'seaside'],
+            'occasion_tags' => ['date', 'casual'],
+            'search_text' => 'batroun scenic sunset walk',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Plan a 2 day seaside trip in Batroun with sunset and seafood');
+
+        $this->assertSame('Batroun Bay Stay', $results['hotels'][0]['hotel_name']);
+        $this->assertSame('Batroun Bay Stay', $results['trip_plan']['days'][0]['flow']['stay']['hotel_name'] ?? null);
+    }
+
+    public function test_one_day_trip_does_not_force_a_hotel_stay_without_a_stay_request(): void
+    {
+        Hotel::create([
+            'hotel_name' => 'Byblos Day Base',
+            'address' => 'Byblos Port',
+            'distance_from_beach' => '120 m',
+            'rating_score' => 4.4,
+            'review_count' => 90,
+            'price_per_night' => '95$',
+            'description' => 'A small harbor stay in Byblos.',
+            'stay_details' => 'Walkable old town access.',
+            'vibe_tags' => ['relaxing', 'coastal'],
+            'audience_tags' => ['couple'],
+            'search_text' => 'byblos harbor stay close to the old town',
+        ]);
+
+        Restaurant::create([
+            'restaurant_name' => 'Port Lunch',
+            'location' => 'Byblos Port',
+            'rating' => 4.5,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Seafood',
+            'description' => 'Seafood by the harbor.',
+            'vibe_tags' => ['seaside'],
+            'occasion_tags' => ['lunch', 'casual'],
+            'search_text' => 'byblos seafood lunch harbor',
+        ]);
+
+        Activity::create([
+            'name' => 'Old Souk Walk',
+            'city' => 'byblos',
+            'category' => 'cultural',
+            'description' => 'Historic streets and shops.',
+            'location' => 'Byblos Old Town',
+            'best_time' => 'morning',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['cultural', 'casual'],
+            'occasion_tags' => ['friends', 'casual'],
+            'search_text' => 'byblos old souk walk',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Plan a 1 day trip in Byblos');
+
+        $this->assertFalse(in_array('hotels', $results['intent']['requested_categories'], true));
+        $this->assertArrayNotHasKey('stay', $results['trip_plan']['days'][0]['flow']);
+    }
+
+    public function test_multi_city_trip_uses_city_appropriate_stays_and_restaurants(): void
+    {
+        Hotel::create([
+            'hotel_name' => 'Beirut Corniche Stay',
+            'address' => 'Beirut Corniche',
+            'distance_from_beach' => '100 m',
+            'rating_score' => 4.6,
+            'review_count' => 160,
+            'price_per_night' => '130$',
+            'description' => 'A Beirut seaside base.',
+            'stay_details' => 'Great for a city start.',
+            'vibe_tags' => ['relaxing', 'beach'],
+            'audience_tags' => ['couple', 'friends'],
+            'search_text' => 'beirut seaside hotel corniche stay',
+        ]);
+
+        Hotel::create([
+            'hotel_name' => 'Byblos Port Stay',
+            'address' => 'Byblos Port',
+            'distance_from_beach' => '90 m',
+            'rating_score' => 4.7,
+            'review_count' => 140,
+            'price_per_night' => '125$',
+            'description' => 'A harbor stay in Byblos.',
+            'stay_details' => 'Best for old town evenings.',
+            'vibe_tags' => ['relaxing', 'coastal'],
+            'audience_tags' => ['couple', 'friends'],
+            'search_text' => 'byblos port hotel old town stay',
+        ]);
+
+        Restaurant::create([
+            'restaurant_name' => 'Beirut Harbor Lunch',
+            'location' => 'Beirut Waterfront',
+            'rating' => 4.5,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Seafood',
+            'description' => 'Seafood lunch in Beirut.',
+            'vibe_tags' => ['seaside'],
+            'occasion_tags' => ['lunch', 'casual'],
+            'search_text' => 'beirut seafood lunch waterfront',
+        ]);
+
+        Restaurant::create([
+            'restaurant_name' => 'Byblos Port Dinner',
+            'location' => 'Byblos Port',
+            'rating' => 4.6,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Seafood',
+            'description' => 'Seafood dinner in Byblos.',
+            'vibe_tags' => ['seaside', 'sunset'],
+            'occasion_tags' => ['dinner', 'date'],
+            'search_text' => 'byblos seafood dinner harbor sunset',
+        ]);
+
+        Activity::create([
+            'name' => 'Beirut Corniche Walk',
+            'city' => 'beirut',
+            'category' => 'walking',
+            'description' => 'A scenic Beirut walk.',
+            'location' => 'Beirut Corniche',
+            'best_time' => 'morning',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['relaxing', 'seaside'],
+            'occasion_tags' => ['casual'],
+            'search_text' => 'beirut corniche walk',
+        ]);
+
+        Activity::create([
+            'name' => 'Byblos Harbor Sunset',
+            'city' => 'byblos',
+            'category' => 'scenic',
+            'description' => 'A sunset stop in Byblos.',
+            'location' => 'Byblos Port',
+            'best_time' => 'sunset',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['sunset', 'seaside'],
+            'occasion_tags' => ['date'],
+            'search_text' => 'byblos harbor sunset',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Plan a 3 day trip from Beirut to Byblos with seafood');
+
+        $this->assertSame('Beirut Corniche Stay', $results['trip_plan']['days'][0]['flow']['stay']['hotel_name'] ?? null);
+        $this->assertSame('Byblos Port Stay', $results['trip_plan']['days'][1]['flow']['stay']['hotel_name'] ?? null);
+        $this->assertSame('Byblos Port Dinner', $results['trip_plan']['days'][1]['flow']['dinner']['restaurant_name'] ?? null);
+        $this->assertSame('Byblos', $results['trip_plan']['days'][2]['location']);
+    }
 }

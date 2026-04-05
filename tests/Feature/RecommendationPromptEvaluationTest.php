@@ -59,7 +59,7 @@ class RecommendationPromptEvaluationTest extends TestCase
                 'expectedTripPlan' => false,
                 'expectedCategories' => ['hotels'],
                 'expectedFoodPreferences' => [],
-                'expectedVibeTags' => ['budget'],
+                'expectedVibeTags' => [],
             ],
             'seaside batroun trip' => [
                 'prompt' => 'Plan a 2 day seaside trip in Batroun with sunset and seafood',
@@ -104,6 +104,17 @@ class RecommendationPromptEvaluationTest extends TestCase
                 'expectedCategories' => ['activities'],
                 'expectedFoodPreferences' => [],
                 'expectedVibeTags' => ['hidden_gem', 'relaxing'],
+            ],
+            'plan dinner is not a trip' => [
+                'prompt' => 'Can you plan a romantic dinner in Beirut with a sea view',
+                'expectedCity' => 'beirut',
+                'expectedBudget' => null,
+                'expectedBudgetMax' => null,
+                'expectedDayCount' => null,
+                'expectedTripPlan' => false,
+                'expectedCategories' => ['restaurants'],
+                'expectedFoodPreferences' => [],
+                'expectedVibeTags' => ['romantic', 'beach'],
             ],
         ];
     }

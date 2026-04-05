@@ -40,6 +40,7 @@ def compact_hotel(h):
 
     return {
         "hotel_name": h.get("hotel_name"),
+        "city": h.get("city"),
         "address": h.get("address"),
         "rating_score": h.get("rating_score"),
         "price_per_night": h.get("price_per_night"),
@@ -57,6 +58,7 @@ def compact_restaurant(r):
 
     return {
         "restaurant_name": r.get("restaurant_name"),
+        "city": r.get("city"),
         "location": r.get("location"),
         "rating": r.get("rating"),
         "food_type": r.get("food_type"),
@@ -115,6 +117,7 @@ def build_prompt_data(intent, hotels, restaurants, activities, trip_plan):
             "time_preferences": intent.get("time_preferences", []),
             "semantic_concepts": intent.get("semantic_concepts", []),
             "requested_categories": intent.get("requested_categories", []),
+            "requires_stay": intent.get("requires_stay", False),
             "wants_trip_plan": intent.get("wants_trip_plan", False),
         },
         "hotels": [compact_hotel(h) for h in hotels[:3]],
@@ -224,7 +227,7 @@ def handle_fallback(hotels, restaurants, activities, trip_plan, prefix):
             parts.append(f"- {a.get('name')} in {a.get('city')}")
 
     if not hotels and not restaurants and not activities and not trip_plan:
-        parts.append("\nI couldn’t find matching places. Try another city, vibe, or budget.")
+        parts.append("\nI couldn't find matching places. Try another city, vibe, or budget.")
 
     return jsonify({"reply": "\n".join(parts)}), 200
 
@@ -258,6 +261,11 @@ IMPORTANT RULES:
 10. Sound human change up some stuff from time to time.
 11. No need to put "Ahlan! Yalla Nemshi is here to help you find that perfect romantic dinner with a sea view in Beirut." in every response.
 12. No need to add "Ahlan" in every response.
+13. When you recommend a hotel, restaurant, or activity, use its exact provided name.
+14. Keep the names you mention aligned with the top options in the provided data.
+15. If a trip plan includes a stay, keep that stay in the answer.
+16. Use the trip title only once.
+17. Do not add a second compact recap after the itinerary.
 
 FOR TRIP PLANS:
 - Structure the answer clearly by Day 1, Day 2, Day 3
@@ -265,9 +273,13 @@ FOR TRIP PLANS:
 - Use the activity blocks to make the trip feel rich and realistic
 - Mention why a hotel or restaurant fits when useful
 - Make the route feel logical and smooth
+- Write the itinerary like polished website travel copy, not like raw database output
+- Keep the tone warm and natural, with short human-friendly descriptions for each part of the day
+- Avoid sounding mechanical or repetitive
 
 FOR NORMAL RECOMMENDATIONS:
 - Mention up to 3 strong options
+- Explicitly name the options you are recommending
 - Briefly explain why each one fits
 - End with a helpful follow-up suggestion
 """
@@ -352,7 +364,7 @@ USER REQUEST:
                 restaurants,
                 activities,
                 trip_plan,
-                "I couldn't fully generate the response, but here’s a useful version from your data:"
+                "I couldn't fully generate the response, but here's a useful version from your data:"
             )
 
         return jsonify({"reply": reply})

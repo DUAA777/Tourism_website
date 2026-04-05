@@ -106,6 +106,8 @@ class ChatbotController extends Controller
             $reply = $this->buildFallbackReply($recommendations);
         }
 
+        $reply = $this->alignReplyWithStructuredPayload($reply, $structuredPayload);
+
         ChatMessage::create([
             'chat_session_id' => $session->id,
             'role' => 'assistant',
@@ -279,6 +281,87 @@ class ChatbotController extends Controller
             ['Here are grounded suggestions based on your request:'],
             $sections
         ));
+    }
+
+    private function alignReplyWithStructuredPayload(string $reply, array $structuredPayload): string
+    {
+        $reply = trim($reply);
+
+        if ($reply === '') {
+            return $reply;
+        }
+
+        if (!empty(data_get($structuredPayload, 'trip_plan.days', []))) {
+            return $reply;
+        }
+
+        $leadLines = [];
+
+        foreach ((array) ($structuredPayload['sections'] ?? []) as $section) {
+            if (!is_array($section)) {
+                continue;
+            }
+
+            $sectionType = (string) ($section['type'] ?? '');
+            if (!in_array($sectionType, ['hotels', 'restaurants'], true)) {
+                continue;
+            }
+
+            $titles = array_values(array_filter(array_map(
+                fn ($item) => is_array($item) ? trim((string) ($item['title'] ?? '')) : '',
+                (array) ($section['items'] ?? [])
+            )));
+
+            if (empty($titles)) {
+                continue;
+            }
+
+            $missingTitles = array_values(array_filter($titles, fn ($title) => stripos($reply, $title) === false));
+
+            if (empty($missingTitles)) {
+                continue;
+            }
+
+            $label = match ($sectionType) {
+                'hotels' => 'Top hotel matches',
+                'restaurants' => 'Top restaurant matches',
+                default => 'Top matches',
+            };
+
+            $leadLines[] = $label . ': ' . $this->implodeNaturalList($titles) . '.';
+        }
+
+        if (empty($leadLines)) {
+            return $reply;
+        }
+
+        return implode("\n", array_unique($leadLines)) . "\n\n" . $reply;
+    }
+
+    private function implodeNaturalList(array $items): string
+    {
+        $items = array_values(array_filter(array_map(
+            fn ($item) => trim((string) $item),
+            $items
+        )));
+
+        $count = count($items);
+
+        if ($count === 0) {
+            return '';
+        }
+
+        if ($count === 1) {
+            return $items[0];
+        }
+
+        if ($count === 2) {
+            return $items[0] . ' and ' . $items[1];
+        }
+
+        $lastItem = array_pop($items);
+
+        return implode(', ', $items) . ', and ' . $lastItem;
     }
 
     private function renderTripPlanFallback(array $tripPlan): string

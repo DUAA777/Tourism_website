@@ -111,6 +111,30 @@ class ChatbotControllerTest extends TestCase
             ]);
     }
 
+    public function test_it_aligns_reply_text_with_structured_recommendation_cards(): void
+    {
+        $this->mockRecommendationService($this->recommendationPayload());
+
+        Http::fake([
+            'http://127.0.0.1:5000/chat' => Http::response([
+                'reply' => 'I found strong Beirut options that fit your request well.',
+            ], 200),
+        ]);
+
+        $response = $this->postJson(route('chatbot.send'), [
+            'message' => 'Recommend a hotel and dinner in Beirut',
+        ]);
+
+        $response->assertOk();
+
+        $reply = $response->json('reply');
+
+        $this->assertStringContainsString('Top hotel matches: Harbor Stay.', $reply);
+        $this->assertStringContainsString('Top restaurant matches: Sea Deck.', $reply);
+        $this->assertStringNotContainsString('Top place matches:', $reply);
+        $this->assertStringContainsString('I found strong Beirut options that fit your request well.', $reply);
+    }
+
     public function test_it_returns_structured_payload_for_rich_frontend_rendering(): void
     {
         $this->mockRecommendationService($this->tripPlanPayload());
@@ -135,6 +159,30 @@ class ChatbotControllerTest extends TestCase
             ->assertJsonPath('structured.trip_plan.days.0.flow.stay.url', route('hotels.show', ['id' => 12]));
     }
 
+    public function test_it_keeps_trip_reply_copy_from_python_without_prepending_match_labels(): void
+    {
+        $this->mockRecommendationService($this->tripPlanPayload());
+
+        Http::fake([
+            'http://127.0.0.1:5000/chat' => Http::response([
+                'reply' => "2-Day Trip in Batroun\nA warm seaside escape with good food and sunset stops.\nDay 1 in Batroun:\nMorning: Start slowly along the harbor.",
+            ], 200),
+        ]);
+
+        $response = $this->postJson(route('chatbot.send'), [
+            'message' => 'Plan me a 2 day trip in Batroun',
+        ]);
+
+        $response->assertOk();
+
+        $reply = $response->json('reply');
+
+        $this->assertStringStartsWith('2-Day Trip in Batroun', $reply);
+        $this->assertStringNotContainsString('Top hotel matches:', $reply);
+        $this->assertStringNotContainsString('Top restaurant matches:', $reply);
+        $this->assertStringNotContainsString('Top place matches:', $reply);
+    }
+
     public function test_it_creates_a_new_session_when_the_requested_session_belongs_to_someone_else(): void
     {
         $owner = $this->createUser('owner@example.com');
@@ -155,8 +203,13 @@ class ChatbotControllerTest extends TestCase
             'session_id' => $foreignSession->id,
         ]);
 
-        $response->assertOk()
-            ->assertJsonPath('reply', 'Safe reply');
+        $response->assertOk();
+
+        $reply = $response->json('reply');
+
+        $this->assertStringContainsString('Safe reply', $reply);
+        $this->assertStringContainsString('Harbor Stay', $reply);
+        $this->assertStringContainsString('Sea Deck', $reply);
 
         $newSessionId = (int) $response->json('session_id');
 
