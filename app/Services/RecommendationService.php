@@ -120,12 +120,15 @@ class RecommendationService
             $tripPlan = $this->buildTripPlan($intent, $topHotels, $topRestaurants, $topActivities);
         }
 
+        $diagnostics = $this->buildDiagnostics($intent, $topHotels, $topRestaurants, $topActivities, $tripPlan);
+
         return [
             'intent' => $intent,
             'hotels' => $topHotels,
             'restaurants' => $topRestaurants,
             'activities' => $topActivities,
             'trip_plan' => $tripPlan,
+            'diagnostics' => $diagnostics,
         ];
     }
 
@@ -541,6 +544,8 @@ class RecommendationService
             'vibe_tags' => $hotel->vibe_tags,
             'audience_tags' => $hotel->audience_tags,
             'score' => $score,
+            'primary_reason' => $reasons[0] ?? null,
+            'top_reasons' => array_slice($reasons, 0, 3),
             'match_reasons' => $reasons,
         ];
     }
@@ -560,6 +565,8 @@ class RecommendationService
             'vibe_tags' => $restaurant->vibe_tags,
             'occasion_tags' => $restaurant->occasion_tags,
             'score' => $score,
+            'primary_reason' => $reasons[0] ?? null,
+            'top_reasons' => array_slice($reasons, 0, 3),
             'match_reasons' => $reasons,
         ];
     }
@@ -579,8 +586,112 @@ class RecommendationService
             'vibe_tags' => $activity->vibe_tags,
             'occasion_tags' => $activity->occasion_tags,
             'score' => $score,
+            'primary_reason' => $reasons[0] ?? null,
+            'top_reasons' => array_slice($reasons, 0, 3),
             'match_reasons' => $reasons,
         ];
+    }
+
+    private function buildDiagnostics(array $intent, array $hotels, array $restaurants, array $activities, ?array $tripPlan): array
+    {
+        return [
+            'summary_chips' => $this->buildIntentSummaryChips($intent),
+            'intent_overview' => array_filter([
+                'cities' => array_map(fn ($city) => ucfirst($city), $intent['mentioned_cities'] ?? []),
+                'budget' => isset($intent['budget']) ? $this->humanizeLabel((string) $intent['budget']) : null,
+                'budget_ceiling' => isset($intent['budget_max']) && $intent['budget_max'] ? '$' . $intent['budget_max'] : null,
+                'day_count' => $intent['day_count'] ?? null,
+                'food_preferences' => $this->humanizeList($intent['food_preferences'] ?? []),
+                'vibe_tags' => $this->humanizeList($intent['vibe_tags'] ?? []),
+                'activity_types' => $this->humanizeList($intent['activity_types'] ?? []),
+                'requested_categories' => $this->humanizeList($intent['requested_categories'] ?? []),
+            ], fn ($value) => !($value === null || $value === '' || $value === [])),
+            'result_counts' => [
+                'hotels' => count($hotels),
+                'restaurants' => count($restaurants),
+                'activities' => count($activities),
+                'trip_days' => is_array($tripPlan['days'] ?? null) ? count($tripPlan['days']) : 0,
+            ],
+            'top_matches' => array_filter([
+                'hotel' => $this->buildTopMatchDigest($hotels[0] ?? null, 'hotel_name'),
+                'restaurant' => $this->buildTopMatchDigest($restaurants[0] ?? null, 'restaurant_name'),
+                'activity' => $this->buildTopMatchDigest($activities[0] ?? null, 'name'),
+                'trip_plan' => is_array($tripPlan) ? [
+                    'title' => trim((string) ($tripPlan['title'] ?? '')),
+                    'days' => is_array($tripPlan['days'] ?? null) ? count($tripPlan['days']) : 0,
+                ] : null,
+            ]),
+        ];
+    }
+
+    private function buildIntentSummaryChips(array $intent): array
+    {
+        $chips = [];
+
+        if (!empty($intent['mentioned_cities'])) {
+            $chips[] = 'City: ' . implode(' / ', array_map(fn ($city) => ucfirst($city), $intent['mentioned_cities']));
+        }
+
+        if (!empty($intent['day_count'])) {
+            $chips[] = 'Duration: ' . $intent['day_count'] . ' day' . ((int) $intent['day_count'] === 1 ? '' : 's');
+        }
+
+        if (!empty($intent['budget'])) {
+            $chips[] = 'Budget: ' . ucfirst($this->humanizeLabel((string) $intent['budget']));
+        }
+
+        if (!empty($intent['budget_max'])) {
+            $chips[] = 'Max: $' . $intent['budget_max'];
+        }
+
+        if (!empty($intent['food_preferences'])) {
+            $chips[] = 'Food: ' . ucfirst($this->humanizeLabel((string) $intent['food_preferences'][0]));
+        }
+
+        if (!empty($intent['vibe_tags'])) {
+            $chips[] = 'Vibe: ' . implode(', ', array_map(
+                fn ($tag) => ucfirst($this->humanizeLabel((string) $tag)),
+                array_slice($intent['vibe_tags'], 0, 2)
+            ));
+        }
+
+        if (!empty($intent['requested_categories'])) {
+            $chips[] = 'Looking for: ' . implode(', ', array_map(
+                fn ($category) => ucfirst($this->humanizeLabel((string) $category)),
+                array_slice($intent['requested_categories'], 0, 3)
+            ));
+        }
+
+        return array_values(array_unique($chips));
+    }
+
+    private function buildTopMatchDigest(?array $item, string $nameKey): ?array
+    {
+        if (!is_array($item)) {
+            return null;
+        }
+
+        $name = trim((string) ($item[$nameKey] ?? ''));
+        if ($name === '') {
+            return null;
+        }
+
+        return [
+            'name' => $name,
+            'score' => isset($item['score']) ? round((float) $item['score'], 2) : null,
+            'reasons' => array_values(array_slice(array_filter(
+                (array) ($item['top_reasons'] ?? $item['match_reasons'] ?? []),
+                fn ($reason) => is_string($reason) && trim($reason) !== ''
+            ), 0, 3)),
+        ];
+    }
+
+    private function humanizeList(array $values): array
+    {
+        return array_values(array_map(
+            fn ($value) => ucfirst($this->humanizeLabel((string) $value)),
+            array_filter($values, fn ($value) => is_scalar($value) && trim((string) $value) !== '')
+        ));
     }
 
     private function buildHotelProfile($hotel): array

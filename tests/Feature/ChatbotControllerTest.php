@@ -111,6 +111,30 @@ class ChatbotControllerTest extends TestCase
             ]);
     }
 
+    public function test_it_returns_structured_payload_for_rich_frontend_rendering(): void
+    {
+        $this->mockRecommendationService($this->tripPlanPayload());
+
+        Http::fake([
+            'http://127.0.0.1:5000/chat' => Http::response([
+                'reply' => 'Here is a 2 day Batroun plan with grounded picks.',
+            ], 200),
+        ]);
+
+        $response = $this->postJson(route('chatbot.send'), [
+            'message' => 'Plan me a 2 day trip in Batroun',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('structured.summary_chips.0', 'City: Batroun')
+            ->assertJsonPath('structured.sections.0.type', 'hotels')
+            ->assertJsonPath('structured.sections.0.items.0.url', route('hotels.show', ['id' => 12]))
+            ->assertJsonPath('structured.sections.1.type', 'restaurants')
+            ->assertJsonPath('structured.sections.1.items.0.url', route('restaurants.show', ['id' => 24]))
+            ->assertJsonPath('structured.trip_plan.days.0.flow.lunch.url', route('restaurants.show', ['id' => 24]))
+            ->assertJsonPath('structured.trip_plan.days.0.flow.stay.url', route('hotels.show', ['id' => 12]));
+    }
+
     public function test_it_creates_a_new_session_when_the_requested_session_belongs_to_someone_else(): void
     {
         $owner = $this->createUser('owner@example.com');
@@ -205,6 +229,13 @@ class ChatbotControllerTest extends TestCase
                 ],
             ],
             'trip_plan' => null,
+            'diagnostics' => [
+                'summary_chips' => ['City: Beirut', 'Looking for: Hotels, Restaurants, Activities'],
+                'top_matches' => [
+                    'hotel' => ['name' => 'Harbor Stay', 'reasons' => ['close to the sea', 'strong rating']],
+                    'restaurant' => ['name' => 'Sea Deck', 'reasons' => ['matches food preference', 'fits occasion']],
+                ],
+            ],
         ];
     }
 
@@ -275,6 +306,7 @@ class ChatbotControllerTest extends TestCase
                                 'activities' => ['Batroun Seafront Walk'],
                             ],
                             'lunch' => [
+                                'id' => 24,
                                 'restaurant_name' => 'Harbor Lunch',
                                 'location' => 'Batroun Port',
                                 'food_type' => 'Seafood',
@@ -289,12 +321,14 @@ class ChatbotControllerTest extends TestCase
                                 'activities' => ['Sunset by the Port'],
                             ],
                             'dinner' => [
+                                'id' => 25,
                                 'restaurant_name' => 'Old Town Dinner',
                                 'location' => 'Batroun Old Town',
                                 'food_type' => 'Lebanese',
                                 'price_tier' => 'Mid-range',
                             ],
                             'stay' => [
+                                'id' => 12,
                                 'hotel_name' => 'Sunset Stay',
                                 'address' => 'Batroun Seafront',
                                 'price_per_night' => '110$',
@@ -310,6 +344,7 @@ class ChatbotControllerTest extends TestCase
                                 'activities' => ['Batroun Seafront Walk'],
                             ],
                             'lunch' => [
+                                'id' => 24,
                                 'restaurant_name' => 'Harbor Lunch',
                                 'location' => 'Batroun Port',
                                 'food_type' => 'Seafood',
@@ -321,6 +356,14 @@ class ChatbotControllerTest extends TestCase
                             ],
                         ],
                     ],
+                ],
+            ],
+            'diagnostics' => [
+                'summary_chips' => ['City: Batroun', 'Duration: 2 days', 'Looking for: Hotels, Restaurants, Activities'],
+                'top_matches' => [
+                    'hotel' => ['name' => 'Sunset Stay', 'reasons' => ['close to the beach']],
+                    'restaurant' => ['name' => 'Harbor Lunch', 'reasons' => ['fits lunch stop']],
+                    'trip_plan' => ['title' => '2-Day Trip in Batroun', 'days' => 2],
                 ],
             ],
         ];

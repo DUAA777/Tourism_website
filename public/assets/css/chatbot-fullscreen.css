@@ -586,6 +586,212 @@
   opacity: 0.9;
 }
 
+.chat-structured-panel {
+  align-self: flex-start;
+  width: min(700px, calc(100% - 3rem));
+  margin-left: 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.chat-structured-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.chat-structured-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.72rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  color: #405168;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.chat-structured-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.95rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.04);
+}
+
+.chat-structured-section__header {
+  color: #111827;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.chat-structured-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.chat-structured-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 18px;
+  background: #fbfcff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.chat-structured-card__title {
+  color: #111827;
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.chat-structured-card__title:hover {
+  color: var(--primary-color-dark);
+}
+
+.chat-structured-card__subtitle {
+  color: #667084;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.chat-structured-card__meta,
+.chat-structured-card__reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chat-structured-card__meta span {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  background: #f4f7fb;
+  color: #516274;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.chat-structured-card__reasons span {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  background: #fff3ec;
+  color: var(--primary-color-dark);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.chat-structured-card__link {
+  align-self: flex-start;
+  color: var(--primary-color-dark);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.chat-structured-card__link:hover {
+  text-decoration: underline;
+}
+
+.chat-structured-section--trip {
+  background: linear-gradient(180deg, rgba(255, 250, 246, 0.98) 0%, rgba(255, 255, 255, 0.96) 100%);
+}
+
+.chat-structured-trip__summary {
+  margin: 0;
+  color: #667084;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.chat-structured-days {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.chat-structured-day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.9rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.chat-structured-day__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.chat-structured-day__header strong {
+  color: #111827;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.chat-structured-day__header span {
+  color: #667084;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.chat-structured-day__slots {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.chat-structured-slot {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+}
+
+.chat-structured-slot__label {
+  color: var(--primary-color-dark);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.chat-structured-slot__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  color: #516274;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.chat-structured-slot__title,
+.chat-structured-slot__link {
+  color: #111827;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.chat-structured-slot__link:hover {
+  color: var(--primary-color-dark);
+}
+
 .chatbot-entity-link {
   color: inherit;
   font-weight: 800;
@@ -824,6 +1030,16 @@
 
   .message {
     max-width: 100%;
+  }
+
+  .chat-structured-panel {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .chat-structured-slot {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
   }
 
   .chat-input-area {

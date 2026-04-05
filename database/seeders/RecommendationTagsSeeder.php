@@ -21,72 +21,79 @@ class RecommendationTagsSeeder extends Seeder
     {
         Hotel::chunk(100, function ($hotels) {
             foreach ($hotels as $hotel) {
-                $text = Str::lower(
-                    trim(
-                        implode(' ', array_filter([
-                            $hotel->hotel_name,
-                            $hotel->address,
-                            $hotel->nearby_landmark,
-                            $hotel->distance_from_center,
-                            $hotel->distance_from_beach,
-                            $hotel->review_text,
-                            $hotel->stay_details,
-                            $hotel->description,
-                            $hotel->price_per_night,
-                        ]))
-                    )
-                );
+                $text = $this->normalizeText(implode(' ', array_filter([
+                    $hotel->hotel_name,
+                    $hotel->address,
+                    $hotel->nearby_landmark,
+                    $hotel->distance_from_center,
+                    $hotel->distance_from_beach,
+                    $hotel->review_text,
+                    $hotel->stay_details,
+                    $hotel->description,
+                    $hotel->price_per_night,
+                ])));
 
                 $vibeTags = [];
                 $audienceTags = [];
 
-                if ($this->containsAny($text, ['beach', 'sea', 'seaside', 'coast'])) {
-                    $vibeTags[] = 'beach';
-                    $vibeTags[] = 'seaside';
-                }
+                $this->addIfContainsAny($vibeTags, 'beach', $text, [
+                    'beach', 'sea', 'seaside', 'coast', 'coastal', 'shore', 'waterfront'
+                ]);
 
-                if ($this->containsAny($text, ['quiet', 'peaceful', 'calm', 'relax', 'relaxing'])) {
-                    $vibeTags[] = 'quiet';
-                    $vibeTags[] = 'relaxing';
-                }
+                $this->addIfContainsAny($vibeTags, 'relaxing', $text, [
+                    'quiet', 'peaceful', 'calm', 'relax', 'relaxing', 'laid back', 'laid-back'
+                ]);
 
-                if ($this->containsAny($text, ['romantic', 'couple', 'anniversary', 'honeymoon'])) {
-                    $vibeTags[] = 'romantic';
-                    $audienceTags[] = 'couples';
-                }
+                $this->addIfContainsAny($vibeTags, 'romantic', $text, [
+                    'romantic', 'couple', 'anniversary', 'honeymoon', 'intimate'
+                ]);
 
-                if ($this->containsAny($text, ['family', 'kids', 'children'])) {
-                    $vibeTags[] = 'family';
-                    $audienceTags[] = 'families';
-                }
+                $this->addIfContainsAny($vibeTags, 'family', $text, [
+                    'family', 'kids', 'children', 'family friendly', 'family-friendly'
+                ]);
 
-                if ($this->containsAny($text, ['luxury', 'premium', 'elegant', 'upscale'])) {
-                    $vibeTags[] = 'luxury';
-                }
+                $this->addIfContainsAny($vibeTags, 'luxury', $text, [
+                    'luxury', 'premium', 'elegant', 'upscale', 'five star', '5 star', 'luxurious'
+                ]);
 
-                if ($this->containsAny($text, ['budget', 'affordable', 'cheap', '$', 'economy'])) {
-                    $vibeTags[] = 'budget';
-                }
+                $this->addIfContainsAny($vibeTags, 'budget', $text, [
+                    'budget', 'affordable', 'cheap', 'economy', 'value', 'low cost', 'low-cost'
+                ]);
 
-                if ($this->containsAny($text, ['studio', 'solo', 'single'])) {
-                    $audienceTags[] = 'solo';
-                    $audienceTags[] = 'short-stay';
-                }
+                $this->addIfContainsAny($vibeTags, 'scenic', $text, [
+                    'view', 'views', 'panoramic', 'panorama', 'photo', 'photos', 'mountain view', 'sea view'
+                ]);
 
-                if ($this->containsAny($text, ['weekend', 'short stay', 'overnight'])) {
-                    $audienceTags[] = 'short-stay';
-                }
+                $this->addIfContainsAny($vibeTags, 'city', $text, [
+                    'city center', 'downtown', 'urban', 'central'
+                ]);
 
-                if ($this->containsAny($text, ['business', 'work', 'city center'])) {
-                    $audienceTags[] = 'business';
-                }
+                $this->addIfContainsAny($vibeTags, 'cultural', $text, [
+                    'heritage', 'history', 'historical', 'old town', 'old city', 'souk', 'castle'
+                ]);
 
-                if ($this->containsAny($text, ['batroun', 'tyre', 'jbeil', 'byblos', 'jounieh'])) {
-                    $vibeTags[] = 'coastal';
-                }
+                $this->addIfContainsAny($vibeTags, 'hidden_gem', $text, [
+                    'hidden gem', 'hidden gems', 'offbeat', 'less touristy', 'quiet corner'
+                ]);
 
-                $vibeTags = array_values(array_unique($vibeTags));
-                $audienceTags = array_values(array_unique($audienceTags));
+                $this->addIfContainsAny($audienceTags, 'couple', $text, [
+                    'romantic', 'couple', 'anniversary', 'honeymoon'
+                ]);
+
+                $this->addIfContainsAny($audienceTags, 'family', $text, [
+                    'family', 'kids', 'children', 'family friendly', 'family-friendly'
+                ]);
+
+                $this->addIfContainsAny($audienceTags, 'friends', $text, [
+                    'friends', 'group', 'groups'
+                ]);
+
+                $this->addIfContainsAny($audienceTags, 'business', $text, [
+                    'business', 'work', 'meeting', 'client', 'conference'
+                ]);
+
+                $vibeTags = $this->uniqueClean($vibeTags);
+                $audienceTags = $this->uniqueClean($audienceTags);
 
                 $searchText = trim(implode(' ', array_filter([
                     "Hotel: {$hotel->hotel_name}",
@@ -116,81 +123,109 @@ class RecommendationTagsSeeder extends Seeder
         Restaurant::chunk(100, function ($restaurants) {
             foreach ($restaurants as $restaurant) {
                 $tagsText = '';
+
                 if (is_array($restaurant->tags)) {
                     $tagsText = implode(' ', $restaurant->tags);
                 } elseif (is_string($restaurant->tags)) {
                     $tagsText = $restaurant->tags;
                 }
 
-                $text = Str::lower(
-                    trim(
-                        implode(' ', array_filter([
-                            $restaurant->restaurant_name,
-                            $restaurant->location,
-                            $restaurant->restaurant_type,
-                            $restaurant->food_type,
-                            $restaurant->price_tier,
-                            $restaurant->description,
-                            $restaurant->opening_hours,
-                            $tagsText,
-                        ]))
-                    )
-                );
+                $text = $this->normalizeText(implode(' ', array_filter([
+                    $restaurant->restaurant_name,
+                    $restaurant->location,
+                    $restaurant->restaurant_type,
+                    $restaurant->food_type,
+                    $restaurant->price_tier,
+                    $restaurant->description,
+                    $restaurant->opening_hours,
+                    $tagsText,
+                ])));
 
                 $vibeTags = [];
                 $occasionTags = [];
 
-                if ($this->containsAny($text, ['seafood', 'sea', 'coast', 'beach', 'seaside'])) {
-                    $vibeTags[] = 'seaside';
-                }
+                $this->addIfContainsAny($vibeTags, 'beach', $text, [
+                    'beach', 'beachfront', 'sea', 'seaside', 'coast', 'coastal', 'waterfront'
+                ]);
 
-                if ($this->containsAny($text, ['romantic', 'date', 'intimate', 'candle'])) {
-                    $vibeTags[] = 'romantic';
-                    $occasionTags[] = 'date';
-                }
+                $this->addIfContainsAny($vibeTags, 'romantic', $text, [
+                    'romantic', 'date', 'intimate', 'candle', 'anniversary'
+                ]);
 
-                if ($this->containsAny($text, ['cozy', 'warm', 'casual'])) {
-                    $vibeTags[] = 'cozy';
-                }
+                $this->addIfContainsAny($vibeTags, 'cozy', $text, [
+                    'cozy', 'cosy', 'warm', 'casual', 'comfortable'
+                ]);
 
-                if ($this->containsAny($text, ['sunset', 'view', 'sea view', 'rooftop'])) {
-                    $vibeTags[] = 'sunset';
-                    $occasionTags[] = 'dinner';
-                }
+                $this->addIfContainsAny($vibeTags, 'sunset', $text, [
+                    'sunset', 'golden hour', 'sea view', 'view', 'views', 'rooftop'
+                ]);
 
-                if ($this->containsAny($text, ['family', 'kids', 'group'])) {
-                    $vibeTags[] = 'family';
-                    $occasionTags[] = 'family';
-                }
+                $this->addIfContainsAny($vibeTags, 'family', $text, [
+                    'family', 'kids', 'children', 'group'
+                ]);
 
-                if ($this->containsAny($text, ['lively', 'music', 'bar', 'night', 'cocktail'])) {
-                    $vibeTags[] = 'lively';
-                    $occasionTags[] = 'night-out';
-                }
+                $this->addIfContainsAny($vibeTags, 'lively', $text, [
+                    'lively', 'music', 'buzzing', 'energetic'
+                ]);
 
-                if ($this->containsAny($text, ['luxury', 'fine dining', 'premium', 'upscale'])) {
-                    $vibeTags[] = 'luxury';
-                }
+                $this->addIfContainsAny($vibeTags, 'nightlife', $text, [
+                    'bar', 'bars', 'night', 'cocktail', 'cocktails', 'night out', 'night-out', 'party', 'club'
+                ]);
 
-                if ($this->containsAny($text, ['cheap', 'affordable', 'budget', 'low price'])) {
-                    $vibeTags[] = 'budget';
-                }
+                $this->addIfContainsAny($vibeTags, 'luxury', $text, [
+                    'luxury', 'fine dining', 'premium', 'upscale', 'elegant'
+                ]);
 
-                if ($this->containsAny($text, ['breakfast', 'brunch', 'coffee', 'cafe'])) {
-                    $occasionTags[] = 'breakfast';
-                    $occasionTags[] = 'casual';
-                }
+                $this->addIfContainsAny($vibeTags, 'budget', $text, [
+                    'cheap', 'affordable', 'budget', 'low price', 'value'
+                ]);
 
-                if ($this->containsAny($text, ['lunch'])) {
-                    $occasionTags[] = 'lunch';
-                }
+                $this->addIfContainsAny($vibeTags, 'scenic', $text, [
+                    'view', 'views', 'sea view', 'panoramic', 'waterfront'
+                ]);
 
-                if ($this->containsAny($text, ['dinner'])) {
-                    $occasionTags[] = 'dinner';
-                }
+                $this->addIfContainsAny($occasionTags, 'date', $text, [
+                    'romantic', 'date', 'intimate', 'anniversary'
+                ]);
 
-                $vibeTags = array_values(array_unique($vibeTags));
-                $occasionTags = array_values(array_unique($occasionTags));
+                $this->addIfContainsAny($occasionTags, 'family', $text, [
+                    'family', 'kids', 'children'
+                ]);
+
+                $this->addIfContainsAny($occasionTags, 'friends', $text, [
+                    'friends', 'group', 'sharing plates', 'shareable'
+                ]);
+
+                $this->addIfContainsAny($occasionTags, 'business', $text, [
+                    'business', 'meeting', 'client', 'formal lunch'
+                ]);
+
+                $this->addIfContainsAny($occasionTags, 'night-out', $text, [
+                    'night out', 'night-out', 'bar', 'bars', 'cocktail', 'cocktails', 'drinks'
+                ]);
+
+                $this->addIfContainsAny($occasionTags, 'breakfast', $text, [
+                    'breakfast', 'brunch', 'coffee', 'cafe'
+                ]);
+
+                $this->addIfContainsAny($occasionTags, 'lunch', $text, [
+                    'lunch', 'midday'
+                ]);
+
+                $this->addIfContainsAny($occasionTags, 'dinner', $text, [
+                    'dinner', 'fine dining', 'sunset dinner', 'evening dining'
+                ]);
+
+                $this->addIfContainsAny($occasionTags, 'casual', $text, [
+                    'casual', 'relaxed', 'cozy', 'coffee', 'cafe'
+                ]);
+
+                $this->addIfContainsAny($occasionTags, 'anniversary', $text, [
+                    'anniversary'
+                ]);
+
+                $vibeTags = $this->uniqueClean($vibeTags);
+                $occasionTags = $this->uniqueClean($occasionTags);
 
                 $searchText = trim(implode(' ', array_filter([
                     "Restaurant: {$restaurant->restaurant_name}",
@@ -213,14 +248,27 @@ class RecommendationTagsSeeder extends Seeder
         });
     }
 
-    private function containsAny(string $text, array $keywords): bool
+    private function addIfContainsAny(array &$target, string $tag, string $text, array $keywords): void
     {
         foreach ($keywords as $keyword) {
-            if (Str::contains($text, Str::lower($keyword))) {
-                return true;
+            if (Str::contains($text, $this->normalizeText($keyword))) {
+                $target[] = $tag;
+                return;
             }
         }
+    }
 
-        return false;
+    private function uniqueClean(array $values): array
+    {
+        return array_values(array_unique(array_filter($values)));
+    }
+
+    private function normalizeText(?string $text): string
+    {
+        $text = Str::lower($text ?? '');
+        $text = preg_replace('/[^\pL\pN\s\-]+/u', ' ', $text);
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        return trim($text);
     }
 }

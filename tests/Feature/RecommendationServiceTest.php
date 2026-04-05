@@ -47,6 +47,29 @@ class RecommendationServiceTest extends TestCase
         $this->assertSame([], $results['activities']);
     }
 
+    public function test_it_returns_diagnostics_summary_and_top_match_reasons(): void
+    {
+        Restaurant::create([
+            'restaurant_name' => 'Sea Breeze Table',
+            'location' => 'Batroun Waterfront',
+            'rating' => 4.8,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Seafood',
+            'description' => 'A romantic seafood dinner spot with sunset tables by the sea.',
+            'vibe_tags' => ['romantic', 'relaxing', 'beach'],
+            'occasion_tags' => ['date', 'dinner'],
+            'search_text' => 'batroun sunset seafood romantic dinner sea view',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Find me a romantic seafood dinner in Batroun under $120');
+
+        $this->assertContains('City: Batroun', $results['diagnostics']['summary_chips']);
+        $this->assertContains('Max: $120', $results['diagnostics']['summary_chips']);
+        $this->assertSame('Sea Breeze Table', $results['diagnostics']['top_matches']['restaurant']['name']);
+        $this->assertNotEmpty($results['diagnostics']['top_matches']['restaurant']['reasons']);
+    }
+
     public function test_it_builds_budget_aware_trip_results_with_trip_plan_data(): void
     {
         Hotel::create([

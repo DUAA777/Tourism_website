@@ -92,6 +92,14 @@ class ChatbotController extends Controller
             ], 500);
         }
 
+        $structuredPayload = $this->buildStructuredPayload($recommendations);
+
+        Log::info('Chatbot recommendation diagnostics prepared.', [
+            'session_id' => $session->id,
+            'user_id' => auth()->id(),
+            'diagnostics' => $structuredPayload['diagnostics'] ?? [],
+        ]);
+
         $reply = $this->requestPythonReply($session, $message, $history, $recommendations);
 
         if ($reply === null) {
@@ -108,6 +116,7 @@ class ChatbotController extends Controller
             'reply' => $reply,
             'session_id' => $session->id,
             'entity_links' => $this->buildEntityLinks($recommendations),
+            'structured' => $structuredPayload,
         ]);
     }
 
@@ -395,7 +404,7 @@ class ChatbotController extends Controller
         $details = array_values(array_filter([
             trim((string) ($hotel['address'] ?? '')),
             trim((string) ($hotel['price_per_night'] ?? '')),
-            isset($hotel['rating_score']) ? 'rating ' . $hotel['rating_score'] . '/5' : null,
+            isset($hotel['rating_score']) ? 'rating ' . $hotel['rating_score'] . '/10' : null,
         ]));
 
         return $this->buildRecommendationLine(
@@ -501,5 +510,148 @@ class ChatbotController extends Controller
         }
 
         return array_values($links);
+    }
+
+    private function buildStructuredPayload(array $recommendations): array
+    {
+        return [
+            'summary_chips' => array_values(array_filter(
+                (array) data_get($recommendations, 'diagnostics.summary_chips', []),
+                fn ($chip) => is_string($chip) && trim($chip) !== ''
+            )),
+            'sections' => array_values(array_filter([
+                $this->buildStructuredSection(
+                    'hotels',
+                    'Hotel Matches',
+                    $recommendations['hotels'] ?? [],
+                    fn (array $hotel) => [
+                        'title' => trim((string) ($hotel['hotel_name'] ?? '')),
+                        'subtitle' => trim((string) ($hotel['address'] ?? '')),
+                        'meta' => array_values(array_filter([
+                            trim((string) ($hotel['price_per_night'] ?? '')),
+                            isset($hotel['rating_score']) ? 'Rating ' . $hotel['rating_score'] . '/10' : null,
+                            !empty($hotel['budget_tier']) ? ucfirst(str_replace('_', ' ', (string) $hotel['budget_tier'])) : null,
+                        ])),
+                        'reasons' => array_slice((array) ($hotel['top_reasons'] ?? $hotel['match_reasons'] ?? []), 0, 3),
+                        'url' => !empty($hotel['id']) ? route('hotels.show', ['id' => $hotel['id']]) : null,
+                        'url_label' => 'Open hotel',
+                    ]
+                ),
+                $this->buildStructuredSection(
+                    'restaurants',
+                    'Restaurant Matches',
+                    $recommendations['restaurants'] ?? [],
+                    fn (array $restaurant) => [
+                        'title' => trim((string) ($restaurant['restaurant_name'] ?? '')),
+                        'subtitle' => trim((string) ($restaurant['location'] ?? '')),
+                        'meta' => array_values(array_filter([
+                            trim((string) ($restaurant['food_type'] ?? '')),
+                            trim((string) ($restaurant['price_tier'] ?? '')),
+                            isset($restaurant['rating']) ? 'Rating ' . $restaurant['rating'] . '/5' : null,
+                        ])),
+                        'reasons' => array_slice((array) ($restaurant['top_reasons'] ?? $restaurant['match_reasons'] ?? []), 0, 3),
+                        'url' => !empty($restaurant['id']) ? route('restaurants.show', ['id' => $restaurant['id']]) : null,
+                        'url_label' => 'Open restaurant',
+                    ]
+                ),
+                $this->buildStructuredSection(
+                    'activities',
+                    'Place and Activity Matches',
+                    $recommendations['activities'] ?? [],
+                    fn (array $activity) => [
+                        'title' => trim((string) ($activity['name'] ?? '')),
+                        'subtitle' => trim((string) ($activity['location'] ?? ($activity['city'] ?? ''))),
+                        'meta' => array_values(array_filter([
+                            trim((string) ($activity['category'] ?? '')),
+                            trim((string) ($activity['best_time'] ?? '')),
+                            trim((string) ($activity['budget_tier'] ?? '')),
+                        ])),
+                        'reasons' => array_slice((array) ($activity['top_reasons'] ?? $activity['match_reasons'] ?? []), 0, 3),
+                        'url' => null,
+                        'url_label' => null,
+                    ]
+                ),
+            ])),
+            'trip_plan' => $this->decorateTripPlanWithLinks($recommendations['trip_plan'] ?? null),
+            'diagnostics' => $recommendations['diagnostics'] ?? [],
+        ];
+    }
+
+    private function buildStructuredSection(string $type, string $title, array $items, callable $transformer): ?array
+    {
+        $items = array_values(array_filter($items, 'is_array'));
+        if (empty($items)) {
+            return null;
+        }
+
+        $entries = [];
+
+        foreach (array_slice($items, 0, 3) as $item) {
+            $entry = $transformer($item);
+            $entry['title'] = trim((string) ($entry['title'] ?? ''));
+
+            if ($entry['title'] === '') {
+                continue;
+            }
+
+            $entry['subtitle'] = trim((string) ($entry['subtitle'] ?? ''));
+            $entry['meta'] = array_values(array_filter(
+                (array) ($entry['meta'] ?? []),
+                fn ($meta) => is_string($meta) && trim($meta) !== ''
+            ));
+            $entry['reasons'] = array_values(array_filter(
+                (array) ($entry['reasons'] ?? []),
+                fn ($reason) => is_string($reason) && trim($reason) !== ''
+            ));
+            $entry['url'] = isset($entry['url']) && is_string($entry['url']) && trim($entry['url']) !== ''
+                ? $entry['url']
+                : null;
+            $entry['url_label'] = isset($entry['url_label']) && is_string($entry['url_label']) && trim($entry['url_label']) !== ''
+                ? $entry['url_label']
+                : null;
+
+            $entries[] = $entry;
+        }
+
+        if (empty($entries)) {
+            return null;
+        }
+
+        return [
+            'type' => $type,
+            'title' => $title,
+            'items' => $entries,
+        ];
+    }
+
+    private function decorateTripPlanWithLinks(mixed $tripPlan): ?array
+    {
+        if (!is_array($tripPlan) || empty($tripPlan['days']) || !is_array($tripPlan['days'])) {
+            return is_array($tripPlan) ? $tripPlan : null;
+        }
+
+        $tripPlan['days'] = array_map(function ($day) {
+            if (!is_array($day)) {
+                return $day;
+            }
+
+            $flow = is_array($day['flow'] ?? null) ? $day['flow'] : [];
+
+            foreach (['lunch', 'dinner'] as $mealKey) {
+                if (is_array($flow[$mealKey] ?? null) && !empty($flow[$mealKey]['id'])) {
+                    $flow[$mealKey]['url'] = route('restaurants.show', ['id' => $flow[$mealKey]['id']]);
+                }
+            }
+
+            if (is_array($flow['stay'] ?? null) && !empty($flow['stay']['id'])) {
+                $flow['stay']['url'] = route('hotels.show', ['id' => $flow['stay']['id']]);
+            }
+
+            $day['flow'] = $flow;
+
+            return $day;
+        }, $tripPlan['days']);
+
+        return $tripPlan;
     }
 }
