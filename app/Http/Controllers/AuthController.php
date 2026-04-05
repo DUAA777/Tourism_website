@@ -57,7 +57,7 @@ class AuthController extends Controller
 
             // Admin Navigation Logic
             if (Auth::user()->is_admin == 1) {
-                return redirect()->intended('/admin/dashboard'); 
+                return redirect()->intended('/admin/'); 
             }
 
             return redirect()->intended('/');
@@ -87,7 +87,7 @@ class AuthController extends Controller
             ], [
                 'name' => $googleUser->name,
                 'is_admin' => 0,
-                'password' => Hash::make(str_random(24)), 
+                'password' => Hash::make("12345678"), 
             ]);
 
             Auth::login($user);

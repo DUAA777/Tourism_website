@@ -6,7 +6,33 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\RestaurantControllerAdmin;
+use App\Http\Controllers\Admin\HotelControllerAdmin;
+// Admin Routes
+Route::prefix('admin')->name('admin.')->group(function () {
 
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+        
+        // User Management
+        Route::resource('users', UserController::class);
+        
+        // Restaurant Management
+        Route::resource('restaurants', RestaurantControllerAdmin::class);
+        // Add to routes/web.php inside admin group
+Route::post('/restaurants/bulk-delete', [RestaurantControllerAdmin::class, 'bulkDelete'])->name('restaurants.bulk-delete');
+Route::get('/restaurants/export', [RestaurantControllerAdmin::class, 'export'])->name('restaurants.export');
+
+Route::post('/hotels/bulk-delete', [HotelControllerAdmin::class, 'bulkDelete'])->name('hotels.bulk-delete');
+Route::post('/hotels/bulk-restore', [HotelControllerAdmin::class, 'bulkRestore'])->name('hotels.bulk-restore');
+        // Hotel Management
+        Route::resource('hotels', HotelControllerAdmin::class);
+        Route::post('hotels/{id}/restore', [HotelControllerAdmin::class, 'restore'])->name('hotels.restore');
+        Route::delete('hotels/{id}/force-delete', [HotelControllerAdmin::class, 'forceDelete'])->name('hotels.force-delete');
+
+});
 // Static Pages
 Route::get('/', [HomeController::class, 'index'])->name('home'); // Updated to use HomeController
 use App\Http\Controllers\ChatbotController;
