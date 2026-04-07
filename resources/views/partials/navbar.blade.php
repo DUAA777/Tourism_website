@@ -14,7 +14,7 @@
     {{-- Show 'DASHBOARD' link only to Admins --}}
     @auth
         @if(Auth::user()->is_admin == 1)
-            <li><a href="/admin/dashboard" style="color: #ffcc00; font-weight: bold;">DASHBOARD</a></li>
+            <li><a href="/admin/" style="color: #ffcc00; font-weight: bold;">DASHBOARD</a></li>
         @endif
     @endauth
 

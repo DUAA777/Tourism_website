@@ -58,7 +58,7 @@ class AuthController extends Controller
 
             // Admin Navigation Logic
             if (Auth::user()->is_admin == 1) {
-                return redirect()->intended('/admin/dashboard'); 
+                return redirect()->intended('/admin/'); 
             }
 
             return redirect()->intended('/');
