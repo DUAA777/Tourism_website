@@ -6,14 +6,23 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProfileController;
 
 // Static Pages
 Route::get('/', [HomeController::class, 'index'])->name('home'); // Updated to use HomeController
 use App\Http\Controllers\ChatbotController;
 
-Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot');
-Route::post('/chatbot/message', [ChatbotController::class, 'send'])->name('chatbot.send');
-Route::post('/chatbot/new-session', [ChatbotController::class, 'newSession'])->name('chatbot.newSession');
+// Chatbot routes (requires authentication)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot');
+    Route::post('/chatbot/message', [ChatbotController::class, 'send'])->name('chatbot.send');
+    Route::post('/chatbot/new-session', [ChatbotController::class, 'newSession'])->name('chatbot.newSession');
+    Route::post('/reviews', [HomeController::class, 'storeReview'])->name('reviews.store');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::delete('/profile/photo', [ProfileController::class, 'removePhoto'])->name('profile.photo.delete');
+});
 Route::get('/aboutUs', function () { return view('aboutUs'); })->name('aboutUs');
 Route::get('/contactUs', function () { return view('contactUs'); })->name('contactUs');
 Route::get('/destinations', function () { return view('destinations'); })->name('destinations');
@@ -40,7 +49,6 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
-Route::get('/profile', function () { return view('profile'); })->name('profile');
 
 /*
 |--------------------------------------------------------------------------

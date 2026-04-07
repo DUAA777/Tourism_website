@@ -77,7 +77,7 @@
     </div>
 </section>
 
-<section class="finder-section">
+<section class="finder-section" data-search-url="{{ route('search.destinations') }}">
     <div class="finder-section__heading">
         <h2>Find Your Dream Destination</h2>
         <p>
@@ -198,152 +198,109 @@
         </p>
     </div>
 
+    @if(session('review_success'))
+        <div class="review-alert review-alert--success">{{ session('review_success') }}</div>
+    @endif
+
+    @if(session('review_error'))
+        <div class="review-alert review-alert--error">{{ session('review_error') }}</div>
+    @endif
+
+    @php
+        $shouldOpenReviewForm = $errors->has('rating') || $errors->has('review_text');
+    @endphp
+
+    @auth
+        @if(!$userReview)
+            <details class="review-compose" {{ $shouldOpenReviewForm ? 'open' : '' }}>
+                <summary class="review-compose__toggle">
+                    <span class="review-compose__left">
+                        <i class="ri-edit-2-line"></i>
+                        Add Your Review
+                    </span>
+                    <i class="ri-arrow-down-s-line review-compose__chevron"></i>
+                </summary>
+                <div class="review-compose__panel">
+                    <form action="{{ route('reviews.store') }}" method="POST" class="review-form">
+                        @csrf
+                        <div class="review-form__field">
+                            <label for="rating">Your Rating</label>
+                            <select id="rating" name="rating" required>
+                                <option value="">Select rating</option>
+                                @for($score = 5; $score >= 1; $score--)
+                                    <option value="{{ $score }}" {{ old('rating') == $score ? 'selected' : '' }}>
+                                        {{ $score }} Star{{ $score > 1 ? 's' : '' }}
+                                    </option>
+                                @endfor
+                            </select>
+                            @error('rating')
+                                <p class="review-field-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="review-form__field">
+                            <label for="review_text">Your Review</label>
+                            <textarea
+                                id="review_text"
+                                name="review_text"
+                                rows="4"
+                                placeholder="Share your experience..."
+                                required>{{ old('review_text') }}</textarea>
+                            @error('review_text')
+                                <p class="review-field-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <button type="submit" class="hero-btn hero-btn--primary review-submit-btn">Submit Review</button>
+                    </form>
+                </div>
+            </details>
+        @else
+            <p class="review-login-hint">
+                You already shared a review. Thank you for your feedback.
+            </p>
+        @endif
+    @else
+        <p class="review-login-hint">
+            Want to share your experience?
+            <a href="{{ route('login') }}">Log in</a>
+            to add a review.
+        </p>
+    @endauth
+
     <div class="reviews-grid">
-        <article class="review-card">
-            <div class="review-stars">
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-            </div>
-            <p class="review-text">
-                Yalla Nemshi made planning my Batroun day so much easier. The suggestions actually matched
-                my vibe and budget.
-            </p>
-            <div class="review-user">
-                <img src="{{ asset('images/client-1.jpg') }}" alt="Reviewer">
-                <div>
-                    <h4>Rana K.</h4>
-                    <span>Weekend Traveler</span>
+        @forelse($reviews as $review)
+            @php
+                $reviewerName = $review->user->name ?? 'Traveler';
+                $reviewerInitial = strtoupper(substr($reviewerName, 0, 1));
+            @endphp
+            <article class="review-card">
+                <div class="review-stars">
+                    @for($i = 1; $i <= 5; $i++)
+                        <i class="{{ $i <= $review->rating ? 'ri-star-fill' : 'ri-star-line' }}"></i>
+                    @endfor
                 </div>
-            </div>
-        </article>
-
-        <article class="review-card">
-            <div class="review-stars">
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-            </div>
-            <p class="review-text">
-                I liked how clean everything felt. Instead of wasting time deciding where to go, I got a
-                full idea in minutes.
-            </p>
-            <div class="review-user">
-                <img src="{{ asset('images/client-2.jpg') }}" alt="Reviewer">
-                <div>
-                    <h4>Karim M.</h4>
-                    <span>City Explorer</span>
+                <p class="review-text">{{ $review->review_text }}</p>
+                <div class="review-user">
+                    <div class="review-avatar">{{ $reviewerInitial }}</div>
+                    <div>
+                        <h4>{{ $reviewerName }}</h4>
+                        <span>Traveler</span>
+                    </div>
                 </div>
-            </div>
-        </article>
-
-        <article class="review-card">
-            <div class="review-stars">
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-                <i class="ri-star-fill"></i>
-            </div>
-            <p class="review-text">
-                Super helpful for finding places I didn’t know about before. It feels modern, simple, and
-                actually useful.
-            </p>
-            <div class="review-user">
-                <img src="{{ asset('images/client-3.jpg') }}" alt="Reviewer">
-                <div>
-                    <h4>Lina S.</h4>
-                    <span>Food & Nature Lover</span>
-                </div>
-            </div>
-        </article>
+            </article>
+        @empty
+            <article class="review-card review-card--empty">
+                <p class="review-text">No reviews yet. Be the first to share one.</p>
+            </article>
+        @endforelse
     </div>
 </section>
 
-
-@endsection
-
 @push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const chips = document.querySelectorAll('.chip');
-    const searchInput = document.getElementById('finderSearch');
-    const grid = document.getElementById('finderGrid');
-    
-    let activeFilter = 'all';
-    let searchTimeout;
-
-    function filterCards() {
-        const searchTerm = searchInput.value.trim().toLowerCase();
-        
-        // Show loading state
-        grid.innerHTML = '<div class="loading-spinner"><i class="ri-loader-4-line"></i> Loading destinations...</div>';
-        
-        // Make AJAX request to search
-        fetch(`{{ route('search.destinations') }}?search=${encodeURIComponent(searchTerm)}&filter=${activeFilter}`)
-            .then(response => response.json())
-            .then(places => {
-                if (places.length === 0) {
-                    grid.innerHTML = '<div class="no-results"><i class="ri-emotion-sad-line"></i> No destinations found. Try a different search!</div>';
-                    return;
-                }
-                
-                // Render the results
-                grid.innerHTML = places.map(place => {
-                    const isRestaurant = place.restaurant_name !== undefined;
-                    const name = isRestaurant ? place.title : place.title;
-                    const image = isRestaurant ? place.image : place.image;
-                    console.log(place)
-                    const route = isRestaurant ? 
-                        `/restaurants/${place.id}` : 
-                        `/hotels/${place.id}`;
-                    return `
-                        <article class="place-card" data-type="${isRestaurant ? 'restaurant' : 'hotel'}">
-                            <a href="${route}" class="place-card__link">
-                                <img src="${image || 'images/default-place.jpg'}" alt="${name}">
-                                <div class="place-card__overlay"></div>
-                                <div class="place-card__content">
-                                    <h4>${name}</h4>
-                                </div>
-                            </a>
-                        </article>
-                    `;
-                }).join('');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                grid.innerHTML = '<div class="error-message"><i class="ri-error-warning-line"></i> Something went wrong. Please try again.</div>';
-            });
-    }
-    
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
-    chips.forEach(chip => {
-        chip.addEventListener('click', function () {
-            chips.forEach(btn => btn.classList.remove('chip--active'));
-            this.classList.add('chip--active');
-            activeFilter = this.dataset.filter;
-            filterCards();
-        });
-    });
-    
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(filterCards, 300); // Debounce search
-    });
-});
-</script>
-
-
 <script src="{{ asset('assets/js/home.js') }}"></script>
 @endpush
 
+
+
+@endsection

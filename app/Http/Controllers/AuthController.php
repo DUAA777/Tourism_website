@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Exception;
 
@@ -87,7 +88,7 @@ class AuthController extends Controller
             ], [
                 'name' => $googleUser->name,
                 'is_admin' => 0,
-                'password' => Hash::make(str_random(24)), 
+                'password' => Hash::make(Str::random(24)), 
             ]);
 
             Auth::login($user);

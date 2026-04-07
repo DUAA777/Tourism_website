@@ -9,26 +9,6 @@
             travel platform. Your journey begins here, where seamless planning
             meets unforgettable experiences.
           </p>
-          <ul class="footer__socials">
-            <li>
-              <a href="#"><i class="ri-facebook-fill"></i></a>
-            </li>
-            <li>
-              <a href="#"><i class="ri-instagram-line"></i></a>
-            </li>
-            <li>
-              <a href="#"><i class="ri-youtube-line"></i></a>
-            </li>
-          </ul>
-        </div>
-        <div class="footer__col">
-          <h4>Quick Links</h4>
-          <ul class="footer__links">
-            <li><a href="{{ route('home') }}">Home</a></li> 
-            <li><a href="{{ route('chatbot') }}">Plan</a></li>
-            <li><a href="{{ route('places.index') }}">Hotels</a></li>
-            <li><a href="{{ route('places.index') }}">Restaurants</a></li>
-          </ul>
         </div>
         <div class="footer__col">
           <h4>Contact Us</h4>

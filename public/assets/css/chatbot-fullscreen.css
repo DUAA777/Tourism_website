@@ -1,6 +1,22 @@
+html,
+body {
+  min-height: 100%;
+}
+
+body,
+.content,
+.content > div,
+#main {
+  background-color: #0f172a;
+}
+
+#main {
+  background: #0f172a url("../images/chatbot-bg.jpg") center center / cover no-repeat;
+}
+
 .chatbot-page {
-  height: calc(100dvh - 84px);
-  min-height: 0;
+  min-height: calc(100dvh - 84px);
+  height: auto;
   padding: 1.2rem;
   background: url("../images/chatbot-bg.jpg") center center / cover no-repeat;
   overflow: hidden;
