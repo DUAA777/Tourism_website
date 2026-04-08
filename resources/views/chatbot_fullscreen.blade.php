@@ -1,5 +1,6 @@
 @extends('layout.app')
 
+@section('bodyClass', 'chatbot-layout')
 @section('hideFooter', '1')
 
 @push('styles')

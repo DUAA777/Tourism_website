@@ -454,4 +454,74 @@ class RecommendationServiceTest extends TestCase
         $this->assertSame('Byblos Port Dinner', $results['trip_plan']['days'][1]['flow']['dinner']['restaurant_name'] ?? null);
         $this->assertSame('Byblos', $results['trip_plan']['days'][2]['location']);
     }
+
+    public function test_it_scopes_restaurants_by_city_across_searchable_metadata(): void
+    {
+        Restaurant::create([
+            'restaurant_name' => 'Marina Table',
+            'location' => 'Waterfront District',
+            'rating' => 4.7,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Seafood',
+            'description' => 'A refined seaside dinner option popular for Beirut date nights.',
+            'vibe_tags' => ['romantic', 'seaside'],
+            'occasion_tags' => ['date', 'dinner'],
+            'search_text' => 'beirut waterfront seafood dinner with sea view',
+        ]);
+
+        Restaurant::create([
+            'restaurant_name' => 'Wrong City Table',
+            'location' => 'Byblos Port',
+            'rating' => 4.9,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Seafood',
+            'description' => 'A strong seafood option, but not in Beirut.',
+            'vibe_tags' => ['romantic', 'seaside'],
+            'occasion_tags' => ['date', 'dinner'],
+            'search_text' => 'byblos seafood dinner by the port',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Find me a romantic seafood dinner in Beirut with a sea view');
+
+        $this->assertSame('Marina Table', $results['restaurants'][0]['restaurant_name']);
+        $this->assertSame('beirut', $results['restaurants'][0]['city']);
+    }
+
+    public function test_it_scopes_activities_by_city_even_with_case_or_location_variation(): void
+    {
+        Activity::create([
+            'name' => 'Hidden Harbor Corner',
+            'city' => 'Batroun',
+            'category' => 'hidden_gem',
+            'description' => 'A quiet coastal corner that feels offbeat and less touristy.',
+            'location' => 'Old Port Lane',
+            'best_time' => 'afternoon',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['hidden_gem', 'relaxing'],
+            'occasion_tags' => ['casual'],
+            'search_text' => 'batroun hidden gem quiet place near the coast',
+        ]);
+
+        Activity::create([
+            'name' => 'Busy City Plaza',
+            'city' => 'beirut',
+            'category' => 'city',
+            'description' => 'A busy urban stop in Beirut.',
+            'location' => 'Downtown Beirut',
+            'best_time' => 'evening',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['lively'],
+            'occasion_tags' => ['friends'],
+            'search_text' => 'beirut busy downtown activity',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Give me hidden gem places in Batroun for a quiet day');
+
+        $this->assertSame('Hidden Harbor Corner', $results['activities'][0]['name']);
+        $this->assertSame('Batroun', $results['activities'][0]['city']);
+    }
 }

@@ -3,20 +3,20 @@ body {
   min-height: 100%;
 }
 
-body,
-.content,
-.content > div,
-#main {
-  background-color: #0f172a;
+body.chatbot-layout,
+body.chatbot-layout .content,
+body.chatbot-layout .content > div,
+body.chatbot-layout #main {
+  background: #f6efe7 url("../images/chatbot-bg.jpg") center center / cover no-repeat;
 }
 
-#main {
-  background: #0f172a url("../images/chatbot-bg.jpg") center center / cover no-repeat;
+body.chatbot-layout #main {
+  min-height: calc(100dvh - var(--site-nav-height, 104px));
 }
 
 .chatbot-page {
-  min-height: calc(100dvh - 84px);
-  height: auto;
+  min-height: calc(100dvh - var(--site-nav-height, 104px));
+  height: calc(100dvh - var(--site-nav-height, 104px));
   padding: 1.2rem;
   background: url("../images/chatbot-bg.jpg") center center / cover no-repeat;
   overflow: hidden;
@@ -155,6 +155,7 @@ body,
   display: grid;
   grid-template-columns: minmax(360px, 400px) minmax(0, 1fr);
   gap: 1rem;
+  overflow: hidden;
 }
 
 .chatbot-landing,
@@ -412,8 +413,11 @@ body,
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 1rem;
+  min-height: 0;
+  height: 100%;
   padding: 1rem;
   border-radius: 32px;
+  overflow: hidden;
 }
 
 .chatbot-chat-panel__header {
@@ -506,6 +510,9 @@ body,
 
 .chatbot-chat-panel__stage {
   min-height: 0;
+  height: 100%;
+  display: flex;
+  overflow: hidden;
   padding: 0.4rem;
   border-radius: 28px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(245, 248, 252, 0.96) 100%);
@@ -513,7 +520,7 @@ body,
 }
 
 .chat-box {
-  height: 100%;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   display: flex;
@@ -1100,7 +1107,7 @@ body,
 @media (max-width: 1280px) {
   .chatbot-page {
     height: auto;
-    min-height: calc(100dvh - 84px);
+    min-height: calc(100dvh - var(--site-nav-height, 104px));
     overflow: visible;
   }
 

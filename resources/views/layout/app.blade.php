@@ -22,7 +22,7 @@
 </head>
 
 
-<body>
+<body class="@yield('bodyClass')">
 
     <div id="your-element-selector"></div>
 
@@ -32,7 +32,7 @@
             <div id="main">
                 @yield('content')
                 @if(trim($__env->yieldContent('hideFooter')) !== '1')
-                    @include("partials.footer")
+                    @include("partials.footer_modern")
                 @endif
             </div>
         </div>

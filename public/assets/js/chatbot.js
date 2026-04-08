@@ -890,7 +890,7 @@ function formatBotText(text, entityLinks = []) {
             return;
         }
 
-        const pattern = buildEntityLinkPattern(linkName);
+        const pattern = buildEntityLinkPatternSafe(linkName);
         if (!pattern.test(tokenizedText)) {
             pattern.lastIndex = 0;
             return;
@@ -923,6 +923,18 @@ function formatBotText(text, entityLinks = []) {
 
 function escapeRegExp(text) {
     return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildEntityLinkPatternSafe(name) {
+    const patternCore = String(name || '')
+        .trim()
+        .split(/\s+/)
+        .map(part => escapeRegExp(part)
+            .replace(/['’]/g, "['’]")
+            .replace(/-/g, '[-–—]'))
+        .join('\\s+');
+
+    return new RegExp(`(^|[^A-Za-z0-9])(${patternCore})(?=$|[^A-Za-z0-9])`, 'gi');
 }
 
 function buildEntityLinkPattern(name) {
