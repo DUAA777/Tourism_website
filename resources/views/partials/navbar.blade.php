@@ -26,23 +26,12 @@
     </div>
   </div>
 
-<<<<<<< HEAD
     <li><a href="{{ route('chatbot') }}">PLAN</a></li>
     <li><a href="{{ route('restaurants.index') }}">RESTAURANTS</a></li>
     <li><a href="{{ route('hotels.index') }}">HOTELS</a></li>
     <li><a href="{{ route('contactUs') }}">CONTACT</a></li>
     
     
-=======
-  <div class="nav__panel" id="nav-links">
-    <ul class="nav__links nav__links--primary">
-      <li>
-        <a href="{{ route('home') }}" class="{{ $homeActive ? 'is-active' : '' }}" @if($homeActive) aria-current="page" @endif>HOME</a>
-      </li>
-      <li>
-        <a href="{{ route('aboutUs') }}" class="{{ $aboutActive ? 'is-active' : '' }}" @if($aboutActive) aria-current="page" @endif>ABOUT</a>
-      </li>
->>>>>>> 221baaa641a3bc6e1af034e6e697d0c4d34d4930
 
       <li>
         <a href="{{ route('chatbot') }}" class="nav__link--plan {{ $chatbotActive ? 'is-active' : '' }}" @if($chatbotActive) aria-current="page" @endif>
