@@ -22,13 +22,7 @@
                 <i class="ri-star-fill"></i> {{ $restaurant->rating }}
             </span>
             <span class="price-tier">
-                @for($i = 1; $i <= 4; $i++)
-                    @if($i <= strlen($restaurant->price_tier))
-                        <i class="ri-money-dollar-circle-fill"></i>
-                    @else
-                        <i class="ri-money-dollar-circle-line"></i>
-                    @endif
-                @endfor
+                {{$restaurant->price_tier}}
             </span>
         </div>
 

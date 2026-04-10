@@ -364,3 +364,154 @@ body {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+/* Container Grid */
+.restaurant-grid-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+/* Base Card Style */
+.similar-restaurant-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+}
+
+.similar-restaurant-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Image Section */
+.similar-restaurant__image {
+    position: relative;
+    height: 180px;
+    width: 100%;
+}
+
+.similar-restaurant__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Rating Badge Overlay */
+.restaurant-rating-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #ff9900;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    backdrop-filter: blur(4px);
+}
+
+/* Content Section */
+.similar-restaurant__content {
+    padding: 1.25rem;
+}
+
+.similar-restaurant__content h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.similar-restaurant__location {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Meta Info (Food Type & Price) */
+.similar-restaurant__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.food-type {
+    background: #f0f2f5;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #555;
+    text-transform: capitalize;
+}
+
+.price-tier {
+    font-weight: 600;
+    color: #2ecc71;
+    font-size: 0.9rem;
+}
+
+/* Tags/Pills */
+.similar-restaurant__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tag-pill {
+    font-size: 0.75rem;
+    color: #888;
+    border: 1px solid #eee;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #fafafa;
+}
+
+/* State Handlers (Loading/Error) */
+.loading-similar, .no-similar-results, .error-similar {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.retry-btn {
+    margin-top: 10px;
+    padding: 8px 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}

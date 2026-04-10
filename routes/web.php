@@ -43,8 +43,30 @@ Route::post('/chatbot/new-session', [ChatbotController::class, 'newSession'])->n
 Route::get('/aboutUs', function () { return view('aboutUs'); })->name('aboutUs');
 Route::get('/contactUs', function () { return view('contactUs'); })->name('contactUs');
 Route::get('/destinations', function () { return view('destinations'); })->name('destinations');
-Route::get('/hotels', function () { return view('hotels'); })->name('hotels');
-Route::get('/restaurants', function () { return view('restaurants'); })->name('restaurants');
+Route::prefix('hotels')->name('hotels.')->group(function () {
+    // Index page with filtering
+    Route::get('/', [HotelController::class, 'index'])->name('index');
+    
+    // Show single hotel
+    Route::get('/{id}', [HotelController::class, 'show'])->name('show');
+    
+    // AJAX endpoints for dynamic filtering (optional)
+    Route::get('/filter-data', [HotelController::class, 'getFilterData'])->name('filter-data');
+    Route::post('/recommendations', [HotelController::class, 'getRecommendations'])->name('recommendations');
+});
+Route::prefix('restaurants')->name('restaurants.')->group(function () {
+    // Main index page with filtering
+    Route::get('/', [RestaurantController::class, 'index'])->name('index');
+    
+    // Single restaurant details
+    Route::get('/{restaurant}', [RestaurantController::class, 'show'])->name('show');
+    
+    // AJAX endpoint for dynamic filtering (optional - for live updates without page reload)
+    Route::get('/filter', [RestaurantController::class, 'filter'])->name('filter');
+    
+    // Export filtered results
+    Route::get('/export/csv', [RestaurantController::class, 'exportCSV'])->name('export.csv');
+});
 
 // Restaurant and Hotel Routes
 Route::get('/restaurants/{id}', [RestaurantController::class, 'show'])->name('restaurants.show');

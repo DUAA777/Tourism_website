@@ -684,20 +684,7 @@
             </span>
             
             <span class="price-tier">
-                @for($i = 1; $i <= 4; $i++)
-                    @php
-                        $priceLevel = 0;
-                        if($hotel->price_tier == 'budget') $priceLevel = 1;
-                        elseif($hotel->price_tier == 'mid-range') $priceLevel = 2;
-                        elseif($hotel->price_tier == 'premium') $priceLevel = 3;
-                        elseif($hotel->price_tier == 'luxury') $priceLevel = 4;
-                    @endphp
-                    @if($i <= $priceLevel)
-                        <i class="ri-money-dollar-circle-fill"></i>
-                    @else
-                        <i class="ri-money-dollar-circle-line"></i>
-                    @endif
-                @endfor
+                {{ $hotel->price_tier }}
             </span>
         </div>
 

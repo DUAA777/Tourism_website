@@ -4,483 +4,514 @@
 <link rel="stylesheet" href="{{ asset('assets/css/chatbot.css') }}">
 <style>
     :root {
-        --hotel-bg: #f6f7fb;
+        --hotel-bg: #f8f9fc;
         --hotel-card-bg: #ffffff;
-        --hotel-text-dark: #1b1b1f;
-        --hotel-text-soft: #6f7380;
-        --hotel-primary: #ff6b2c;
-        --hotel-primary-dark: #e85d22;
+        --hotel-text-dark: #1e293b;
+        --hotel-text-soft: #64748b;
+        --hotel-text-muted: #94a3b8;
+        --hotel-border: #e2e8f0;
+        --hotel-border-light: #f1f5f9;
+        --hotel-primary: #ea580c;
+        --hotel-primary-dark: #c2410c;
+        --hotel-primary-light: #fff7ed;
         --hotel-success: #10b981;
         --hotel-warning: #f59e0b;
-        --hotel-info: #3b82f6;
-        --hotel-purple: #8b5cf6;
-        --hotel-shadow: 0 20px 50px rgba(16, 24, 40, 0.08);
-        --hotel-shadow-hover: 0 30px 60px rgba(16, 24, 40, 0.12);
-        --hotel-radius: 30px;
-        --hotel-radius-lg: 22px;
-        --hotel-radius-md: 16px;
-        --hotel-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --hotel-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+        --hotel-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+        --hotel-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --hotel-radius-sm: 8px;
+        --hotel-radius-md: 12px;
+        --hotel-radius-lg: 16px;
+        --hotel-transition: all 0.2s ease;
     }
 
-    body { 
-        background-color: var(--hotel-bg); 
-        font-family: 'DM Sans', sans-serif; 
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
     }
 
-    /* Hero Section */
-    .hotel-hero {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        padding: 80px 20px;
-        text-align: center;
-        color: white;
-        margin-bottom: 40px;
-        position: relative;
-        overflow: hidden;
+    body {
+        background-color: var(--hotel-bg);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: var(--hotel-text-dark);
+        line-height: 1.5;
     }
 
-    .hotel-hero::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="rgba(255,255,255,0.03)" d="M50 0L61.8 38.2L100 50L61.8 61.8L50 100L38.2 61.8L0 50L38.2 38.2L50 0z"/></svg>') repeat;
-        opacity: 0.3;
-    }
-
-    .hotel-hero h1 {
-        font-size: 56px;
-        font-weight: 800;
-        margin-bottom: 16px;
-        position: relative;
-        letter-spacing: -0.02em;
-    }
-
-    .hotel-hero p {
-        font-size: 18px;
-        opacity: 0.9;
-        max-width: 600px;
+    /* Main Layout */
+    .hotel-layout {
+        max-width: 1440px;
         margin: 0 auto;
-        position: relative;
-        line-height: 1.6;
+        padding: 32px 40px;
+        display: flex;
+        gap: 32px;
+        align-items: flex-start;
     }
 
-    /* Filter Section */
-    .filter-grid-container {
-        max-width: 1280px;
-        margin: 40px auto 40px;
-        padding: 40px;
+    /* Filter Sidebar */
+    .filters-panel {
+        width: 320px;
+        flex-shrink: 0;
         background: var(--hotel-card-bg);
-        border-radius: var(--hotel-radius);
-        box-shadow: var(--hotel-shadow);
-        position: relative;
-        z-index: 10;
+        border-radius: var(--hotel-radius-lg);
+        box-shadow: var(--hotel-shadow-sm);
+        border: 1px solid var(--hotel-border);
+        position: sticky;
+        top: 24px;
     }
 
-    .filter-header { 
-        margin-bottom: 32px; 
-        text-align: center; 
+    .panel-header {
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid var(--hotel-border-light);
     }
-    
-    .filter-header h2 { 
-        font-size: 32px; 
-        font-weight: 800; 
-        color: var(--hotel-text-dark); 
-        margin-bottom: 12px;
-        letter-spacing: -0.01em;
-    }
-    
-    .filter-header p {
-        color: var(--hotel-text-soft);
+
+    .panel-header h3 {
         font-size: 16px;
+        font-weight: 600;
+        color: var(--hotel-text-dark);
+        margin-bottom: 4px;
+    }
+
+    .panel-header p {
+        font-size: 13px;
+        color: var(--hotel-text-soft);
     }
 
     .filter-form {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 24px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-height: calc(100vh - 140px);
+        overflow-y: auto;
     }
 
-    .filter-group { 
-        display: flex; 
-        flex-direction: column; 
+    .filter-form::-webkit-scrollbar {
+        width: 4px;
     }
-    
+
+    .filter-form::-webkit-scrollbar-track {
+        background: var(--hotel-border-light);
+        border-radius: 4px;
+    }
+
+    .filter-form::-webkit-scrollbar-thumb {
+        background: var(--hotel-text-muted);
+        border-radius: 4px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
     .filter-group label {
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: var(--hotel-text-dark);
         font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        font-weight: 500;
+        color: var(--hotel-text-dark);
     }
 
-    .filter-group select, 
+    .filter-group select,
     .filter-group input {
         width: 100%;
-        padding: 12px 16px;
-        border: 2px solid #e5e7eb;
-        border-radius: var(--hotel-radius-md);
-        background-color: #fafbfc;
+        padding: 10px 12px;
+        border: 1px solid var(--hotel-border);
+        border-radius: var(--hotel-radius-sm);
+        background-color: var(--hotel-card-bg);
         font-size: 14px;
         color: var(--hotel-text-dark);
         transition: var(--hotel-transition);
         font-family: inherit;
     }
 
-    .filter-group select:focus, 
+    .filter-group select:focus,
     .filter-group input:focus {
-        border-color: var(--hotel-primary);
-        background-color: #fff;
-        box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.1);
         outline: none;
+        border-color: var(--hotel-primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
-    .filter-group select:hover,
-    .filter-group input:hover {
-        border-color: #d1d5db;
-    }
-
-    .price-range-input {
+    .price-buttons {
         display: flex;
         gap: 8px;
-        align-items: center;
-    }
-
-    .price-range-input input {
-        flex: 1;
-    }
-
-    /* Recommendation Type Selector */
-    .rec-type-selector {
-        grid-column: span 4;
-        display: flex;
-        gap: 16px;
-        justify-content: center;
-        margin: 20px 0 10px;
         flex-wrap: wrap;
     }
 
-    .rec-type-btn {
-        padding: 12px 28px;
-        border: 2px solid #e5e7eb;
-        border-radius: 40px;
-        background: white;
-        color: var(--hotel-text-dark);
-        font-weight: 600;
+    .price-btn {
+        flex: 1;
+        text-align: center;
+        padding: 8px 8px;
+        background: var(--hotel-bg);
+        border: 1px solid var(--hotel-border);
+        border-radius: var(--hotel-radius-sm);
+        font-size: 12px;
+        font-weight: 500;
         cursor: pointer;
         transition: var(--hotel-transition);
-        flex: 1;
-        min-width: 140px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        font-size: 14px;
+        color: var(--hotel-text-soft);
     }
 
-    .rec-type-btn:hover {
+    .price-btn:hover {
         border-color: var(--hotel-primary);
-        transform: translateY(-2px);
+        background: var(--hotel-primary-light);
     }
 
-    .rec-type-btn.active {
+    .price-btn.active {
+        background: var(--hotel-primary);
+        border-color: var(--hotel-primary);
+        color: white;
+    }
+
+    .rating-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .rating-btn {
+        padding: 8px 14px;
+        background: var(--hotel-bg);
+        border: 1px solid var(--hotel-border);
+        border-radius: var(--hotel-radius-sm);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--hotel-transition);
+        color: var(--hotel-text-soft);
+    }
+
+    .rating-btn:hover {
+        border-color: var(--hotel-primary);
+        background: var(--hotel-primary-light);
+    }
+
+    .rating-btn.active {
+        background: var(--hotel-primary);
+        border-color: var(--hotel-primary);
+        color: white;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+    }
+
+    .btn-apply {
+        flex: 2;
         background: var(--hotel-primary);
         color: white;
-        border-color: var(--hotel-primary);
-    }
-
-    .rec-type-btn.smart.active { background: var(--hotel-primary); border-color: var(--hotel-primary); }
-    .rec-type-btn.popular.active { background: var(--hotel-warning); border-color: var(--hotel-warning); }
-    .rec-type-btn.rated.active { background: var(--hotel-success); border-color: var(--hotel-success); }
-    .rec-type-btn.diverse.active { background: var(--hotel-purple); border-color: var(--hotel-purple); }
-
-    .submit-btn {
-        grid-column: span 4;
-        background: linear-gradient(135deg, var(--hotel-primary) 0%, var(--hotel-primary-dark) 100%);
-        color: white;
-        padding: 16px 24px;
+        padding: 10px 16px;
         border: none;
-        border-radius: var(--hotel-radius-md);
-        font-weight: 700;
-        font-size: 16px;
+        border-radius: var(--hotel-radius-sm);
+        font-weight: 600;
+        font-size: 14px;
         cursor: pointer;
-        margin-top: 10px;
         transition: var(--hotel-transition);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
     }
 
-    .submit-btn:hover { 
-        transform: translateY(-2px); 
-        box-shadow: 0 10px 25px rgba(255, 107, 44, 0.3);
+    .btn-apply:hover {
+        background: var(--hotel-primary-dark);
     }
-    
-    .submit-btn:disabled { 
-        opacity: 0.7; 
-        cursor: not-allowed; 
-        transform: none;
+
+    .btn-reset {
+        flex: 1;
+        background: white;
+        color: var(--hotel-text-soft);
+        padding: 10px 12px;
+        border: 1px solid var(--hotel-border);
+        border-radius: var(--hotel-radius-sm);
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        transition: var(--hotel-transition);
+    }
+
+    .btn-reset:hover {
+        background: var(--hotel-bg);
+        border-color: var(--hotel-text-muted);
     }
 
     /* Results Section */
-    .results-container {
-        max-width: 1280px;
-        margin: 48px auto 80px;
-        padding: 0 20px;
+    .results-panel {
+        flex: 1;
+        min-width: 0;
     }
 
     .results-header {
         display: flex;
         justify-content: space-between;
-        align-items: baseline;
-        margin-bottom: 32px;
+        align-items: center;
+        margin-bottom: 24px;
         flex-wrap: wrap;
         gap: 16px;
     }
 
-    .results-header h3 {
-        font-size: 28px;
-        font-weight: 800;
-        color: var(--hotel-text-dark);
-        margin: 0;
-        letter-spacing: -0.01em;
-    }
-
-    .results-stats {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-    }
-
-    .results-count {
-        background: #f1f5f9;
-        padding: 6px 14px;
-        border-radius: 40px;
-        font-size: 14px;
+    .results-title h2 {
+        font-size: 20px;
         font-weight: 600;
         color: var(--hotel-text-dark);
     }
 
-    .similarity-info {
-        background: #fef3e8;
-        padding: 6px 14px;
-        border-radius: 40px;
-        font-size: 12px;
-        color: var(--hotel-primary);
-        font-weight: 500;
+    .results-title span {
+        font-size: 14px;
+        color: var(--hotel-text-soft);
+        margin-left: 8px;
+        font-weight: normal;
+    }
+
+    .results-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .sort-select {
+        padding: 8px 12px;
+        border: 1px solid var(--hotel-border);
+        border-radius: var(--hotel-radius-sm);
+        font-size: 13px;
+        background: white;
+        cursor: pointer;
+        color: var(--hotel-text-dark);
+    }
+
+    .sort-select:focus {
+        outline: none;
+        border-color: var(--hotel-primary);
     }
 
     /* Hotel Grid */
     .hotel-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-        gap: 32px;
+        gap: 24px;
     }
 
     .hotel-card {
-        background: white;
-        border-radius: var(--hotel-radius-lg);
+        background: var(--hotel-card-bg);
+        border-radius: var(--hotel-radius-md);
+        border: 1px solid var(--hotel-border);
         overflow: hidden;
-        border: 1px solid #f1f5f9;
         transition: var(--hotel-transition);
-        position: relative;
         cursor: pointer;
         text-decoration: none;
         color: inherit;
         display: block;
     }
 
-    .hotel-card:hover { 
-        transform: translateY(-8px); 
-        box-shadow: var(--hotel-shadow-hover); 
+    .hotel-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--hotel-shadow-lg);
         border-color: transparent;
     }
 
-    .hotel-image-container {
+    .card-image {
         position: relative;
+        height: 200px;
         overflow: hidden;
-        height: 240px;
+        background: var(--hotel-bg);
     }
 
-    .hotel-image { 
-        width: 100%; 
-        height: 100%; 
-        object-fit: cover; 
-        transition: transform 0.5s ease;
+    .card-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
     }
 
-    .hotel-card:hover .hotel-image {
-        transform: scale(1.08);
+    .hotel-card:hover .card-image img {
+        transform: scale(1.03);
     }
 
-    .hotel-badge {
+    .card-badge {
         position: absolute;
-        top: 16px;
-        right: 16px;
-        padding: 6px 14px;
-        border-radius: 40px;
-        font-size: 12px;
-        font-weight: 700;
-        z-index: 2;
-        backdrop-filter: blur(8px);
-        background: rgba(0, 0, 0, 0.8);
+        top: 12px;
+        right: 12px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(4px);
         color: white;
     }
 
-    .hotel-badge.luxury {
-        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    .card-badge.top-rated {
+        background: #f59e0b;
+        color: #1a1a2e;
     }
 
-    .hotel-badge.premium {
-        background: linear-gradient(135deg, #f59e0b, #ef4444);
+    .card-badge.luxury {
+        background: #8b5cf6;
     }
 
-    .hotel-badge.popular {
-        background: linear-gradient(135deg, #10b981, #059669);
+    .card-badge.premium {
+        background: #ef4444;
     }
 
-    .hotel-badge.top-rated {
-        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    .card-content {
+        padding: 16px;
     }
 
-    .hotel-content { 
-        padding: 24px; 
+    .hotel-name {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--hotel-text-dark);
+        margin-bottom: 6px;
+        line-height: 1.4;
     }
-    
-    .hotel-title { 
-        font-size: 20px; 
-        font-weight: 800; 
-        color: var(--hotel-text-dark); 
-        margin-bottom: 8px;
-        line-height: 1.3;
-    }
-    
-    .hotel-location { 
-        font-size: 14px; 
-        color: var(--hotel-text-soft); 
-        margin-bottom: 12px;
+
+    .hotel-address {
+        font-size: 13px;
+        color: var(--hotel-text-soft);
+        margin-bottom: 10px;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
     }
-    
+
     .rating-badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: #fef3e8;
-        padding: 4px 12px;
+        background: var(--hotel-primary-light);
+        padding: 4px 10px;
         border-radius: 20px;
-        font-weight: 700;
-        font-size: 13px;
+        font-weight: 600;
+        font-size: 12px;
         color: var(--hotel-primary);
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }
 
-    .hotel-details {
+    .hotel-features {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 16px;
+        gap: 6px;
+        margin-bottom: 12px;
     }
 
-    .detail-chip {
+    .feature-chip {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
-        background: #f8f9fc;
-        border-radius: 8px;
-        font-size: 12px;
+        gap: 4px;
+        padding: 4px 8px;
+        background: var(--hotel-bg);
+        border-radius: 6px;
+        font-size: 11px;
         color: var(--hotel-text-soft);
         font-weight: 500;
     }
 
     .hotel-description {
         color: var(--hotel-text-soft);
-        font-size: 13px;
-        margin: 12px 0;
+        font-size: 12px;
+        margin: 10px 0;
         line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .price-section {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid #f1f5f9;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--hotel-border-light);
     }
 
     .price {
-        font-size: 24px;
-        font-weight: 800;
+        font-size: 20px;
+        font-weight: 700;
         color: var(--hotel-primary);
     }
 
     .price small {
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 500;
         color: var(--hotel-text-soft);
     }
-
-    .view-details {
-        display: inline-flex;
+    .pagination-jump{
+        display: none;
         align-items: center;
         gap: 8px;
+    }
+    .details-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         color: var(--hotel-primary);
-        font-weight: 600;
-        font-size: 14px;
+        font-weight: 500;
+        font-size: 12px;
         transition: var(--hotel-transition);
     }
 
-    .hotel-card:hover .view-details {
-        gap: 12px;
+    .hotel-card:hover .details-link {
+        gap: 10px;
     }
 
-    .match-percentage {
-        font-size: 11px;
-        color: var(--hotel-text-soft);
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid #f1f5f9;
-        text-align: right;
-    }
-
-    /* Loading State */
-    .skeleton-card {
-        background: white;
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--hotel-card-bg);
         border-radius: var(--hotel-radius-lg);
+        border: 1px solid var(--hotel-border);
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--hotel-text-dark);
+        margin-bottom: 8px;
+    }
+
+    .empty-message {
+        font-size: 14px;
+        color: var(--hotel-text-soft);
+    }
+
+    /* Loading Skeleton */
+    .skeleton-card {
+        background: var(--hotel-card-bg);
+        border-radius: var(--hotel-radius-md);
+        border: 1px solid var(--hotel-border);
         overflow: hidden;
-        border: 1px solid #f1f5f9;
     }
 
     .skeleton-image {
-        height: 240px;
+        height: 200px;
         background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
         background-size: 200% 100%;
         animation: loading 1.5s infinite;
     }
 
     .skeleton-content {
-        padding: 24px;
+        padding: 16px;
     }
 
     .skeleton-title {
-        height: 24px;
+        height: 20px;
         background: #f0f0f0;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
         border-radius: 4px;
         width: 70%;
     }
 
-    .skeleton-location {
+    .skeleton-address {
         height: 16px;
         background: #f0f0f0;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
         border-radius: 4px;
         width: 50%;
     }
@@ -488,16 +519,17 @@
     .skeleton-rating {
         height: 28px;
         background: #f0f0f0;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
         border-radius: 20px;
         width: 30%;
     }
 
-    .skeleton-details {
-        height: 32px;
+    .skeleton-features {
+        height: 24px;
         background: #f0f0f0;
-        margin-bottom: 16px;
-        border-radius: 8px;
+        margin-bottom: 12px;
+        border-radius: 6px;
+        width: 80%;
     }
 
     @keyframes loading {
@@ -505,453 +537,382 @@
         100% { background-position: -200% 0; }
     }
 
-    /* Empty State */
-    .empty-state {
-        grid-column: 1/-1;
-        text-align: center;
-        padding: 80px 20px;
+    /* Pagination */
+    .pagination-wrapper {
+        margin-top: 40px;
+        display: flex;
+        justify-content: center;
     }
 
-    .empty-icon {
-        font-size: 64px;
-        margin-bottom: 24px;
-        opacity: 0.5;
+    .pagination {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        list-style: none;
     }
 
-    .empty-title {
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--hotel-text-dark);
-        margin-bottom: 12px;
+    .page-item {
+        display: inline-block;
     }
 
-    .empty-message {
+    .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: var(--hotel-radius-sm);
+        background: white;
+        border: 1px solid var(--hotel-border);
         color: var(--hotel-text-soft);
-        margin-bottom: 24px;
-    }
-
-    .reset-btn {
-        padding: 12px 28px;
-        background: var(--hotel-primary);
-        color: white;
-        border: none;
-        border-radius: var(--hotel-radius-md);
-        font-weight: 600;
-        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
         transition: var(--hotel-transition);
+        text-decoration: none;
     }
 
-    .reset-btn:hover {
-        background: var(--hotel-primary-dark);
-        transform: translateY(-2px);
+    .page-link:hover {
+        border-color: var(--hotel-primary);
+        color: var(--hotel-primary);
     }
 
-    /* Responsive Design */
-    @media (max-width: 1000px) {
-        .filter-form { grid-template-columns: repeat(2, 1fr); }
-        .rec-type-selector, .submit-btn { grid-column: span 2; }
-        .hotel-hero h1 { font-size: 40px; }
-        .hotel-hero { padding: 60px 20px; }
+    .active .page-link {
+        background: var(--hotel-primary);
+        border-color: var(--hotel-primary);
+        color: white;
+    }
+
+    .disabled .page-link {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .hotel-layout {
+            flex-direction: column;
+            padding: 24px;
+        }
+        .filters-panel {
+            width: 100%;
+            position: relative;
+            top: 0;
+        }
+        .filter-form {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            max-height: none;
+            overflow-y: visible;
+        }
+        .filter-actions {
+            grid-column: span 2;
+        }
     }
 
     @media (max-width: 640px) {
-        .filter-grid-container { padding: 24px; }
-        .filter-form { grid-template-columns: 1fr; }
-        .rec-type-selector, .submit-btn { grid-column: span 1; }
-        .rec-type-selector { flex-direction: column; }
-        .rec-type-btn { width: 100%; }
-        .hotel-hero h1 { font-size: 32px; }
-        .hotel-hero p { font-size: 14px; }
-        .results-header { flex-direction: column; align-items: flex-start; }
-        .results-header h3 { font-size: 24px; }
-        .hotel-grid { gap: 20px; }
-        .hotel-title { font-size: 18px; }
-        .price { font-size: 20px; }
+        .hotel-layout {
+            padding: 16px;
+        }
+        .filter-form {
+            grid-template-columns: 1fr;
+        }
+        .filter-actions {
+            grid-column: span 1;
+        }
+        .hotel-grid {
+            grid-template-columns: 1fr;
+        }
+        .results-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
     }
 </style>
 @endpush
 
 @section('content')
 
-
-<!-- Filter Section -->
-<div class="filter-grid-container">
-    <div class="filter-header">
-        <h2>Smart Hotel Recommendations</h2>
-        <p>Tell us what you're looking for and let us find your ideal stay</p>
-    </div>
-    
-    <form id="hotelFilterForm" class="filter-form">
-        <div class="filter-group">
-            <label>Room Type</label>
-            <select name="room_type">
-                <option value="">Any Room Type</option>
-                <option value="standard">Standard Room</option>
-                <option value="deluxe">Deluxe Room</option>
-                <option value="suite">Suite</option>
-                <option value="family">Family Room</option>
-                <option value="presidential">Presidential Suite</option>
-                <option value="villa">Villa</option>
-            </select>
+<div class="hotel-layout">
+    <!-- Filter Sidebar -->
+    <aside class="filters-panel">
+        <div class="panel-header">
+            <h3>Find Hotels</h3>
         </div>
-
-        <div class="filter-group">
-            <label>Bed Type</label>
-            <select name="bed_info">
-                <option value="">Any Bed Type</option>
-                <option value="single">Single Bed</option>
-                <option value="double">Double Bed</option>
-                <option value="queen">Queen Bed</option>
-                <option value="king">King Bed</option>
-                <option value="twin">Twin Beds</option>
-            </select>
-        </div>
-
-        <div class="filter-group">
-            <label>Minimum Rating</label>
-            <select name="rating_score">
-                <option value="0">Any Rating</option>
-                <option value="4.5">4.5+ Stars</option>
-                <option value="4.0">4.0+ Stars</option>
-                <option value="3.5">3.5+ Stars</option>
-                <option value="3.0">3.0+ Stars</option>
-            </select>
-        </div>
-
-        <div class="filter-group">
-            <label>Nearby Landmark</label>
-            <select name="nearby_landmark">
-                <option value="">Any Landmark</option>
-                <option value="beach">Near Beach</option>
-                <option value="city center">City Center</option>
-                <option value="airport">Near Airport</option>
-                <option value="mall">Shopping Mall</option>
-                <option value="historical">Historical Sites</option>
-            </select>
-        </div>
-
-        <div class="filter-group">
-            <label>Beach Distance</label>
-            <select name="distance_from_beach">
-                <option value="">Any Distance</option>
-                <option value="beachfront">Beachfront</option>
-                <option value="100m">Less than 100m</option>
-                <option value="500m">Less than 500m</option>
-                <option value="1km">Less than 1km</option>
-            </select>
-        </div>
-
-        <div class="filter-group">
-            <label>City or Area</label>
-<select name="address">
-    <option value="">All Locations</option>
-    
-    <optgroup label="Beirut">
-        <option value="Beirut">Beirut City</option>
-    </optgroup>
-
-    <optgroup label="Mount Lebanon">
-        <option value="Baabda">Baabda</option>
-        <option value="Aley">Aley</option>
-        <option value="Chouf">Chouf</option>
-        <option value="Matn">Matn</option>
-    </optgroup>
-
-    <optgroup label="Keserwan-Jbeil">
-        <option value="Jounieh">Jounieh</option>
-        <option value="Byblos">Byblos (Jbeil)</option>
-    </optgroup>
-
-    <optgroup label="North Lebanon">
-        <option value="Tripoli">Tripoli</option>
-        <option value="Batroun">Batroun</option>
-        <option value="Zgharta">Zgharta</option>
-        <option value="Bcharre">Bcharre</option>
-        <option value="Koura">Koura</option>
-        <option value="Minieh-Danniyeh">Minieh-Danniyeh</option>
-    </optgroup>
-
-    <optgroup label="Akkar">
-        <option value="Halba">Halba</option>
-        <option value="Akkar">Akkar District</option>
-    </optgroup>
-
-    <optgroup label="South Lebanon">
-        <option value="Sidon">Sidon (Saida)</option>
-        <option value="Tyre">Tyre (Sour)</option>
-        <option value="Jezzine">Jezzine</option>
-    </optgroup>
-
-    <optgroup label="Nabatieh">
-        <option value="Nabatieh">Nabatieh City</option>
-        <option value="Bint Jbeil">Bint Jbeil</option>
-        <option value="Hasbaya">Hasbaya</option>
-        <option value="Marjeyoun">Marjeyoun</option>
-    </optgroup>
-
-    <optgroup label="Beqaa">
-        <option value="Zahle">Zahle</option>
-        <option value="West Beqaa">West Beqaa</option>
-        <option value="Rashaya">Rashaya</option>
-    </optgroup>
-
-    <optgroup label="Baalbek-Hermel">
-        <option value="Baalbek">Baalbek</option>
-        <option value="Hermel">Hermel</option>
-    </optgroup>
-</select>
-        </div>
-
-        <div class="filter-group">
-            <label>Price per Night</label>
-            <div class="price-range-input">
-                <input type="number" name="price_per_night" placeholder="Max price (e.g., 150)" step="10">
+        
+        <form id="filterForm" class="filter-form" method="GET" action="{{ route('hotels.index') }}">
+            <!-- Room Type -->
+            <div class="filter-group">
+                <label>Room Type</label>
+                <select name="room_type" id="room_type">
+                    <option value="">Any room type</option>
+                    @foreach($uniqueRoomTypes as $roomType)
+                        <option value="{{ $roomType }}" {{ request('room_type') == $roomType ? 'selected' : '' }}>{{ ucfirst($roomType) }}</option>
+                    @endforeach
+                </select>
             </div>
+
+            <!-- Bed Type -->
+            <div class="filter-group">
+                <label>Bed Type</label>
+                <select name="bed_info" id="bed_info">
+                    <option value="">Any bed type</option>
+                    @foreach($uniqueBedTypes as $bedType)
+                        <option value="{{ $bedType }}" {{ request('bed_info') == $bedType ? 'selected' : '' }}>{{ ucfirst($bedType) }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Price Range -->
+            <div class="filter-group">
+                <label>Price Range</label>
+                <div class="price-buttons" id="priceGroup">
+                    <div class="price-btn {{ !request('price_tier') ? 'active' : '' }}" data-price="">Any</div>
+                    <div class="price-btn {{ request('price_tier') == 'budget' ? 'active' : '' }}" data-price="budget">Budget</div>
+                    <div class="price-btn {{ request('price_tier') == 'mid' ? 'active' : '' }}" data-price="mid">Mid</div>
+                    <div class="price-btn {{ request('price_tier') == 'luxury' ? 'active' : '' }}" data-price="luxury">Luxury</div>
+                </div>
+                <input type="hidden" name="price_tier" id="price_tier" value="{{ request('price_tier') }}">
+            </div>
+
+            <!-- Max Price -->
+            <div class="filter-group">
+                <label>Max Price per Night</label>
+                <input type="number" name="max_price" id="max_price" placeholder="e.g., 200" step="10" value="{{ request('max_price') }}">
+            </div>
+
+            <!-- Minimum Rating -->
+            <div class="filter-group">
+                <label>Minimum Rating</label>
+                <div class="rating-buttons" id="ratingGroup">
+                    <div class="rating-btn {{ !request('min_rating') ? 'active' : '' }}" data-rating="">Any</div>
+                    <div class="rating-btn {{ request('min_rating') == '4.5' ? 'active' : '' }}" data-rating="4.5">4.5+</div>
+                    <div class="rating-btn {{ request('min_rating') == '4.0' ? 'active' : '' }}" data-rating="4.0">4.0+</div>
+                    <div class="rating-btn {{ request('min_rating') == '3.5' ? 'active' : '' }}" data-rating="3.5">3.5+</div>
+                    <div class="rating-btn {{ request('min_rating') == '3.0' ? 'active' : '' }}" data-rating="3.0">3.0+</div>
+                </div>
+                <input type="hidden" name="min_rating" id="min_rating" value="{{ request('min_rating') }}">
+            </div>
+
+            <!-- Location -->
+            <div class="filter-group">
+                <label>Location</label>
+                <select name="address" id="address">
+                    <option value="">All locations</option>
+                    @foreach($locations as $location)
+                        <option value="{{ $location }}" {{ request('address') == $location ? 'selected' : '' }}>{{ ucfirst($location) }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Nearby Landmark -->
+            <div class="filter-group">
+                <label>Nearby Landmark</label>
+                <select name="nearby_landmark" id="nearby_landmark">
+                    <option value="">Any landmark</option>
+                    @foreach($landmarks as $landmark)
+                        <option value="{{ $landmark }}" {{ request('nearby_landmark') == $landmark ? 'selected' : '' }}>{{ ucfirst($landmark) }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Distance from Beach -->
+            <div class="filter-group">
+                <label>Distance from Beach</label>
+                <select name="distance_from_beach" id="distance_from_beach">
+                    <option value="">Any distance</option>
+                    @foreach($beachDistances as $distance)
+                        <option value="{{ $distance }}" {{ request('distance_from_beach') == $distance ? 'selected' : '' }}>{{ ucfirst($distance) }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Distance from Center -->
+            <div class="filter-group">
+                <label>Distance from Center</label>
+                <select name="distance_from_center" id="distance_from_center">
+                    <option value="">Any distance</option>
+                    @foreach($centerDistances as $distance)
+                        <option value="{{ $distance }}" {{ request('distance_from_center') == $distance ? 'selected' : '' }}>{{ ucfirst($distance) }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Keyword Search -->
+            <div class="filter-group">
+                <label>Keyword</label>
+                <input type="text" name="keyword" id="keyword" placeholder="pool, wifi, breakfast..." value="{{ request('keyword') }}">
+            </div>
+
+            <!-- Actions -->
+            <div class="filter-actions">
+                <button type="submit" class="btn-apply">Apply Filters</button>
+                <button type="button" id="resetFiltersBtn" class="btn-reset">Reset</button>
+            </div>
+        </form>
+    </aside>
+
+    <!-- Results Section -->
+    <main class="results-panel">
+        <div class="results-header">
+            <div class="results-title">
+                <h2>Hotels <span>{{ $hotels->total() }} found</span></h2>
+            </div>
+           
         </div>
 
-        <div class="filter-group">
-            <label>Distance from Center</label>
-            <select name="distance_from_center">
-                <option value="">Any Distance</option>
-                <option value="1km">Less than 1km</option>
-                <option value="3km">Less than 3km</option>
-                <option value="5km">Less than 5km</option>
-                <option value="10km">Less than 10km</option>
-            </select>
+        <div id="hotelGrid" class="hotel-grid">
+            @forelse($hotels as $hotel)
+                <div class="hotel-card" data-hotel-id="{{ $hotel->id }}">
+                    <div class="card-image">
+                        @php
+                            $badgeText = '';
+                            $badgeClass = '';
+                            if($hotel->rating_score >= 4.5) {
+                                $badgeText = 'Top Rated';
+                                $badgeClass = 'top-rated';
+                            } elseif($hotel->price_tier == 'luxury') {
+                                $badgeText = 'Luxury';
+                                $badgeClass = 'luxury';
+                            } elseif($hotel->price_tier == 'premium') {
+                                $badgeText = 'Premium';
+                                $badgeClass = 'premium';
+                            }
+                        @endphp
+
+                        <img src="{{ $hotel->hotel_image ?? 'https://placehold.co/400x240?text=Hotel' }}" 
+                             alt="{{ $hotel->hotel_name }}"
+                             onerror="this.src='https://placehold.co/400x240?text=No+Image'">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="hotel-name">{{ $hotel->hotel_name }}</h3>
+                        <div class="hotel-address">
+                            {{ $hotel->address ?? 'Location not specified' }}
+                        </div>
+                        <div class="rating-badge">
+                            {{ number_format($hotel->rating_score, 1) ?? 'N/A' }} stars
+                            @if($hotel->review_count)
+                                ({{ $hotel->review_count }} reviews)
+                            @endif
+                        </div>
+                        <div class="hotel-features">
+                            @if($hotel->room_type)
+                                @php $roomTypes = array_map('trim', explode(',', $hotel->room_type)); @endphp
+                                @foreach(array_slice($roomTypes, 0, 2) as $room)
+                                    <span class="feature-chip">{{ ucfirst($room) }}</span>
+                                @endforeach
+                            @endif
+                            @if($hotel->bed_info)
+                                @php $bedTypes = array_map('trim', explode(',', $hotel->bed_info)); @endphp
+                                @foreach(array_slice($bedTypes, 0, 2) as $bed)
+                                    <span class="feature-chip">{{ ucfirst($bed) }}</span>
+                                @endforeach
+                            @endif
+                            @if($hotel->distance_from_beach)
+                                <span class="feature-chip">Beach: {{ $hotel->distance_from_beach }}</span>
+                            @endif
+                            @if($hotel->distance_from_center)
+                                <span class="feature-chip">Center: {{ $hotel->distance_from_center }}</span>
+                            @endif
+                        </div>
+                        @if($hotel->description)
+                            <div class="hotel-description">{{ Str::limit($hotel->description, 100) }}</div>
+                        @endif
+                        <div class="price-section">
+                            <div class="price">
+                                @php
+                                    $price = preg_replace('/[^0-9]/', '', $hotel->price_per_night);
+                                @endphp
+                                @if($price && is_numeric($price))
+                                    ${{ number_format($price, 0) }}
+                                @else
+                                    {{ $hotel->price_per_night ?? 'Contact' }}
+                                @endif
+                                <small>/night</small>
+                            </div>
+                            <div class="details-link">
+                                View details →
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="empty-state">
+                    <div class="empty-icon">🏨</div>
+                    <div class="empty-title">No hotels found</div>
+                    <div class="empty-message">Try adjusting your filters to see more results.</div>
+                </div>
+            @endforelse
         </div>
 
-
-        <input type="hidden" name="recommendation_type" id="recommendationType" value="smart">
-
-        <button type="submit" class="submit-btn" id="submitBtn">
-            <span class="btn-text">Find Hotels</span>
-            <span class="btn-loading" style="display:none;">Finding the best stays...</span>
-        </button>
-    </form>
-</div>
-
-<!-- Results Section -->
-<div class="results-container">
-    <div class="results-header">
-        <h3>Recommended Stays</h3>
-        <div class="results-stats">
-            <span class="results-count" id="resultsCount">0 hotels</span>
-            <span class="similarity-info" id="similarityInfo" style="display: none;"></span>
-        </div>
-    </div>
-    <div id="hotelGrid" class="hotel-grid">
-        <!-- Results will be loaded here -->
-        <div class="empty-state">
-            <div class="empty-icon">🏨</div>
-            <div class="empty-title">Ready to find your perfect stay?</div>
-            <div class="empty-message">Select your preferences above and click "Find Hotels" to see personalized recommendations</div>
-        </div>
-    </div>
+        @if($hotels->hasPages())
+            <div class="pagination-wrapper">
+                {{ $hotels->appends(request()->query())->links() }}
+            </div>
+        @endif
+    </main>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const baseUrl = '{{ url("/hotels") }}';
+    const filterForm = document.getElementById('filterForm');
+    const resetBtn = document.getElementById('resetFiltersBtn');
+    const sortSelect = document.getElementById('sortSelect');
     
-    // Handle recommendation type selection
-    const recTypeBtns = document.querySelectorAll('.rec-type-btn');
-    const recTypeInput = document.getElementById('recommendationType');
+    // Price selection
+    const priceBtns = document.querySelectorAll('.price-btn');
+    const priceInput = document.getElementById('price_tier');
     
-    recTypeBtns.forEach(btn => {
+    priceBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            recTypeBtns.forEach(b => b.classList.remove('active'));
+            const price = this.dataset.price;
+            priceInput.value = price || '';
+            priceBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            recTypeInput.value = this.dataset.type;
         });
     });
-
-    function navigateToHotel(hotelId) {
-        if (hotelId) {
-            window.location.href = `${baseUrl}/${hotelId}`;
-        }
-    }
-
-    // Form submission
-    document.getElementById('hotelFilterForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const btn = document.getElementById('submitBtn');
-        const btnText = btn.querySelector('.btn-text');
-        const btnLoading = btn.querySelector('.btn-loading');
-        const grid = document.getElementById('hotelGrid');
-        const resultsCount = document.getElementById('resultsCount');
-        const similarityInfo = document.getElementById('similarityInfo');
-        
-        btn.disabled = true;
-        btnText.style.display = 'none';
-        btnLoading.style.display = 'inline';
-        similarityInfo.style.display = 'none';
-        
-        // Show skeleton loaders
-        grid.innerHTML = `
-            ${Array(6).fill(0).map(() => `
-                <div class="skeleton-card">
-                    <div class="skeleton-image"></div>
-                    <div class="skeleton-content">
-                        <div class="skeleton-title"></div>
-                        <div class="skeleton-location"></div>
-                        <div class="skeleton-rating"></div>
-                        <div class="skeleton-details"></div>
-                    </div>
-                </div>
-            `).join('')}
-        `;
-
-        const formData = new FormData(this);
-        const data = Object.fromEntries(formData.entries());
-        
-        if (data.price_per_night && data.price_per_night.trim()) {
-            data.price_per_night = parseFloat(data.price_per_night);
-        } else {
-            delete data.price_per_night;
-        }
-        
-        if (data.rating_score) {
-            data.rating_score = parseFloat(data.rating_score);
-        }
-
-        try {
-            const response = await fetch('http://127.0.0.1:5000/recommend-hotels', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const responseData = await response.json();
-            
-            if (responseData.recommendations) {
-                renderHotels(responseData.recommendations);
-                resultsCount.textContent = `${responseData.recommendations.length} hotels`;
-                
-                if (responseData.metadata && responseData.metadata.avg_similarity) {
-                    similarityInfo.textContent = `Average Match: ${responseData.metadata.avg_similarity} (Threshold: ${responseData.metadata.similarity_threshold_used})`;
-                    similarityInfo.style.display = 'inline-block';
-                }
-            } else {
-                throw new Error('Invalid response format');
-            }
-        } catch (error) {
-            console.error("Hotel Recommendation Error:", error);
-            grid.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">⚠️</div>
-                    <div class="empty-title">Connection Error</div>
-                    <div class="empty-message">Unable to fetch hotel recommendations at the moment. Please check if the recommendation server is running and try again.</div>
-                    <button onclick="location.reload()" class="reset-btn">Retry</button>
-                </div>
-            `;
-            resultsCount.textContent = `0 hotels`;
-            similarityInfo.style.display = 'none';
-        } finally {
-            btn.disabled = false;
-            btnText.style.display = 'inline';
-            btnLoading.style.display = 'none';
-        }
+    
+    // Rating selection
+    const ratingBtns = document.querySelectorAll('.rating-btn');
+    const ratingInput = document.getElementById('min_rating');
+    
+    ratingBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const rating = this.dataset.rating;
+            ratingInput.value = rating || '';
+            ratingBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
     });
-
-    function renderHotels(hotels) {
-        const grid = document.getElementById('hotelGrid');
-        
-        if (!hotels || hotels.length === 0) {
-            grid.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">🔍</div>
-                    <div class="empty-title">No hotels found</div>
-                    <div class="empty-message">Try adjusting your filters for more results.</div>
-                    <button onclick="document.getElementById('hotelFilterForm').reset()" class="reset-btn">Reset Filters</button>
-                </div>
-            `;
-            return;
-        }
-
-        grid.innerHTML = hotels.map(hotel => {
-            let badgeText = '';
-            let badgeClass = '';
-            
-            if (hotel.rating_score >= 4.5) {
-                badgeText = 'Top Rated';
-                badgeClass = 'top-rated';
-            } else if (hotel.price_tier === 'luxury') {
-                badgeText = 'Luxury';
-                badgeClass = 'luxury';
-            } else if (hotel.price_tier === 'premium') {
-                badgeText = 'Premium';
-                badgeClass = 'premium';
-            } else if (hotel.popularity >= 4.0) {
-                badgeText = 'Popular';
-                badgeClass = 'popular';
-            }
-            
-            const priceDisplay = hotel.price_per_night ? 
-                `${hotel.price_per_night}` : 
-                'Contact for price';
-            
-            const hotelId = hotel.id || '';
-            
-            return `
-                <div class="hotel-card" onclick="navigateToHotel('${hotelId}')" data-hotel-id="${hotelId}">
-                    <div class="hotel-image-container">
-                        ${badgeText ? `<div class="hotel-badge ${badgeClass}">${badgeText}</div>` : ''}
-                        <img src="${hotel.hotel_image || 'https://via.placeholder.com/400x240?text=Hotel+Image'}" 
-                             class="hotel-image" 
-                             alt="${hotel.hotel_name || 'Hotel'}"
-                             onerror="this.src='https://via.placeholder.com/400x240?text=Image+Not+Available'">
-                    </div>
-                    <div class="hotel-content">
-                        <h3 class="hotel-title">${hotel.hotel_name || 'Unnamed Hotel'}</h3>
-                        <div class="hotel-location">
-                            📍 ${hotel.address || 'Location not specified'}
-                        </div>
-                        <div class="rating-badge">
-                            ⭐ ${hotel.rating_score || 'N/A'} 
-                            ${hotel.review_count ? `(${hotel.review_count} reviews)` : ''}
-                        </div>
-                        <div class="hotel-details">
-                            ${hotel.room_type ? `<span class="detail-chip">🛏️ ${hotel.room_type}</span>` : ''}
-                            ${hotel.bed_info ? `<span class="detail-chip">🛌 ${hotel.bed_info}</span>` : ''}
-                            ${hotel.distance_from_beach ? `<span class="detail-chip">🏖️ ${hotel.distance_from_beach}</span>` : ''}
-                            ${hotel.distance_from_center ? `<span class="detail-chip">🚗 ${hotel.distance_from_center}</span>` : ''}
-                            ${hotel.nearby_landmark ? `<span class="detail-chip">📍 ${hotel.nearby_landmark}</span>` : ''}
-                        </div>
-                        ${hotel.description ? `<div class="hotel-description">${hotel.description.substring(0, 100)}${hotel.description.length > 100 ? '...' : ''}</div>` : ''}
-                        <div class="price-section">
-                            <div class="price">
-                                ${priceDisplay}
-                                <small>/night</small>
-                            </div>
-                            <div class="view-details">
-                                View Details →
-                            </div>
-                        </div>
-                        ${hotel.similarity_percentage ? `<div class="match-percentage">Match: ${hotel.similarity_percentage}%</div>` : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
+    
+    // Sort change
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('sort', this.value);
+            window.location.href = url.toString();
+        });
     }
-
-    window.navigateToHotel = navigateToHotel;
-
-    document.addEventListener('click', function(e) {
-        const card = e.target.closest('.hotel-card');
-        if (card && !e.target.closest('a')) {
-            const hotelId = card.dataset.hotelId;
+    
+    // Reset filters
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            window.location.href = baseUrl;
+        });
+    }
+    
+    // Hotel card click navigation
+    document.querySelectorAll('.hotel-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            const hotelId = this.dataset.hotelId;
             if (hotelId) {
                 window.location.href = `${baseUrl}/${hotelId}`;
             }
-        }
+        });
     });
 });
 </script>
+
 @endsection

@@ -19,8 +19,8 @@
     @endauth
 
     <li><a href="{{ route('chatbot') }}">PLAN</a></li>
-    <li><a href="{{ route('restaurants') }}">RESTAURANTS</a></li>
-        <li><a href="{{ route('hotels') }}">HOTELS</a></li>
+    <li><a href="{{ route('restaurants.index') }}">RESTAURANTS</a></li>
+    <li><a href="{{ route('hotels.index') }}">HOTELS</a></li>
     <li><a href="{{ route('contactUs') }}">CONTACT</a></li>
     
     
