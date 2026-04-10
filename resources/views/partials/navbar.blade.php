@@ -26,11 +26,6 @@
     </div>
   </div>
 
-    <li><a href="{{ route('chatbot') }}">PLAN</a></li>
-    <li><a href="{{ route('restaurants.index') }}">RESTAURANTS</a></li>
-    <li><a href="{{ route('hotels.index') }}">HOTELS</a></li>
-    <li><a href="{{ route('contactUs') }}">CONTACT</a></li>
-    
     
 
       <li>
@@ -40,10 +35,10 @@
         </a>
       </li>
       <li>
-        <a href="{{ route('restaurants') }}" class="{{ $restaurantsActive ? 'is-active' : '' }}" @if($restaurantsActive) aria-current="page" @endif>RESTAURANTS</a>
+        <a href="{{ route('restaurants.index') }}" class="{{ $restaurantsActive ? 'is-active' : '' }}" @if($restaurantsActive) aria-current="page" @endif>RESTAURANTS</a>
       </li>
       <li>
-        <a href="{{ route('hotels') }}" class="{{ $hotelsActive ? 'is-active' : '' }}" @if($hotelsActive) aria-current="page" @endif>HOTELS</a>
+        <a href="{{ route('hotels.index') }}" class="{{ $hotelsActive ? 'is-active' : '' }}" @if($hotelsActive) aria-current="page" @endif>HOTELS</a>
       </li>
       <li>
         <a href="{{ route('contactUs') }}" class="{{ $contactActive ? 'is-active' : '' }}" @if($contactActive) aria-current="page" @endif>CONTACT</a>

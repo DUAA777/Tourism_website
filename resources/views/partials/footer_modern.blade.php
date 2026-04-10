@@ -22,8 +22,8 @@
         <h4>Plan with confidence</h4>
         <ul class="footer__nav">
           <li><a href="{{ route('chatbot') }}">AI trip planner</a></li>
-          <li><a href="{{ route('hotels') }}">Browse hotels</a></li>
-          <li><a href="{{ route('restaurants') }}">Browse restaurants</a></li>
+          <li><a href="{{ route('hotels.index') }}">Browse hotels</a></li>
+          <li><a href="{{ route('restaurants.index') }}">Browse restaurants</a></li>
           <li><a href="{{ route('aboutUs') }}">About Yalla Nemshi</a></li>
         </ul>
       </div>
