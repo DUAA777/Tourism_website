@@ -58,7 +58,7 @@ class RecommendationService
 
         if ($needsRestaurants) {
             $restaurantsQuery = Restaurant::query();
-            $this->applyFuzzyCityScope($restaurantsQuery, 'location', $intent['mentioned_cities']);
+            $this->applyRestaurantCityScope($restaurantsQuery, $intent['mentioned_cities']);
 
             $rankedRestaurants = $restaurantsQuery->limit(150)->get()
                 ->map(function ($restaurant) use ($intent, $normalizedMessage) {
@@ -91,7 +91,7 @@ class RecommendationService
 
         if ($needsActivities) {
             $activitiesQuery = Activity::query();
-            $this->applyExactCityScope($activitiesQuery, 'city', $intent['mentioned_cities']);
+            $this->applyActivityCityScope($activitiesQuery, $intent['mentioned_cities']);
 
             $rankedActivities = $activitiesQuery->limit(150)->get()
                 ->map(function ($activity) use ($intent, $normalizedMessage) {
@@ -991,6 +991,35 @@ class RecommendationService
         });
     }
 
+    private function applyRestaurantCityScope(Builder $query, array $cities): void
+    {
+        $columns = ['location', 'restaurant_name', 'description', 'search_text'];
+        $terms = [];
+
+        foreach ($cities as $city) {
+            $terms = array_merge($terms, $this->citySearchTerms($city));
+        }
+
+        $terms = array_values(array_unique(array_filter($terms)));
+        if (empty($terms)) {
+            return;
+        }
+
+        $query->where(function (Builder $builder) use ($columns, $terms) {
+            foreach ($columns as $column) {
+                $builder->orWhere(function (Builder $columnQuery) use ($column, $terms) {
+                    foreach ($terms as $index => $term) {
+                        if ($index === 0) {
+                            $columnQuery->where($column, 'like', '%' . $term . '%');
+                        } else {
+                            $columnQuery->orWhere($column, 'like', '%' . $term . '%');
+                        }
+                    }
+                });
+            }
+        });
+    }
+
     private function applyFuzzyCityScope(Builder $query, string $column, array $cities): void
     {
         if (empty($cities)) {
@@ -1022,6 +1051,35 @@ class RecommendationService
         }
 
         $query->whereIn($column, array_values(array_unique($cities)));
+    }
+
+    private function applyActivityCityScope(Builder $query, array $cities): void
+    {
+        $columns = ['city', 'location', 'description', 'search_text'];
+        $terms = [];
+
+        foreach ($cities as $city) {
+            $terms = array_merge($terms, $this->citySearchTerms($city));
+        }
+
+        $terms = array_values(array_unique(array_filter($terms)));
+        if (empty($terms)) {
+            return;
+        }
+
+        $query->where(function (Builder $builder) use ($columns, $terms) {
+            foreach ($columns as $column) {
+                $builder->orWhere(function (Builder $columnQuery) use ($column, $terms) {
+                    foreach ($terms as $index => $term) {
+                        if ($index === 0) {
+                            $columnQuery->where($column, 'like', '%' . $term . '%');
+                        } else {
+                            $columnQuery->orWhere($column, 'like', '%' . $term . '%');
+                        }
+                    }
+                });
+            }
+        });
     }
 
     private function scoreCityMatch(array $requestedCities, array $candidateCities, array &$reasons): float

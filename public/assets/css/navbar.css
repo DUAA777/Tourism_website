@@ -1,3 +1,9 @@
+/* ================= NAVBAR VARIABLES ================= */
+
+:root {
+  --site-nav-height: 62px;
+}
+
 /* ================= NAVBAR BASE ================= */
 
 nav {
@@ -6,31 +12,24 @@ nav {
   left: 0;
   right: 0;
   width: 100%;
-  z-index: 1000;
+  z-index: 1100;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid rgba(255, 107, 44, 0.14);
+  box-shadow: 0 10px 28px rgba(16, 24, 40, 0.06);
+  backdrop-filter: blur(12px);
+  min-height: var(--site-nav-height);
+  transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
 
-  background: #ffffff;
-  box-shadow: none;
-  transition: background 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease;
+nav.scrolled {
+  background: rgba(255, 255, 255, 0.98);
+  border-bottom-color: rgba(255, 107, 44, 0.2);
+  box-shadow: 0 14px 34px rgba(16, 24, 40, 0.08);
 }
 
 nav .nav__logo .logo,
-nav .nav__links a,
 nav .nav__menu__btn {
   color: #ff6b2c;
-  transition: color 0.3s ease;
-}
-
-/* white navbar after scroll */
-nav.scrolled {
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-}
-
-nav.scrolled .nav__logo .logo,
-nav.scrolled .nav__links a,
-nav.scrolled .nav__menu__btn {
-  color: var(--primary);
 }
 
 /* ================= NAV HEADER ================= */
@@ -39,195 +38,690 @@ nav.scrolled .nav__menu__btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
-}
-
-.nav__logo {
-  display: flex;
-  align-items: center;
+  min-height: var(--site-nav-height);
+  padding: 0.48rem 0.92rem;
 }
 
 .nav__logo .logo {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  font-size: 1.75rem;
-  font-weight: 800;
+  gap: 0.4rem;
   text-decoration: none;
+}
+
+.nav__logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 28px;
+  flex: 0 0 40px;
+  border-radius: 0;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.nav__logo-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.nav__logo-wordmark {
+  color: #17324a;
+  font-size: 1.14rem;
+  font-weight: 900;
   line-height: 1;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
 }
 
 .nav__menu__btn {
-  display: flex;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.7rem;
-  line-height: 1;
+  font-size: 1.2rem;
   cursor: pointer;
-  background: transparent;
-  border: 0;
-  padding: 0.25rem;
+  border: 1px solid rgba(255, 107, 44, 0.24);
+  background: rgba(255, 107, 44, 0.08);
 }
 
-/* ================= MOBILE MENU ================= */
+.nav__menu__btn:hover {
+  background: rgba(255, 107, 44, 0.15);
+}
 
-.nav__links {
+/* ================= NAV PANEL ================= */
+
+.nav__panel {
   position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-
+  top: calc(100% + 8px);
+  left: 10px;
+  right: 10px;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-
-  margin: 0;
-  padding: 0 1.5rem;
-
-  list-style: none;
-  background: #ffffff;
-
+  gap: 0.7rem;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(255, 107, 44, 0.18);
+  border-radius: 20px;
+  box-shadow: 0 18px 38px rgba(16, 24, 40, 0.12);
   max-height: 0;
-  overflow: hidden;
   opacity: 0;
+  overflow: hidden;
   visibility: hidden;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
-
-  transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.25s ease;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: max-height 0.35s ease, opacity 0.25s ease, transform 0.25s ease, padding 0.25s ease;
 }
 
-.nav__links.open {
-  max-height: 500px;
+.nav__panel.open {
+  max-height: 84vh;
   opacity: 1;
   visibility: visible;
-  padding: 1.25rem 1.5rem 1.5rem;
+  pointer-events: auto;
+  transform: translateY(0);
+  padding: 0.85rem;
+}
+
+.nav__panel-divider {
+  height: 1px;
+  background: rgba(15, 23, 42, 0.08);
+  margin: 0.1rem 0.15rem;
+}
+
+.nav__links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
 }
 
 .nav__links li {
   width: 100%;
-  text-align: center;
 }
 
-.nav__links a {
-  display: block;
+.nav__links a,
+.nav__links .nav-logout-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  padding: 0.55rem 0;
-  font-size: 1rem;
-  font-weight: 700;
+  padding: 0.72rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
   text-decoration: none;
-  color: var(--text-dark);
+  color: #344054;
+  background: transparent;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nav__links a:hover,
+.nav__links .nav-logout-link:hover {
+  background: rgba(255, 107, 44, 0.1);
+  color: #e85d22;
+}
+
+.nav__links a:focus-visible,
+.nav__links .nav-logout-link:focus-visible,
+.nav__menu__btn:focus-visible {
+  outline: none;
+  border-color: rgba(255, 107, 44, 0.4);
+  box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.14);
+}
+
+.nav__links a.is-active {
+  background: rgba(255, 107, 44, 0.12);
+  color: #e85d22;
+}
+
+.nav__links--account a,
+.nav__links--account .nav-logout-link {
+  border-color: rgba(255, 107, 44, 0.2);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.nav__links--account a.is-active {
+  border-color: rgba(255, 107, 44, 0.3);
+}
+
+.nav__account-item {
+  width: 100%;
+}
+
+.nav__account-menu {
+  position: relative;
+  width: 100%;
+}
+
+.nav__account-menu::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 100%;
+  height: 14px;
+}
+
+.nav__account-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.52rem 0.62rem;
+  border: 1px solid rgba(255, 107, 44, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  color: #22354a;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.nav__account-trigger:hover,
+.nav__account-trigger:focus-visible,
+.nav__account-menu:hover .nav__account-trigger,
+.nav__account-menu:focus-within .nav__account-trigger,
+.nav__account-trigger.is-active {
+  background: #ffffff;
+  border-color: rgba(255, 107, 44, 0.3);
+  color: #102a43;
+  box-shadow: 0 10px 22px rgba(16, 24, 40, 0.08);
+}
+
+.nav__account-trigger:focus-visible {
+  outline: none;
+}
+
+.nav__account-avatar {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff7b39, #ef5c18);
+  color: #ffffff;
+  font-size: 0.96rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.nav__account-avatar--large {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 14px;
+  font-size: 1.08rem;
+}
+
+.nav__account-copy,
+.nav__account-dropdown-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav__account-copy strong,
+.nav__account-dropdown-copy strong {
+  color: #102a43;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav__account-copy small,
+.nav__account-dropdown-copy small {
+  color: #667085;
+  font-size: 0.72rem;
+  font-weight: 600;
   line-height: 1.2;
 }
 
-.nav__links a:hover {
-  color: var(--primary);
+.nav__account-trigger i {
+  margin-left: auto;
+  color: #7a8aa0;
+  font-size: 1rem;
+  transition: transform 0.18s ease;
 }
 
-/* ================= MOBILE: NO SCROLL TRANSITION ================= */
+.nav__account-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.6rem;
+  padding: 0.68rem;
+  border: 1px solid rgba(255, 107, 44, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 16px 36px rgba(16, 24, 40, 0.1);
+}
 
-@media (max-width: 768px) {
+.nav__account-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.12rem 0.1rem;
+}
+
+.nav__account-dropdown-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.nav__account-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.58rem 0.68rem;
+  border-radius: 12px;
+  color: #344054;
+  text-decoration: none;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.nav__account-link:hover,
+.nav__account-link.is-active {
+  background: rgba(255, 107, 44, 0.1);
+  color: #e85d22;
+}
+
+.nav__account-link i {
+  font-size: 1rem;
+  color: inherit;
+}
+
+.nav__account-link span {
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.nav__account-link--logout {
+  color: #b54708;
+}
+
+.nav__account-menu.is-open .nav__account-trigger i {
+  transform: rotate(180deg);
+}
+
+.nav__link--plan {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 107, 44, 0.08);
+  border-width: 0;
+  border-color: transparent;
+  color: #e85d22;
+  box-shadow: none;
+}
+
+.nav__link-plan-star {
+  position: absolute;
+  top: 0.2rem;
+  left: 0.42rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.85rem;
+  height: 0.85rem;
+  color: #ff8a4c;
+  font-size: 0.68rem;
+  line-height: 1;
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.nav__link--plan:hover,
+.nav__link--plan:focus-visible,
+.nav__link--plan.is-active {
+  background: rgba(255, 107, 44, 0.14);
+  border-width: 0;
+  border-color: transparent;
+  color: #d9571e;
+  box-shadow: none;
+}
+
+.nav__admin-link {
+  background: rgba(255, 204, 0, 0.14);
+  border-color: rgba(255, 204, 0, 0.34);
+  color: #8a5a00;
+}
+
+.nav__admin-link:hover {
+  background: rgba(255, 204, 0, 0.22);
+  color: #714900;
+}
+
+body.nav-open {
+  overflow: hidden;
+}
+
+@media (max-width: 1024px) {
   nav {
-    background: #ffffff;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
     backdrop-filter: none;
-    transition: none;
+    box-shadow: 0 8px 20px rgba(16, 24, 40, 0.06);
   }
 
-  nav .nav__logo .logo,
-  nav .nav__links a,
-  nav .nav__menu__btn,
-  nav.scrolled .nav__logo .logo,
-  nav.scrolled .nav__links a,
-  nav.scrolled .nav__menu__btn {
-    color: var(--text-dark);
-    transition: none;
+  .nav__panel {
+    gap: 0.55rem;
+    background: rgba(255, 255, 255, 0.99);
+    border-radius: 22px;
+    box-shadow: 0 20px 44px rgba(16, 24, 40, 0.14);
   }
 
-  nav.scrolled {
-    background: #ffffff;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-    backdrop-filter: none;
+  .nav__panel.open {
+    padding: 0.7rem;
+  }
+
+  .nav__panel-divider {
+    margin: 0.2rem 0.15rem;
+  }
+
+  .nav__links {
+    gap: 0.2rem;
+  }
+
+  .nav__links a,
+  .nav__links .nav-logout-link {
+    justify-content: flex-start;
+    padding: 0.78rem 0.88rem;
+    border-radius: 16px;
+    font-size: 0.95rem;
+    line-height: 1.1;
+  }
+
+  .nav__link--plan {
+    padding-left: 1.8rem !important;
+  }
+
+  .nav__account-menu::after {
+    display: none;
+  }
+
+  .nav__account-trigger {
+    padding: 0.5rem 0.58rem;
+    border-radius: 16px;
+    box-shadow: none;
+  }
+
+  .nav__account-trigger:hover,
+  .nav__account-trigger:focus-visible,
+  .nav__account-menu:hover .nav__account-trigger,
+  .nav__account-menu:focus-within .nav__account-trigger,
+  .nav__account-trigger.is-active {
+    box-shadow: none;
+  }
+
+  .nav__account-copy strong {
+    font-size: 0.88rem;
+  }
+
+  .nav__account-copy small {
+    font-size: 0.67rem;
+  }
+
+  .nav__account-dropdown {
+    display: none;
+    margin-top: 0.42rem;
+    padding: 0.46rem;
+    gap: 0.4rem;
+    border-radius: 16px;
+    box-shadow: none;
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  .nav__account-menu.is-open .nav__account-dropdown {
+    display: flex;
+  }
+
+  .nav__account-dropdown-header {
+    display: none;
+  }
+
+  .nav__account-dropdown-links {
+    gap: 0.28rem;
+  }
+
+  .nav__account-link {
+    padding: 0.66rem 0.72rem;
+    border-radius: 13px;
   }
 }
 
 /* ================= DESKTOP ================= */
 
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
+  :root {
+    --site-nav-height: 68px;
+  }
+
   nav {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 84px;
-    padding: 0 4rem;
+    gap: 1.4rem;
+    padding: 0.5rem 1.15rem;
   }
 
   .nav__header {
-    height: 100%;
     padding: 0;
-  }
-
-  .nav__logo,
-  .nav__logo .logo {
-    height: 100%;
-    display: flex;
-    align-items: center;
+    flex: 0 0 auto;
   }
 
   .nav__menu__btn {
     display: none;
   }
 
-  .nav__links {
-    position: static;
-    width: auto;
-    height: 100%;
+  .nav__logo-mark {
+    width: 46px;
+    height: 32px;
+    flex-basis: 46px;
+  }
 
+  .nav__logo-image {
+    width: 100%;
+    height: 100%;
+    object-position: center;
+  }
+
+  .nav__logo-wordmark {
+    font-size: 1.32rem;
+  }
+
+  .nav__panel {
+    position: static;
+    left: auto;
+    right: auto;
+    top: auto;
+    flex: 1 1 auto;
     flex-direction: row;
     align-items: center;
-    justify-content: flex-end;
-    gap: 3rem;
-
+    justify-content: space-between;
+    gap: 1rem;
     margin: 0;
     padding: 0;
-
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    transform: none;
     max-height: none;
-    overflow: visible;
     opacity: 1;
     visibility: visible;
-    background: transparent;
-    box-shadow: none;
+    pointer-events: auto;
+    overflow: visible;
+  }
+
+  .nav__panel-divider {
+    width: 1px;
+    height: 28px;
+    margin: 0;
+    background: rgba(15, 23, 42, 0.1);
+  }
+
+  .nav__links {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.34rem;
   }
 
   .nav__links li {
     width: auto;
-    height: 100%;
-    display: flex;
-    align-items: center;
   }
 
-  .nav__links a {
-    display: flex;
-    align-items: center;
-    height: 100%;
+  .nav__links a,
+  .nav__links .nav-logout-link {
     width: auto;
-    padding: 0;
-    line-height: 1;
-    color: inherit;
+    padding: 0.4rem 0.72rem;
+    border-radius: 999px;
+    font-size: 0.91rem;
+  }
+
+  .nav__links--primary a {
+    color: #344054;
+  }
+
+  .nav__links--primary a:not(.nav__link--plan).is-active {
+    background: rgba(255, 107, 44, 0.08);
+    color: #e85d22;
+  }
+
+  .nav__links--account {
+    flex-shrink: 0;
+  }
+
+  .nav__account-item {
+    width: auto;
+  }
+
+  .nav__account-menu {
+    width: auto;
+  }
+
+  .nav__account-trigger {
+    width: auto;
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+    border-radius: 16px;
+  }
+
+  .nav__account-avatar {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 11px;
+    font-size: 0.9rem;
+  }
+
+  .nav__account-copy strong {
+    font-size: 0.88rem;
+  }
+
+  .nav__account-copy small {
+    font-size: 0.68rem;
+  }
+
+  .nav__account-dropdown {
+    position: absolute;
+    top: calc(100% + 2px);
+    right: 0;
+    width: 220px;
+    margin-top: 0;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+  }
+
+  .nav__account-menu:hover .nav__account-dropdown,
+  .nav__account-menu:focus-within .nav__account-dropdown {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .nav__link-plan-star {
+    top: 0.16rem;
+    left: 0.46rem;
+  }
+
+  .nav__links--account a,
+  .nav__links--account .nav-logout-link {
+    border-color: rgba(255, 107, 44, 0.18);
+    background: rgba(255, 255, 255, 0.9);
   }
 }
 
-/* ================= SMALLER MOBILE TWEAK ================= */
+/* ================= SMALL MOBILE TWEAK ================= */
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .nav__header {
-    padding: 1.25rem 1.25rem;
+    padding: 0.42rem 0.78rem;
   }
 
   .nav__logo .logo {
-    font-size: 1.45rem;
+    gap: 0.34rem;
+  }
+
+  .nav__logo-mark {
+    width: 34px;
+    height: 24px;
+    flex-basis: 34px;
+  }
+
+  .nav__logo-image {
+    width: 100%;
+    height: 100%;
+    object-position: center;
+  }
+
+  .nav__logo-wordmark {
+    font-size: 1rem;
   }
 
   .nav__menu__btn {
-    font-size: 1.55rem;
+    width: 34px;
+    height: 34px;
+    font-size: 1.05rem;
+  }
+
+  .nav__account-trigger {
+    padding: 0.44rem 0.5rem;
+  }
+
+  .nav__account-avatar {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    font-size: 0.82rem;
+  }
+
+  .nav__account-copy strong {
+    font-size: 0.84rem;
+  }
+
+  .nav__account-copy small {
+    font-size: 0.66rem;
   }
 }

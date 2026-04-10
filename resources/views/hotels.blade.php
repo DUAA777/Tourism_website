@@ -1,7 +1,6 @@
 @extends('layout.app')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/chatbot.css') }}">
 <style>
     :root {
         --hotel-bg: #f8f9fc;

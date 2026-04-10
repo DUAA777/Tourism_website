@@ -14,6 +14,16 @@ class ChatbotControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->user = $this->createUser('tester@example.com');
+        $this->actingAs($this->user);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();
@@ -239,7 +249,7 @@ class ChatbotControllerTest extends TestCase
         return User::create([
             'name' => strtok($email, '@'),
             'email' => $email,
-            'password' => 'password',
+            'password' => bcrypt('password'),
         ]);
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Restaurant;
 use App\Models\Hotel;
+use App\Models\Review;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -16,8 +17,32 @@ class HomeController extends Controller
         
         // Merge collections
         $places = $restaurants->merge($hotels);
+        $reviews = Review::with('user')->inRandomOrder()->take(6)->get();
+        $userReview = auth()->check() ? auth()->user()->review : null;
         
-        return view('home', compact('places'));
+        return view('home', compact('places', 'reviews', 'userReview'));
+    }
+
+    public function storeReview(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->review) {
+            return redirect()
+                ->route('home')
+                ->with('review_error', 'You already submitted a review.');
+        }
+
+        $validated = $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'review_text' => 'required|string|min:10|max:1000',
+        ]);
+
+        $user->review()->create($validated);
+
+        return redirect()
+            ->route('home')
+            ->with('review_success', 'Thanks! Your review has been added.');
     }
     
 public function searchDestinations(Request $request)

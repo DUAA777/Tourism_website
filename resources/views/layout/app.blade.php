@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
 
@@ -21,7 +22,7 @@
 </head>
 
 
-<body>
+<body class="@yield('bodyClass')">
 
     <div id="your-element-selector"></div>
 
@@ -31,7 +32,7 @@
             <div id="main">
                 @yield('content')
                 @if(trim($__env->yieldContent('hideFooter')) !== '1')
-                    @include("partials.footer")
+                    @include("partials.footer_modern")
                 @endif
             </div>
         </div>
@@ -40,7 +41,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.dots.min.js"></script>
 
-    <script src="{{ asset('assets/js/header.js') }}"></script>
+    <script src="{{ asset('assets/js/navbar.js') }}"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"

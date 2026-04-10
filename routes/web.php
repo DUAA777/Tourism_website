@@ -6,40 +6,48 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RestaurantControllerAdmin;
 use App\Http\Controllers\Admin\HotelControllerAdmin;
-// Admin Routes
-Route::prefix('admin')->name('admin.')->group(function () {
 
-        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-        
-        // User Management
-        Route::resource('users', UserController::class);
-        
-        // Restaurant Management
-        Route::resource('restaurants', RestaurantControllerAdmin::class);
-        // Add to routes/web.php inside admin group
-Route::post('/restaurants/bulk-delete', [RestaurantControllerAdmin::class, 'bulkDelete'])->name('restaurants.bulk-delete');
-Route::get('/restaurants/export', [RestaurantControllerAdmin::class, 'export'])->name('restaurants.export');
-
-Route::post('/hotels/bulk-delete', [HotelControllerAdmin::class, 'bulkDelete'])->name('hotels.bulk-delete');
-Route::post('/hotels/bulk-restore', [HotelControllerAdmin::class, 'bulkRestore'])->name('hotels.bulk-restore');
-        // Hotel Management
-        Route::resource('hotels', HotelControllerAdmin::class);
-        Route::post('hotels/{id}/restore', [HotelControllerAdmin::class, 'restore'])->name('hotels.restore');
-        Route::delete('hotels/{id}/force-delete', [HotelControllerAdmin::class, 'forceDelete'])->name('hotels.force-delete');
-
-});
 // Static Pages
-Route::get('/', [HomeController::class, 'index'])->name('home'); // Updated to use HomeController
-use App\Http\Controllers\ChatbotController;
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot');
-Route::post('/chatbot/message', [ChatbotController::class, 'send'])->name('chatbot.send');
-Route::post('/chatbot/new-session', [ChatbotController::class, 'newSession'])->name('chatbot.newSession');
+// Admin Routes (with authentication middleware)
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    
+    // User Management
+    Route::resource('users', UserController::class);
+    
+    // Restaurant Management
+    Route::resource('restaurants', RestaurantControllerAdmin::class);
+    Route::post('/restaurants/bulk-delete', [RestaurantControllerAdmin::class, 'bulkDelete'])->name('restaurants.bulk-delete');
+    Route::get('/restaurants/export', [RestaurantControllerAdmin::class, 'export'])->name('restaurants.export');
+    
+    // Hotel Management
+    Route::resource('hotels', HotelControllerAdmin::class);
+    Route::post('/hotels/bulk-delete', [HotelControllerAdmin::class, 'bulkDelete'])->name('hotels.bulk-delete');
+    Route::post('/hotels/bulk-restore', [HotelControllerAdmin::class, 'bulkRestore'])->name('hotels.bulk-restore');
+    Route::post('hotels/{id}/restore', [HotelControllerAdmin::class, 'restore'])->name('hotels.restore');
+    Route::delete('hotels/{id}/force-delete', [HotelControllerAdmin::class, 'forceDelete'])->name('hotels.force-delete');
+});
+
+// Chatbot routes (requires authentication)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot');
+    Route::post('/chatbot/message', [ChatbotController::class, 'send'])->name('chatbot.send');
+    Route::post('/chatbot/new-session', [ChatbotController::class, 'newSession'])->name('chatbot.newSession');
+    Route::post('/reviews', [HomeController::class, 'storeReview'])->name('reviews.store');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::delete('/profile/photo', [ProfileController::class, 'removePhoto'])->name('profile.photo.delete');
+});
 Route::get('/aboutUs', function () { return view('aboutUs'); })->name('aboutUs');
 Route::get('/contactUs', function () { return view('contactUs'); })->name('contactUs');
 Route::get('/destinations', function () { return view('destinations'); })->name('destinations');
@@ -88,7 +96,6 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
-Route::get('/profile', function () { return view('profile'); })->name('profile');
 
 /*
 |--------------------------------------------------------------------------

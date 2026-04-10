@@ -7,18 +7,6 @@
 @endpush
 
 @push('styles')
-<style>
-body.about-page .nav__links a{
-  color:#000 !important;
-}
-body.about-page .nav__links a:hover{
-  color:var(--primary) !important;
-}
-body.about-page .nav__logo .logo,
-body.about-page .nav__menu__btn{
-  color:#000 !important;
-}
-</style>
 <link rel="stylesheet" href="{{ asset('assets/css/about.css') }}">
 @endpush
 
