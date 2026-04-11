@@ -7,39 +7,48 @@ document.addEventListener("DOMContentLoaded", function () {
             const target = parseFloat(element.getAttribute("data-target")) || 0;
             const suffix = element.getAttribute("data-suffix") || "";
             const decimals = parseInt(element.getAttribute("data-decimals") || "0", 10);
+            const duration =
+                target >= 10000 ? 3600 :
+                target >= 2000 ? 3200 :
+                2800;
 
-            let start = 0;
-            const duration = 1800;
-            const increment = target / (duration / 16);
+            const startTime = performance.now();
 
-            function updateCounter() {
-                start += increment;
+            function formatValue(value) {
+                if (decimals > 0) {
+                    return value.toFixed(decimals) + suffix;
+                }
+                return Math.floor(value).toLocaleString() + suffix;
+            }
 
-                if (start >= target) {
-                    if (decimals > 0) {
-                        element.textContent = target.toFixed(decimals) + suffix;
-                    } else {
-                        element.textContent = Math.floor(target).toLocaleString() + suffix;
-                    }
+            function easeOutCubic(t) {
+                return 1 - Math.pow(1 - t, 3);
+            }
+
+            function updateCounter(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easedProgress = easeOutCubic(progress);
+                const currentValue = target * easedProgress;
+
+                if (progress >= 1) {
+                    element.textContent = formatValue(target);
                     return;
                 }
 
-                if (decimals > 0) {
-                    element.textContent = start.toFixed(decimals) + suffix;
-                } else {
-                    element.textContent = Math.floor(start).toLocaleString() + suffix;
-                }
-
+                element.textContent = formatValue(currentValue);
                 requestAnimationFrame(updateCounter);
             }
 
-            updateCounter();
+            requestAnimationFrame(updateCounter);
         }
 
         function startCounters() {
             if (started) return;
             started = true;
-            statNumbers.forEach((number) => animateNumber(number));
+            statNumbers.forEach((number, index) => {
+                setTimeout(() => animateNumber(number), index * 140);
+            });
         }
 
         const statsSection = document.querySelector(".stats-strip");

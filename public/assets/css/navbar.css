@@ -366,7 +366,10 @@ nav .nav__menu__btn {
 
 .nav__link--plan {
   position: relative;
-  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.36rem;
+  overflow: visible;
   background: rgba(255, 107, 44, 0.08);
   border-width: 0;
   border-color: transparent;
@@ -375,18 +378,19 @@ nav .nav__menu__btn {
 }
 
 .nav__link-plan-star {
-  position: absolute;
-  top: 0.2rem;
-  left: 0.42rem;
+  position: static;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 0.85rem;
-  height: 0.85rem;
-  color: #ff8a4c;
-  font-size: 0.68rem;
+  width: 1.02rem;
+  height: 1.02rem;
+  border-radius: 999px;
+  background: rgba(255, 107, 44, 0.14);
+  color: #ff6b2c;
+  font-size: 0.72rem;
   line-height: 1;
-  opacity: 0.95;
+  opacity: 1;
+  transform: translateY(-0.02rem);
   pointer-events: none;
 }
 
@@ -398,6 +402,13 @@ nav .nav__menu__btn {
   border-color: transparent;
   color: #d9571e;
   box-shadow: none;
+}
+
+.nav__link--plan:hover .nav__link-plan-star,
+.nav__link--plan:focus-visible .nav__link-plan-star,
+.nav__link--plan.is-active .nav__link-plan-star {
+  background: rgba(255, 107, 44, 0.2);
+  color: #d9571e;
 }
 
 .nav__admin-link {
@@ -447,10 +458,6 @@ body.nav-open {
     border-radius: 16px;
     font-size: 0.95rem;
     line-height: 1.1;
-  }
-
-  .nav__link--plan {
-    padding-left: 1.8rem !important;
   }
 
   .nav__account-menu::after {
@@ -597,12 +604,52 @@ body.nav-open {
   }
 
   .nav__links--primary a {
+    position: relative;
     color: #344054;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding-inline: 0.5rem;
   }
 
-  .nav__links--primary a:not(.nav__link--plan).is-active {
-    background: rgba(255, 107, 44, 0.08);
+  .nav__links--primary a::after {
+    content: "";
+    position: absolute;
+    left: 0.45rem;
+    right: 0.45rem;
+    bottom: -0.08rem;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ff6b2c 0%, #ff8a4c 100%);
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .nav__links--primary a:hover {
     color: #e85d22;
+    background: transparent;
+  }
+
+  .nav__links--primary a:hover::after,
+  .nav__links--primary a.is-active::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .nav__links--primary a.is-active {
+    color: #e85d22;
+    background: transparent;
+  }
+
+  .nav__links--primary .nav__link--plan,
+  .nav__links--primary .nav__link--plan:hover,
+  .nav__links--primary .nav__link--plan:focus-visible,
+  .nav__links--primary .nav__link--plan.is-active {
+    background: transparent;
+    box-shadow: none;
+    border: 0;
   }
 
   .nav__links--account {
@@ -662,8 +709,9 @@ body.nav-open {
   }
 
   .nav__link-plan-star {
-    top: 0.16rem;
-    left: 0.46rem;
+    width: 0.96rem;
+    height: 0.96rem;
+    font-size: 0.68rem;
   }
 
   .nav__links--account a,

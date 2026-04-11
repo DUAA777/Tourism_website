@@ -26,8 +26,14 @@
     </div>
   </div>
 
-    
-
+  <div class="nav__panel" id="nav-links">
+    <ul class="nav__links nav__links--primary">
+      <li>
+        <a href="{{ route('home') }}" class="{{ $homeActive ? 'is-active' : '' }}" @if($homeActive) aria-current="page" @endif>HOME</a>
+      </li>
+      <li>
+        <a href="{{ route('aboutUs') }}" class="{{ $aboutActive ? 'is-active' : '' }}" @if($aboutActive) aria-current="page" @endif>ABOUT</a>
+      </li>
       <li>
         <a href="{{ route('chatbot') }}" class="nav__link--plan {{ $chatbotActive ? 'is-active' : '' }}" @if($chatbotActive) aria-current="page" @endif>
           <span class="nav__link-plan-star" aria-hidden="true"><i class="ri-sparkling-2-fill"></i></span>
@@ -58,7 +64,7 @@
       @else
         @php
           $displayName = trim((string) (Auth::user()->name ?? 'User'));
-          $userInitial = strtoupper(substr($displayName, 0, 1));
+          $userInitial = strtoupper(substr($displayName !== '' ? $displayName : 'User', 0, 1));
           $isAdmin = (bool) Auth::user()->is_admin;
         @endphp
         <li class="nav__account-item">

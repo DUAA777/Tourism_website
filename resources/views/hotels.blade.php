@@ -1,5 +1,7 @@
 @extends('layout.app')
 
+@section('bodyClass', 'hotels-page')
+
 @push('styles')
 <style>
     :root {
@@ -24,15 +26,15 @@
         --hotel-transition: all 0.2s ease;
     }
 
-    * {
+    .hotel-layout,
+    .hotel-layout * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
     }
 
-    body {
+    body.hotels-page {
         background-color: var(--hotel-bg);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         color: var(--hotel-text-dark);
         line-height: 1.5;
     }
@@ -45,6 +47,7 @@
         display: flex;
         gap: 32px;
         align-items: flex-start;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
     /* Filter Sidebar */

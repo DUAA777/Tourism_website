@@ -1,6 +1,6 @@
 @extends('layout.app')
 
-@section('body-class','about-page')
+@section('bodyClass','about-page')
 
 @push('meta')
   <title>About us | Yalla Nemshi</title>

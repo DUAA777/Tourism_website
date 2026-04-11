@@ -415,3 +415,7 @@ body.about-page {
     min-width: 100%;
   }
 }
+
+body.about-page .site-footer {
+  margin-top: 0;
+}

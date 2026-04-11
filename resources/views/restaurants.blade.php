@@ -1,5 +1,7 @@
 @extends('layout.app')
 
+@section('bodyClass', 'restaurants-page')
+
 @push('styles')
 <link rel="stylesheet" href="{{ asset('assets/css/chatbot.css') }}">
 <style>
@@ -23,15 +25,15 @@
         --transition: all 0.2s ease;
     }
 
-    * {
+    .resto-layout,
+    .resto-layout * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
     }
 
-    body {
+    body.restaurants-page {
         background-color: var(--bg-color);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         color: var(--text-primary);
         line-height: 1.5;
     }
@@ -44,6 +46,7 @@
         display: flex;
         gap: 32px;
         align-items: flex-start;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
     /* Sidebar Filters */
@@ -693,13 +696,45 @@
                             @endif
                         </div>
                         <div class="tags">
-                            @php $tags = $restaurant->tags ? explode(',', $restaurant->tags) : []; @endphp
+                            @php
+                                $rawTags = $restaurant->tags;
+                                if (is_array($rawTags)) {
+                                    $tags = $rawTags;
+                                } elseif (is_string($rawTags)) {
+                                    $decodedTags = json_decode($rawTags, true);
+                                    $tags = is_array($decodedTags) ? $decodedTags : explode(',', $rawTags);
+                                } else {
+                                    $tags = [];
+                                }
+
+                                $tags = array_values(array_filter(array_map(function ($tag) {
+                                    return trim((string) $tag);
+                                }, $tags), function ($tag) {
+                                    return $tag !== '';
+                                }));
+                            @endphp
                             @foreach(array_slice($tags, 0, 3) as $tag)
                                 <span class="tag">{{ trim($tag) }}</span>
                             @endforeach
                             @if($restaurant->food_type)
                                 @php
-                                    $foodTypes = array_map('trim', explode(',', $restaurant->food_type));
+                                    $rawFoodTypes = $restaurant->food_type;
+                                    if (is_array($rawFoodTypes)) {
+                                        $foodTypes = $rawFoodTypes;
+                                    } else {
+                                        $decodedFoodTypes = is_string($rawFoodTypes) ? json_decode($rawFoodTypes, true) : null;
+                                        if (is_array($decodedFoodTypes)) {
+                                            $foodTypes = $decodedFoodTypes;
+                                        } else {
+                                            $foodTypes = is_string($rawFoodTypes) ? explode(',', $rawFoodTypes) : [];
+                                        }
+                                    }
+
+                                    $foodTypes = array_values(array_filter(array_map(function ($foodType) {
+                                        return trim((string) $foodType);
+                                    }, $foodTypes), function ($foodType) {
+                                        return $foodType !== '';
+                                    }));
                                 @endphp
                                 @foreach(array_slice($foodTypes, 0, 2) as $foodType)
                                     <span class="tag cuisine">{{ ucfirst($foodType) }}</span>

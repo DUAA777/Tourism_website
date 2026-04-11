@@ -52,16 +52,25 @@ body {
 .home-hero__content {
   position: relative;
   z-index: 2;
-  min-height: 700px;
-  padding: 120px 56px 42px;
+  min-height: 100%;
+  padding: 120px 56px 110px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
 }
 
 .home-hero__text {
-  max-width: 470px;
+  max-width: 560px;
   color: #fff;
+}
+
+.home-hero__brand-top {
+  margin: 0 0 10px;
+  font-size: clamp(2.9rem, 6.8vw, 5.2rem);
+  line-height: 0.92;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--primary);
 }
 
 .home-hero__eyebrow {
@@ -80,7 +89,7 @@ body {
 }
 
 .home-hero__desc {
-  max-width: 420px;
+  max-width: 520px;
   margin: 0 0 28px;
   font-size: 1rem;
   line-height: 1.7;
@@ -123,61 +132,6 @@ body {
 
 .hero-btn--ghost:hover {
   background: rgba(255, 255, 255, 0.2);
-}
-
-/* ===== HERO THUMBS ===== */
-
-.home-hero__thumbs {
-  position: absolute;
-  bottom: -20px;
-  left: 0;
-  width: 100%;
-  overflow: hidden;
-}
-
-.home-hero__thumb-title {
-  margin: 20px 0 14px;
-  padding-left: 56px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #fff;
-}
-
-.home-hero__thumb-slider {
-  width: 100%;
-  overflow: hidden;
-}
-
-.home-hero__thumb-track {
-  display: flex;
-  gap: 18px;
-  width: max-content;
-  will-change: transform;
-  animation: heroThumbSlide 28s linear infinite;
-}
-
-.hero-thumb {
-  flex: 0 0 300px;
-  height: 110px;
-  border-radius: 20px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.hero-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-@keyframes heroThumbSlide {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(calc(-50% - 9px), 0, 0);
-  }
 }
 
 /* ===== STATS ===== */
@@ -474,8 +428,8 @@ body {
 
 @media (max-width: 900px) {
   .home-hero__content {
-    padding: 110px 28px 32px;
-    min-height: 650px;
+    padding: 110px 28px 96px;
+    min-height: 100%;
   }
 
   .stats-strip__inner {
@@ -487,13 +441,6 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .home-hero__thumb-title {
-    padding-left: 28px;
-  }
-
-  .hero-thumb {
-    flex: 0 0 260px;
-  }
 }
 
 @media (max-width: 640px) {
@@ -503,18 +450,7 @@ body {
   }
 
   .home-hero__content {
-    padding: 100px 18px 24px;
-  }
-
-  .home-hero__thumb-title {
-    padding-left: 18px;
-    font-size: 0.9rem;
-  }
-
-  .hero-thumb {
-    flex: 0 0 220px;
-    height: 96px;
-    border-radius: 16px;
+    padding: 100px 18px 90px;
   }
 
   .stats-strip__inner {

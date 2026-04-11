@@ -10,8 +10,12 @@
 
 .contact{
   position: relative;
-  padding: 5.5rem 0 4rem;
+  padding: 4.9rem 0 3rem;
+  min-height: calc(100vh - var(--site-nav-height) + 1px);
+  min-height: calc(100svh - var(--site-nav-height) + 1px);
   overflow: hidden;
+  display: flex;
+  align-items: center;
 
   background:
     linear-gradient(
@@ -36,18 +40,26 @@
 .contact .section__container{
   position: relative;
   z-index: 1;
+  width: 100%;
+}
+
+.contact > .section__container.contact__wrap{
+  padding-top: 0;
+  padding-bottom: 0;
+  width: min(var(--max-width), 100%);
+  margin: 0 auto;
 }
 
 .contact__wrap{
   display: grid;
   grid-template-columns: 1fr 1.05fr;
   gap: 3rem;
-  align-items: start;
+  align-items: center;
 }
 
 .contact__info{
   padding-left: 0;
-  padding: 0.75rem 0;
+  padding: 0;
 }
 
 .contact__card{
@@ -204,10 +216,11 @@ a.contact__value:hover{
   .contact__wrap{
     grid-template-columns: 1fr;
     gap: 1.5rem;
-    align-items: stretch;
+    align-items: center;
   }
 
   .contact{
+    display: block;
     padding-top: 4.2rem;
     background-position: center center;
   }
@@ -217,4 +230,10 @@ a.contact__value:hover{
     margin-left: 0;
     max-width: 100%;
   }
+}
+
+body.contact-page .site-footer {
+  margin-top: 0 !important;
+  padding-top: 1.45rem;
+  padding-bottom: 1.05rem;
 }

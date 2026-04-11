@@ -11,46 +11,15 @@
 
     <div class="home-hero__content">
         <div class="home-hero__text">
+            <h2 class="home-hero__brand-top">Yalla Nemshi</h2>
             <p class="home-hero__eyebrow">Discover Lebanon</p>
-            <h1>Unlock Your Travel Dreams With Us!!!</h1>
+            <h1>Unlock Your Travel Dreams With Us!</h1>
             <p class="home-hero__desc">
                 Discover destinations, build smart itineraries, and explore Lebanon
                 with a cleaner, easier, and more inspiring planning experience.
             </p>
             <div class="home-hero__actions">
                 <a href="{{ route('chatbot') }}" class="hero-btn hero-btn--primary">Plan My Trip</a>
-            </div>
-        </div>
-
-        <div class="home-hero__thumbs">
-            <div class="home-hero__thumb-title">Popular Places</div>
-            <div class="home-hero__thumb-slider">
-                <div class="home-hero__thumb-track">
-                    <div class="hero-thumb">
-                        <img src="{{ asset('images/destination-1.jpg') }}" alt="Baalbek">
-                    </div>
-                    <div class="hero-thumb">
-                        <img src="{{ asset('images/destination-2.jpg') }}" alt="Sidon">
-                    </div>
-                    <div class="hero-thumb">
-                        <img src="{{ asset('images/destination-3.jpg') }}" alt="Beirut">
-                    </div>
-                    <div class="hero-thumb">
-                        <img src="{{ asset('images/showcase-bg.jpg') }}" alt="Lebanon">
-                    </div>
-                    <div class="hero-thumb">
-                        <img src="{{ asset('images/destination-1.jpg') }}" alt="Baalbek">
-                    </div>
-                    <div class="hero-thumb">
-                        <img src="{{ asset('images/destination-2.jpg') }}" alt="Sidon">
-                    </div>
-                    <div class="hero-thumb">
-                        <img src="{{ asset('images/destination-3.jpg') }}" alt="Beirut">
-                    </div>
-                    <div class="hero-thumb">
-                        <img src="{{ asset('images/showcase-bg.jpg') }}" alt="Lebanon">
-                    </div>
-                </div>
             </div>
         </div>
     </div>

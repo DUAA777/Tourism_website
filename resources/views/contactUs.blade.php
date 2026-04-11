@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="{{ asset('assets/css/contactUs.css') }}">
 @endpush
 
+@section('bodyClass', 'contact-page')
+
 @section('content')
 
 <section class="contact">
