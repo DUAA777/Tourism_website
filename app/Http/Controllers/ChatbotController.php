@@ -191,11 +191,13 @@ class ChatbotController extends Controller
 
     private function requestPythonReply(ChatSession $session, string $message, array $history, array $recommendations): ?string
     {
+        $chatbotBaseUrl = rtrim((string) config('services.chatbot.base_url', 'http://127.0.0.1:5000'), '/');
+
         try {
-            $pythonResponse = Http::connectTimeout(3)
-                ->timeout(45)
+            $pythonResponse = Http::connectTimeout((int) config('services.chatbot.connect_timeout', 3))
+                ->timeout((int) config('services.chatbot.timeout', 45))
                 ->retry(2, 250, null, false)
-                ->post('http://127.0.0.1:5000/chat', [
+                ->post($chatbotBaseUrl . '/chat', [
                     'session_id' => $session->id,
                     'message' => $message,
                     'history' => $history,
@@ -573,7 +575,7 @@ class ChatbotController extends Controller
             $links['hotel:' . $hotelName] = [
                 'type' => 'hotel',
                 'name' => $hotelName,
-                'url' => route('hotels.show', ['id' => $hotelId]),
+                'url' => $this->buildHotelUrl($hotelId),
             ];
         }
 
@@ -588,7 +590,7 @@ class ChatbotController extends Controller
             $links['restaurant:' . $restaurantName] = [
                 'type' => 'restaurant',
                 'name' => $restaurantName,
-                'url' => route('restaurants.show', ['id' => $restaurantId]),
+                'url' => $this->buildRestaurantUrl($restaurantId),
             ];
         }
 
@@ -616,7 +618,7 @@ class ChatbotController extends Controller
                             !empty($hotel['budget_tier']) ? ucfirst(str_replace('_', ' ', (string) $hotel['budget_tier'])) : null,
                         ])),
                         'reasons' => array_slice((array) ($hotel['top_reasons'] ?? $hotel['match_reasons'] ?? []), 0, 3),
-                        'url' => !empty($hotel['id']) ? route('hotels.show', ['id' => $hotel['id']]) : null,
+                        'url' => $this->buildHotelUrl($hotel['id'] ?? null),
                         'url_label' => 'Open hotel',
                     ]
                 ),
@@ -633,7 +635,7 @@ class ChatbotController extends Controller
                             isset($restaurant['rating']) ? 'Rating ' . $restaurant['rating'] . '/5' : null,
                         ])),
                         'reasons' => array_slice((array) ($restaurant['top_reasons'] ?? $restaurant['match_reasons'] ?? []), 0, 3),
-                        'url' => !empty($restaurant['id']) ? route('restaurants.show', ['id' => $restaurant['id']]) : null,
+                        'url' => $this->buildRestaurantUrl($restaurant['id'] ?? null),
                         'url_label' => 'Open restaurant',
                     ]
                 ),
@@ -722,12 +724,12 @@ class ChatbotController extends Controller
 
             foreach (['lunch', 'dinner'] as $mealKey) {
                 if (is_array($flow[$mealKey] ?? null) && !empty($flow[$mealKey]['id'])) {
-                    $flow[$mealKey]['url'] = route('restaurants.show', ['id' => $flow[$mealKey]['id']]);
+                    $flow[$mealKey]['url'] = $this->buildRestaurantUrl($flow[$mealKey]['id']);
                 }
             }
 
             if (is_array($flow['stay'] ?? null) && !empty($flow['stay']['id'])) {
-                $flow['stay']['url'] = route('hotels.show', ['id' => $flow['stay']['id']]);
+                $flow['stay']['url'] = $this->buildHotelUrl($flow['stay']['id']);
             }
 
             $day['flow'] = $flow;
@@ -736,5 +738,19 @@ class ChatbotController extends Controller
         }, $tripPlan['days']);
 
         return $tripPlan;
+    }
+
+    private function buildRestaurantUrl(mixed $restaurantId): ?string
+    {
+        $restaurantId = (int) $restaurantId;
+
+        return $restaurantId > 0 ? url("/restaurants/{$restaurantId}") : null;
+    }
+
+    private function buildHotelUrl(mixed $hotelId): ?string
+    {
+        $hotelId = (int) $hotelId;
+
+        return $hotelId > 0 ? url("/hotels/{$hotelId}") : null;
     }
 }

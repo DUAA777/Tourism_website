@@ -6,6 +6,7 @@ use App\Models\ChatSession;
 use App\Models\User;
 use App\Services\RecommendationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Support\Facades\Http;
 use Mockery;
 use Tests\TestCase;
@@ -49,7 +50,7 @@ class ChatbotControllerTest extends TestCase
         $this->mockRecommendationService($this->tripPlanPayload());
 
         Http::fake([
-            'http://127.0.0.1:5000/chat' => Http::response(['error' => 'service unavailable'], 500),
+            $this->chatbotServiceUrl() => Http::response(['error' => 'service unavailable'], 500),
         ]);
 
         $response = $this->postJson(route('chatbot.send'), [
@@ -76,7 +77,7 @@ class ChatbotControllerTest extends TestCase
         $this->mockRecommendationService($this->recommendationPayload());
 
         Http::fake([
-            'http://127.0.0.1:5000/chat' => Http::response(['reply' => '   '], 200),
+            $this->chatbotServiceUrl() => Http::response(['reply' => '   '], 200),
         ]);
 
         $response = $this->postJson(route('chatbot.send'), [
@@ -99,7 +100,7 @@ class ChatbotControllerTest extends TestCase
         $this->mockRecommendationService($this->recommendationPayload());
 
         Http::fake([
-            'http://127.0.0.1:5000/chat' => Http::response([
+            $this->chatbotServiceUrl() => Http::response([
                 'reply' => 'You should look at Harbor Stay and Sea Deck.',
             ], 200),
         ]);
@@ -112,12 +113,12 @@ class ChatbotControllerTest extends TestCase
             ->assertJsonFragment([
                 'type' => 'hotel',
                 'name' => 'Harbor Stay',
-                'url' => route('hotels.show', ['id' => 82]),
+                'url' => url('/hotels/82'),
             ])
             ->assertJsonFragment([
                 'type' => 'restaurant',
                 'name' => 'Sea Deck',
-                'url' => route('restaurants.show', ['id' => 17]),
+                'url' => url('/restaurants/17'),
             ]);
     }
 
@@ -126,7 +127,7 @@ class ChatbotControllerTest extends TestCase
         $this->mockRecommendationService($this->recommendationPayload());
 
         Http::fake([
-            'http://127.0.0.1:5000/chat' => Http::response([
+            $this->chatbotServiceUrl() => Http::response([
                 'reply' => 'I found strong Beirut options that fit your request well.',
             ], 200),
         ]);
@@ -150,7 +151,7 @@ class ChatbotControllerTest extends TestCase
         $this->mockRecommendationService($this->tripPlanPayload());
 
         Http::fake([
-            'http://127.0.0.1:5000/chat' => Http::response([
+            $this->chatbotServiceUrl() => Http::response([
                 'reply' => 'Here is a 2 day Batroun plan with grounded picks.',
             ], 200),
         ]);
@@ -162,11 +163,11 @@ class ChatbotControllerTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('structured.summary_chips.0', 'City: Batroun')
             ->assertJsonPath('structured.sections.0.type', 'hotels')
-            ->assertJsonPath('structured.sections.0.items.0.url', route('hotels.show', ['id' => 12]))
+            ->assertJsonPath('structured.sections.0.items.0.url', url('/hotels/12'))
             ->assertJsonPath('structured.sections.1.type', 'restaurants')
-            ->assertJsonPath('structured.sections.1.items.0.url', route('restaurants.show', ['id' => 24]))
-            ->assertJsonPath('structured.trip_plan.days.0.flow.lunch.url', route('restaurants.show', ['id' => 24]))
-            ->assertJsonPath('structured.trip_plan.days.0.flow.stay.url', route('hotels.show', ['id' => 12]));
+            ->assertJsonPath('structured.sections.1.items.0.url', url('/restaurants/24'))
+            ->assertJsonPath('structured.trip_plan.days.0.flow.lunch.url', url('/restaurants/24'))
+            ->assertJsonPath('structured.trip_plan.days.0.flow.stay.url', url('/hotels/12'));
     }
 
     public function test_it_keeps_trip_reply_copy_from_python_without_prepending_match_labels(): void
@@ -174,7 +175,7 @@ class ChatbotControllerTest extends TestCase
         $this->mockRecommendationService($this->tripPlanPayload());
 
         Http::fake([
-            'http://127.0.0.1:5000/chat' => Http::response([
+            $this->chatbotServiceUrl() => Http::response([
                 'reply' => "2-Day Trip in Batroun\nA warm seaside escape with good food and sunset stops.\nDay 1 in Batroun:\nMorning: Start slowly along the harbor.",
             ], 200),
         ]);
@@ -205,7 +206,7 @@ class ChatbotControllerTest extends TestCase
         $this->mockRecommendationService($this->recommendationPayload());
 
         Http::fake([
-            'http://127.0.0.1:5000/chat' => Http::response(['reply' => 'Safe reply'], 200),
+            $this->chatbotServiceUrl() => Http::response(['reply' => 'Safe reply'], 200),
         ]);
 
         $response = $this->actingAs($requester)->postJson(route('chatbot.send'), [
@@ -234,6 +235,29 @@ class ChatbotControllerTest extends TestCase
         ]);
     }
 
+    public function test_it_uses_the_configured_chatbot_service_base_url(): void
+    {
+        config()->set('services.chatbot.base_url', 'http://127.0.0.1:5999');
+
+        $this->mockRecommendationService($this->recommendationPayload());
+
+        Http::fake([
+            $this->chatbotServiceUrl() => Http::response(['reply' => 'Configured chatbot service reply'], 200),
+        ]);
+
+        $response = $this->postJson(route('chatbot.send'), [
+            'message' => 'Recommend a hotel in Beirut',
+        ]);
+
+        $response->assertOk();
+
+        Http::assertSent(function (HttpRequest $request) {
+            return $request->url() === 'http://127.0.0.1:5999/chat';
+        });
+
+        $this->assertStringContainsString('Configured chatbot service reply', $response->json('reply'));
+    }
+
     private function mockRecommendationService(array $payload): void
     {
         $service = Mockery::mock(RecommendationService::class);
@@ -251,6 +275,11 @@ class ChatbotControllerTest extends TestCase
             'email' => $email,
             'password' => bcrypt('password'),
         ]);
+    }
+
+    private function chatbotServiceUrl(string $path = '/chat'): string
+    {
+        return rtrim((string) config('services.chatbot.base_url', 'http://127.0.0.1:5000'), '/') . $path;
     }
 
     private function recommendationPayload(): array

@@ -2,11 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Hotel;
+use Database\Seeders\Concerns\DeduplicatesSeedRows;
+use Illuminate\Database\Seeder;
 
 class HotelsTableSeeder extends Seeder
 {
+    use DeduplicatesSeedRows;
+
     public function run(): void
     {
         $rows = [
@@ -3918,9 +3921,13 @@ class HotelsTableSeeder extends Seeder
             ],
         ];
 
+        $rows = $this->deduplicateSeedRows($rows, 'hotel_name', 'address', 'hotel');
+
         Hotel::truncate();
         foreach ($rows as $row) {
             Hotel::create($row);
         }
+
+        $this->command?->info('Seeded ' . count($rows) . ' unique hotel rows.');
     }
 }

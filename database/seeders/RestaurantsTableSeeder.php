@@ -2,11 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Restaurant;
+use Database\Seeders\Concerns\DeduplicatesSeedRows;
+use Illuminate\Database\Seeder;
 
 class RestaurantsTableSeeder extends Seeder
 {
+    use DeduplicatesSeedRows;
+
     public function run(): void
     {
         $rows = [
@@ -2922,9 +2925,13 @@ class RestaurantsTableSeeder extends Seeder
             ],
         ];
 
+        $rows = $this->deduplicateSeedRows($rows, 'restaurant_name', 'location', 'restaurant');
+
         Restaurant::truncate();
         foreach ($rows as $row) {
             Restaurant::create($row);
         }
+
+        $this->command?->info('Seeded ' . count($rows) . ' unique restaurant rows.');
     }
 }

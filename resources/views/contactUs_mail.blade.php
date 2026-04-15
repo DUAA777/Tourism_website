@@ -17,11 +17,10 @@
     <aside class="contact__info">
       <h1 class="contact__title">Contact Us</h1>
       <p class="contact__subtitle">
-        We’re here to help you plan better days out in Lebanon. Send us a message and we’ll get back to you.
+        We are here to help you plan better days out in Lebanon. Send us a message and we will get back to you.
       </p>
 
       <div class="contact__list">
-
         <div class="contact__item">
           <span class="contact__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
@@ -31,7 +30,9 @@
           </span>
           <div class="contact__text">
             <div class="contact__label">Email</div>
-            <a class="contact__value" href="mailto:{{ config('mail.contact.address', 'hello@yallanemshi.com') }}">{{ config('mail.contact.address', 'hello@yallanemshi.com') }}</a>
+            <a class="contact__value" href="mailto:{{ config('mail.contact.address', 'hello@yallanemshi.com') }}">
+              {{ config('mail.contact.address', 'hello@yallanemshi.com') }}
+            </a>
           </div>
         </div>
 
@@ -60,12 +61,8 @@
             <a class="contact__value" href="tel:+96170000000">+961 70 000 000</a>
           </div>
         </div>
-
       </div>
-
-
     </aside>
-
 
     <div class="contact__card">
       <form class="contact__form" action="{{ route('contactUs.send') }}" method="POST" novalidate>
@@ -109,7 +106,10 @@
 
         <div class="field">
           <label class="field__label" for="message">Message</label>
-          <textarea class="field__input field__textarea" id="message" name="message" placeholder="Tell us what you need…"></textarea>
+          <textarea class="field__input field__textarea @error('message') field__input--error @enderror" id="message" name="message" placeholder="Tell us what you need...">{{ old('message') }}</textarea>
+          @error('message')
+            <p class="field__error">{{ $message }}</p>
+          @enderror
         </div>
 
         <button class="contact__submit" type="submit">
@@ -117,11 +117,10 @@
         </button>
 
         <p class="contact__small">
-          By sending, you agree we can reply to your email.
+          By sending, you agree that we can reply to your email.
         </p>
       </form>
     </div>
-
   </div>
 </section>
 

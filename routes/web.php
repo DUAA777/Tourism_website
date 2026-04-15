@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -49,36 +50,19 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/profile/photo', [ProfileController::class, 'removePhoto'])->name('profile.photo.delete');
 });
 Route::get('/aboutUs', function () { return view('aboutUs'); })->name('aboutUs');
-Route::get('/contactUs', function () { return view('contactUs'); })->name('contactUs');
+Route::get('/contactUs', [ContactController::class, 'index'])->name('contactUs');
+Route::post('/contactUs', [ContactController::class, 'send'])->name('contactUs.send');
 Route::get('/destinations', function () { return view('destinations'); })->name('destinations');
+
 Route::prefix('hotels')->name('hotels.')->group(function () {
-    // Index page with filtering
     Route::get('/', [HotelController::class, 'index'])->name('index');
-    
-    // Show single hotel
-    Route::get('/{id}', [HotelController::class, 'show'])->name('show');
-    
-    // AJAX endpoints for dynamic filtering (optional)
-    Route::get('/filter-data', [HotelController::class, 'getFilterData'])->name('filter-data');
-    Route::post('/recommendations', [HotelController::class, 'getRecommendations'])->name('recommendations');
-});
-Route::prefix('restaurants')->name('restaurants.')->group(function () {
-    // Main index page with filtering
-    Route::get('/', [RestaurantController::class, 'index'])->name('index');
-    
-    // Single restaurant details
-    Route::get('/{restaurant}', [RestaurantController::class, 'show'])->name('show');
-    
-    // AJAX endpoint for dynamic filtering (optional - for live updates without page reload)
-    Route::get('/filter', [RestaurantController::class, 'filter'])->name('filter');
-    
-    // Export filtered results
-    Route::get('/export/csv', [RestaurantController::class, 'exportCSV'])->name('export.csv');
+    Route::get('/{id}', [HotelController::class, 'show'])->whereNumber('id')->name('show');
 });
 
-// Restaurant and Hotel Routes
-Route::get('/restaurants/{id}', [RestaurantController::class, 'show'])->name('restaurants.show');
-Route::get('/hotels/{id}', [HotelController::class, 'show'])->name('hotels.show');
+Route::prefix('restaurants')->name('restaurants.')->group(function () {
+    Route::get('/', [RestaurantController::class, 'index'])->name('index');
+    Route::get('/{id}', [RestaurantController::class, 'show'])->whereNumber('id')->name('show');
+});
 
 // Search Destinations Route
 Route::get('/search-destinations', [HomeController::class, 'searchDestinations'])->name('search.destinations');

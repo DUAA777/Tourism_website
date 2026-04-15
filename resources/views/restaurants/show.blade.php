@@ -100,6 +100,9 @@
 @endsection
 
 @push('scripts')
+<script>
+window.SIMILARITY_SERVICE_BASE_URL = @json(rtrim((string) config('services.similarity.base_url', 'http://127.0.0.1:5001'), '/'));
+</script>
 <script src="{{ asset('assets/js/similar-restaurants.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {

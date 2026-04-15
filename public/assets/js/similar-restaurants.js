@@ -1,6 +1,6 @@
 // Similar Restaurants API Client
 class SimilarRestaurantsAPI {
-    constructor(baseUrl = 'http://127.0.0.1:5000') {
+    constructor(baseUrl = window.SIMILARITY_SERVICE_BASE_URL || 'http://127.0.0.1:5001') {
         this.baseUrl = baseUrl;
     }
 
@@ -17,8 +17,7 @@ class SimilarRestaurantsAPI {
                 {
                     method: 'GET',
                     headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Accept': 'application/json'
                     }
                 }
             );
@@ -31,37 +30,6 @@ class SimilarRestaurantsAPI {
             return data;
         } catch (error) {
             console.error('Error fetching similar restaurants:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get similar restaurants using criteria-based matching
-     * @param {number} restaurantId - The ID of the restaurant
-     * @param {number} limit - Number of similar restaurants to return
-     * @returns {Promise} - Promise with similar restaurants data
-     */
-    async getSimilarByCriteria(restaurantId, limit = 6) {
-        try {
-            const response = await fetch(
-                `${this.baseUrl}/similar/${restaurantId}/by-criteria?limit=${limit}`,
-                {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Error fetching similar restaurants by criteria:', error);
             throw error;
         }
     }
@@ -154,24 +122,16 @@ class SimilarRestaurantsAPI {
         `;
 
         try {
-            // Try the main similar endpoint first
             const data = await this.getSimilarRestaurants(restaurantId, limit);
             
             if (data.similar_restaurants && data.similar_restaurants.length > 0) {
                 this.renderSimilarRestaurants(data.similar_restaurants, containerId);
             } else {
-                // If no results, try the criteria-based endpoint
-                const criteriaData = await this.getSimilarByCriteria(restaurantId, limit);
-                
-                if (criteriaData.similar_restaurants && criteriaData.similar_restaurants.length > 0) {
-                    this.renderSimilarRestaurants(criteriaData.similar_restaurants, containerId);
-                } else {
-                    container.innerHTML = `
-                        <div class="no-similar-results">
-                            <p>No similar restaurants found.</p>
-                        </div>
-                    `;
-                }
+                container.innerHTML = `
+                    <div class="no-similar-results">
+                        <p>No similar restaurants found.</p>
+                    </div>
+                `;
             }
         } catch (error) {
             console.error('Failed to load similar restaurants:', error);

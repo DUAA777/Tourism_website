@@ -866,6 +866,8 @@
 
 @push('scripts')
 <script>
+window.SIMILARITY_SERVICE_BASE_URL = @json(rtrim((string) config('services.similarity.base_url', 'http://127.0.0.1:5001'), '/'));
+
 document.addEventListener('DOMContentLoaded', function() {
     const hotelId = {{ $hotel->id ?? 0 }};
     
@@ -878,7 +880,11 @@ async function loadSimilarHotels(hotelId) {
     const grid = document.getElementById('similarHotelsGrid');
     
     try {
-        const response = await fetch(`http://127.0.0.1:5000/similar-hotels/${hotelId}?limit=6`);
+        const response = await fetch(`${window.SIMILARITY_SERVICE_BASE_URL}/similar-hotels/${hotelId}?limit=6`, {
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -912,8 +918,10 @@ function renderSimilarHotels(hotels) {
     const grid = document.getElementById('similarHotelsGrid');
     
     if (!grid) return;
+
+    const uniqueHotels = deduplicateHotelsForDisplay(hotels);
     
-    grid.innerHTML = hotels.map(hotel => `
+    grid.innerHTML = uniqueHotels.map(hotel => `
         <a href="/hotels/${hotel.id}" class="similar-hotel-card">
             <div class="similar-hotel-image">
                 <img src="${hotel.hotel_image || '{{ asset('images/default-hotel.jpg') }}'}" 
@@ -943,6 +951,49 @@ function renderSimilarHotels(hotels) {
             </div>
         </a>
     `).join('');
+}
+
+function deduplicateHotelsForDisplay(hotels) {
+    if (!Array.isArray(hotels)) {
+        return [];
+    }
+
+    const seen = new Set();
+
+    return hotels.filter((hotel) => {
+        const name = String(hotel?.hotel_name || '').trim().toLowerCase();
+        const address = String(hotel?.address || '').trim().toLowerCase();
+        const familyKey = getCuratedHotelFamilyKey(name);
+        const fallbackId = hotel?.id != null ? `id:${hotel.id}` : '';
+        const key = familyKey || [name, address].filter(Boolean).join('|') || fallbackId;
+
+        if (!key || seen.has(key)) {
+            return false;
+        }
+
+        seen.add(key);
+        return true;
+    });
+}
+
+function getCuratedHotelFamilyKey(name) {
+    if (!name) {
+        return '';
+    }
+
+    if (/\bsands\b/.test(name)) {
+        return 'family:sands-guesthouse';
+    }
+
+    if (/\bbeit chams\b/.test(name)) {
+        return 'family:beit-chams';
+    }
+
+    if (/\barcades\b.*\bbahsa\b/.test(name)) {
+        return 'family:arcades-de-bahsa';
+    }
+
+    return '';
 }
 
 function escapeHtml(text) {
