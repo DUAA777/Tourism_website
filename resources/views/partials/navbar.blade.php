@@ -66,6 +66,7 @@
           $displayName = trim((string) (Auth::user()->name ?? 'User'));
           $userInitial = strtoupper(substr($displayName !== '' ? $displayName : 'User', 0, 1));
           $isAdmin = (bool) Auth::user()->is_admin;
+          $profilePicture = Auth::user()->profile_picture ? asset(Auth::user()->profile_picture) : null;
         @endphp
         <li class="nav__account-item">
           <div class="nav__account-menu">
@@ -75,7 +76,13 @@
               aria-haspopup="true"
               aria-expanded="false"
             >
-              <span class="nav__account-avatar">{{ $userInitial }}</span>
+              <span class="nav__account-avatar">
+                @if($profilePicture)
+                  <img src="{{ $profilePicture }}" alt="{{ $displayName }}" class="nav__account-avatar-image">
+                @else
+                  {{ $userInitial }}
+                @endif
+              </span>
               <span class="nav__account-copy">
                 <strong>{{ $displayName }}</strong>
                 <small>{{ $isAdmin ? 'Admin' : 'User' }}</small>

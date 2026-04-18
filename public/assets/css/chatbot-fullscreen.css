@@ -3,6 +3,36 @@ body {
   min-height: 100%;
 }
 
+@media (min-width: 1281px) {
+  body.chatbot-layout {
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  body.chatbot-layout .content,
+  body.chatbot-layout .content > div {
+    min-height: 100dvh;
+  }
+
+  body.chatbot-layout .content > div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.chatbot-layout #main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chatbot-page {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+}
+
 body.chatbot-layout,
 body.chatbot-layout .content,
 body.chatbot-layout .content > div,
@@ -1012,6 +1042,37 @@ body.chatbot-layout #main {
   font-size: 1rem;
 }
 
+.chat-input-icon--avatar {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding: 0;
+}
+
+.chat-input-avatar-image,
+.chat-input-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 999px;
+}
+
+.chat-input-avatar-image {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.chat-input-avatar-fallback {
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
 .chat-input-area input {
   flex: 1;
   min-height: 48px;
@@ -1248,5 +1309,42 @@ body.chatbot-layout #main {
 
   .chat-input-icon {
     display: none;
+  }
+}
+
+@media (min-width: 1281px) {
+  body.chatbot-layout {
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  body.chatbot-layout .content,
+  body.chatbot-layout .content > div {
+    min-height: 100dvh;
+  }
+
+  body.chatbot-layout .content > div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.chatbot-layout #main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chatbot-page {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    padding-top: 0.95rem;
+    padding-bottom: 0.95rem;
+    overflow: hidden;
+  }
+
+  .chatbot-screen {
+    gap: 0.85rem;
   }
 }

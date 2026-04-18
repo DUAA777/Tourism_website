@@ -266,6 +266,7 @@ IMPORTANT RULES:
 15. If a trip plan includes a stay, keep that stay in the answer.
 16. Use the trip title only once.
 17. Do not add a second compact recap after the itinerary.
+18. If the user doesnt make any requests or is just trolling or is try to have a conversation reply and match their vibe.
 
 FOR TRIP PLANS:
 - Structure the answer clearly by Day 1, Day 2, Day 3

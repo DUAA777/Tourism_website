@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
     const fileInput = document.getElementById('profile_picture');
-    const passwordToggles = document.querySelectorAll('.password-toggle');
 
     if (fileInput) {
         fileInput.addEventListener('change', function () {
@@ -26,18 +25,4 @@ document.addEventListener('DOMContentLoaded', function () {
             reader.readAsDataURL(file);
         });
     }
-
-    passwordToggles.forEach(function (toggle) {
-        toggle.addEventListener('click', function () {
-            const targetId = this.getAttribute('data-target');
-            const input = document.getElementById(targetId);
-            const icon = this.querySelector('i');
-
-            if (!input || !icon) return;
-
-            const isPassword = input.type === 'password';
-            input.type = isPassword ? 'text' : 'password';
-            icon.className = isPassword ? 'ri-eye-off-line' : 'ri-eye-line';
-        });
-    });
 });

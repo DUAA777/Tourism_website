@@ -1,5 +1,7 @@
 @extends('layout.app')
 
+@section('bodyClass', 'profile-layout')
+
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/css/profile.css') }}">
 @endpush
@@ -35,6 +37,10 @@
             <div class="profile-alert profile-alert--success">{{ session('password_success') }}</div>
         @endif
 
+        @if(session('password_error'))
+            <div class="profile-alert profile-alert--error">{{ session('password_error') }}</div>
+        @endif
+
         @if($errors->any())
             <div class="profile-alert profile-alert--error">Please review the highlighted fields and try again.</div>
         @endif
@@ -42,7 +48,7 @@
         <div class="profile-grid">
             <article class="profile-card">
                 <h2>Personal Information</h2>
-                <p class="profile-card__desc">Update your profile photo, name, email, and phone number.</p>
+                <p class="profile-card__desc">Update your profile photo, name, and phone number.</p>
 
                 <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="profile-form">
                     @csrf
@@ -56,6 +62,18 @@
                         @enderror
                     </div>
 
+                    @if($user->profile_picture)
+                        <div class="profile-form__field">
+                            <button
+                                type="submit"
+                                form="remove-profile-photo-form"
+                                class="profile-btn profile-btn--ghost"
+                            >
+                                Remove Profile Picture
+                            </button>
+                        </div>
+                    @endif
+
                     <div class="profile-form__field">
                         <label for="name">Name</label>
                         <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" required>
@@ -65,11 +83,9 @@
                     </div>
 
                     <div class="profile-form__field">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" required>
-                        @error('email')
-                            <p class="profile-field-error">{{ $message }}</p>
-                        @enderror
+                        <label for="profile_email">Email</label>
+                        <input type="email" id="profile_email" value="{{ $user->email }}" disabled readonly>
+                        <p class="profile-field-hint">Your email is used for sign-in and password recovery and cannot be changed here.</p>
                     </div>
 
                     <div class="profile-form__field">
@@ -86,60 +102,31 @@
                 </form>
 
                 @if($user->profile_picture)
-                    <form action="{{ route('profile.photo.delete') }}" method="POST" class="profile-remove-photo">
+                    <form action="{{ route('profile.photo.delete') }}" method="POST" class="profile-remove-photo" id="remove-profile-photo-form">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="profile-btn profile-btn--ghost">Remove Profile Picture</button>
                     </form>
                 @endif
             </article>
 
             <article class="profile-card">
                 <h2>Password Change Request</h2>
-                <p class="profile-card__desc">Update your password securely by confirming your current password.</p>
+                <p class="profile-card__desc">Request a secure password reset link and finish the change from your email inbox.</p>
 
-                <form action="{{ route('profile.password.update') }}" method="POST" class="profile-form">
+                <div class="profile-security">
+                    <div class="profile-security__meta">
+                        <span class="profile-security__label">Reset Password</span>
+                        <strong>{{ $user->email }}</strong>
+                    </div>
+                    <p class="profile-security__note">
+                        We will send a one-time password reset link to your account email. This is safer than changing it directly inside the profile page.
+                    </p>
+                </div>
+
+                <form action="{{ route('profile.password.request') }}" method="POST" class="profile-form profile-form--inline">
                     @csrf
-                    @method('PUT')
-
-                    <div class="profile-form__field">
-                        <label for="current_password">Current Password</label>
-                        <div class="profile-password-wrap">
-                            <input type="password" id="current_password" name="current_password" required>
-                            <button type="button" class="password-toggle" data-target="current_password">
-                                <i class="ri-eye-line"></i>
-                            </button>
-                        </div>
-                        @error('current_password')
-                            <p class="profile-field-error">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div class="profile-form__field">
-                        <label for="password">New Password</label>
-                        <div class="profile-password-wrap">
-                            <input type="password" id="password" name="password" required>
-                            <button type="button" class="password-toggle" data-target="password">
-                                <i class="ri-eye-line"></i>
-                            </button>
-                        </div>
-                        @error('password')
-                            <p class="profile-field-error">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div class="profile-form__field">
-                        <label for="password_confirmation">Confirm New Password</label>
-                        <div class="profile-password-wrap">
-                            <input type="password" id="password_confirmation" name="password_confirmation" required>
-                            <button type="button" class="password-toggle" data-target="password_confirmation">
-                                <i class="ri-eye-line"></i>
-                            </button>
-                        </div>
-                    </div>
-
                     <div class="profile-form__actions">
-                        <button type="submit" class="profile-btn profile-btn--primary">Change Password</button>
+                        <button type="submit" class="profile-btn profile-btn--primary">Request Password Change</button>
                     </div>
                 </form>
             </article>

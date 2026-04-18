@@ -8,11 +8,18 @@
 @endpush
 
 @section('content')
+@php
+    $chatUser = auth()->user();
+    $chatUserPhoto = $chatUser && $chatUser->profile_picture ? asset($chatUser->profile_picture) : null;
+    $chatUserInitial = strtoupper(substr(trim((string) ($chatUser->name ?? 'U')) ?: 'U', 0, 1));
+    $chatUserName = trim((string) ($chatUser->name ?? 'there')) ?: 'there';
+@endphp
 <section
     class="chatbot-page"
     data-send-url="{{ route('chatbot.send') }}"
     data-new-session-url="{{ route('chatbot.newSession') }}"
     data-csrf-token="{{ csrf_token() }}"
+    data-user-name="{{ $chatUserName }}"
 >
     <div class="chatbot-screen">
         <header class="chatbot-screen__top">
@@ -128,7 +135,7 @@
                             <div class="message-avatar bot-avatar">YN</div>
                             <div class="message-body">
                                 <div class="message-label">Yalla Nemshi</div>
-                                <div class="message-text">Hi! Tell me what kind of trip or place you're looking for, and I'll help you plan it.</div>
+                                <div class="message-text">Hi {{ $chatUserName }}! Tell me what kind of trip or place you're looking for, and I'll help you plan it.</div>
                             </div>
                         </div>
                     </div>
@@ -137,7 +144,13 @@
                 <div class="chatbot-input-dock">
                     <label class="chat-input-label" for="chat-input">Ask Yalla Nemshi</label>
                     <div class="chat-input-area">
-                        <span class="chat-input-icon"><i class="ri-quill-pen-ai-line"></i></span>
+                        <span class="chat-input-icon chat-input-icon--avatar">
+                            @if($chatUserPhoto)
+                                <img src="{{ $chatUserPhoto }}" alt="{{ $chatUser->name }}" class="chat-input-avatar-image">
+                            @else
+                                <span class="chat-input-avatar-fallback">{{ $chatUserInitial }}</span>
+                            @endif
+                        </span>
                         <input
                             type="text"
                             id="chat-input"

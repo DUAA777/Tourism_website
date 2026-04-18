@@ -251,20 +251,28 @@ nav .nav__menu__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 999px;
   background: linear-gradient(135deg, #ff7b39, #ef5c18);
   color: #ffffff;
   font-size: 0.96rem;
   font-weight: 900;
   letter-spacing: -0.03em;
+  overflow: hidden;
 }
 
 .nav__account-avatar--large {
   width: 42px;
   height: 42px;
   min-width: 42px;
-  border-radius: 14px;
+  border-radius: 999px;
   font-size: 1.08rem;
+}
+
+.nav__account-avatar-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .nav__account-copy,
@@ -518,7 +526,7 @@ body.nav-open {
 
 @media (min-width: 1025px) {
   :root {
-    --site-nav-height: 68px;
+    --site-nav-height: 76px;
   }
 
   nav {
@@ -526,7 +534,7 @@ body.nav-open {
     align-items: center;
     justify-content: space-between;
     gap: 1.4rem;
-    padding: 0.5rem 1.15rem;
+    padding: 0.65rem 1.25rem;
   }
 
   .nav__header {
@@ -539,9 +547,9 @@ body.nav-open {
   }
 
   .nav__logo-mark {
-    width: 46px;
-    height: 32px;
-    flex-basis: 46px;
+    width: 52px;
+    height: 36px;
+    flex-basis: 52px;
   }
 
   .nav__logo-image {
@@ -551,7 +559,7 @@ body.nav-open {
   }
 
   .nav__logo-wordmark {
-    font-size: 1.32rem;
+    font-size: 1.5rem;
   }
 
   .nav__panel {
@@ -598,9 +606,9 @@ body.nav-open {
   .nav__links a,
   .nav__links .nav-logout-link {
     width: auto;
-    padding: 0.4rem 0.72rem;
+    padding: 0.48rem 0.86rem;
     border-radius: 999px;
-    font-size: 0.91rem;
+    font-size: 1rem;
   }
 
   .nav__links--primary a {
@@ -667,24 +675,24 @@ body.nav-open {
   .nav__account-trigger {
     width: auto;
     min-width: 0;
-    padding: 0.4rem 0.5rem;
-    border-radius: 16px;
+    padding: 0.46rem 0.62rem;
+    border-radius: 18px;
   }
 
   .nav__account-avatar {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    border-radius: 11px;
-    font-size: 0.9rem;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 999px;
+    font-size: 0.96rem;
   }
 
   .nav__account-copy strong {
-    font-size: 0.88rem;
+    font-size: 0.98rem;
   }
 
   .nav__account-copy small {
-    font-size: 0.68rem;
+    font-size: 0.76rem;
   }
 
   .nav__account-dropdown {
@@ -762,6 +770,7 @@ body.nav-open {
     width: 30px;
     height: 30px;
     min-width: 30px;
+    border-radius: 999px;
     font-size: 0.82rem;
   }
 

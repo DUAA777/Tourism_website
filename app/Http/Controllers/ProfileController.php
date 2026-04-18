@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 
 class ProfileController extends Controller
 {
@@ -16,14 +16,13 @@ class ProfileController extends Controller
 
     public function update(Request $request)
     {
-        $user = $request->user();
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:45',
             'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        $user = $request->user();
 
         if ($request->hasFile('profile_picture')) {
             $uploadPath = public_path('uploads/profile-pictures');
@@ -51,20 +50,23 @@ class ProfileController extends Controller
             ->with('profile_success', 'Profile updated successfully.');
     }
 
-    public function updatePassword(Request $request)
+    public function requestPasswordReset(Request $request)
     {
-        $validated = $request->validate([
-            'current_password' => 'required|current_password',
-            'password' => 'required|string|min:8|confirmed|different:current_password',
+        $user = $request->user();
+
+        $status = Password::sendResetLink([
+            'email' => $user->email,
         ]);
 
-        $request->user()->update([
-            'password' => Hash::make($validated['password']),
-        ]);
+        if ($status === Password::RESET_LINK_SENT) {
+            return redirect()
+                ->route('profile')
+                ->with('password_success', 'We sent a password reset link to ' . $user->email . '.');
+        }
 
         return redirect()
             ->route('profile')
-            ->with('password_success', 'Password changed successfully.');
+            ->with('password_error', __($status));
     }
 
     public function removePhoto(Request $request)
@@ -82,4 +84,3 @@ class ProfileController extends Controller
             ->with('profile_success', 'Profile picture removed.');
     }
 }
-

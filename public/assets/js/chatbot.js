@@ -6,6 +6,7 @@ const suggestionChips = document.querySelectorAll('.chatbot-chip');
 const chatbotPage = document.querySelector('.chatbot-page');
 const sendUrl = chatbotPage?.dataset.sendUrl || '/chatbot/message';
 const newSessionUrl = chatbotPage?.dataset.newSessionUrl || '/chatbot/new-session';
+const userName = (chatbotPage?.dataset.userName || 'there').trim() || 'there';
 const csrfToken = chatbotPage?.dataset.csrfToken
     || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
     || '';
@@ -41,7 +42,7 @@ function getWelcomeMessageHtml() {
             <div class="message-avatar bot-avatar">YN</div>
             <div class="message-body">
                 <div class="message-label">Yalla Nemshi</div>
-                <div class="message-text">Hi! Tell me what kind of trip or place you're looking for, and I'll help you plan it.</div>
+                <div class="message-text">Hi ${escapeHtml(userName)}! Tell me what kind of trip or place you're looking for, and I'll help you plan it.</div>
             </div>
         </div>
     `;
