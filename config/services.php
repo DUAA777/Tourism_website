@@ -36,6 +36,7 @@ return [
         'base_url' => env('CHATBOT_SERVICE_BASE_URL', 'http://127.0.0.1:5000'),
         'connect_timeout' => (int) env('CHATBOT_SERVICE_CONNECT_TIMEOUT', 3),
         'timeout' => (int) env('CHATBOT_SERVICE_TIMEOUT', 45),
+        'audit_logging' => env('CHATBOT_AUDIT_LOGGING', true),
     ],
     'similarity' => [
         'base_url' => env('SIMILARITY_SERVICE_BASE_URL', 'http://127.0.0.1:5001'),

@@ -94,19 +94,21 @@ class ChatbotController extends Controller
 
         $structuredPayload = $this->buildStructuredPayload($recommendations);
 
-        Log::info('Chatbot recommendation diagnostics prepared.', [
-            'session_id' => $session->id,
-            'user_id' => auth()->id(),
-            'diagnostics' => $structuredPayload['diagnostics'] ?? [],
-        ]);
+        $this->logChatbotRecommendationPrepared($session, $message, $recommendations);
 
-        $reply = $this->requestPythonReply($session, $message, $history, $recommendations);
+        $pythonReply = $this->requestPythonReply($session, $message, $history, $recommendations);
+        $reply = trim((string) ($pythonReply['reply'] ?? ''));
+        $replySource = $reply !== '' ? 'python' : 'fallback';
+        $fallbackReason = $replySource === 'fallback'
+            ? (string) ($pythonReply['failure_reason'] ?? 'unknown')
+            : null;
 
-        if ($reply === null) {
+        if ($reply === '') {
             $reply = $this->buildFallbackReply($recommendations);
         }
 
         $reply = $this->alignReplyWithStructuredPayload($reply, $structuredPayload);
+        $structuredPayload = $this->syncStructuredPayloadWithReply($structuredPayload, $reply);
 
         ChatMessage::create([
             'chat_session_id' => $session->id,
@@ -114,12 +116,104 @@ class ChatbotController extends Controller
             'message' => $reply,
         ]);
 
+        $this->logChatbotReplyDelivered(
+            $session,
+            $recommendations,
+            $structuredPayload,
+            $reply,
+            $replySource,
+            $fallbackReason
+        );
+
         return response()->json([
             'reply' => $reply,
             'session_id' => $session->id,
             'entity_links' => $this->buildEntityLinks($recommendations),
             'structured' => $structuredPayload,
         ]);
+    }
+
+    private function logChatbotRecommendationPrepared(ChatSession $session, string $message, array $recommendations): void
+    {
+        if (!(bool) config('services.chatbot.audit_logging', true)) {
+            return;
+        }
+
+        Log::info('Chatbot recommendation payload prepared.', [
+            'session_id' => $session->id,
+            'user_id' => auth()->id(),
+            'message_preview' => mb_substr($message, 0, 120),
+            'message_length' => mb_strlen($message),
+            'message_type' => data_get($recommendations, 'intent.message_type'),
+            'primary_city' => $this->recommendationPrimaryCity($recommendations),
+            'route_cities' => $this->recommendationRouteCities($recommendations),
+            'hold_results' => (bool) data_get($recommendations, 'diagnostics.guidance.should_hold_results'),
+            'confidence_overall' => data_get($recommendations, 'diagnostics.confidence.overall'),
+            'summary_chips' => array_slice((array) data_get($recommendations, 'diagnostics.summary_chips', []), 0, 6),
+            'result_counts' => $this->recommendationResultCounts($recommendations),
+        ]);
+    }
+
+    private function logChatbotReplyDelivered(
+        ChatSession $session,
+        array $recommendations,
+        array $structuredPayload,
+        string $reply,
+        string $replySource,
+        ?string $fallbackReason = null
+    ): void {
+        if (!(bool) config('services.chatbot.audit_logging', true)) {
+            return;
+        }
+
+        Log::info('Chatbot reply delivered.', [
+            'session_id' => $session->id,
+            'user_id' => auth()->id(),
+            'reply_source' => $replySource,
+            'fallback_reason' => $fallbackReason,
+            'reply_length' => mb_strlen($reply),
+            'message_type' => data_get($recommendations, 'intent.message_type'),
+            'primary_city' => $this->recommendationPrimaryCity($recommendations),
+            'route_cities' => $this->recommendationRouteCities($recommendations),
+            'hold_results' => (bool) data_get($recommendations, 'diagnostics.guidance.should_hold_results'),
+            'confidence_overall' => data_get($recommendations, 'diagnostics.confidence.overall'),
+            'result_counts' => $this->recommendationResultCounts($recommendations),
+            'structured_sections' => count((array) ($structuredPayload['sections'] ?? [])),
+            'trip_days' => count((array) data_get($structuredPayload, 'trip_plan.days', [])),
+        ]);
+    }
+
+    private function recommendationResultCounts(array $recommendations): array
+    {
+        return [
+            'hotels' => count((array) ($recommendations['hotels'] ?? [])),
+            'restaurants' => count((array) ($recommendations['restaurants'] ?? [])),
+            'activities' => count((array) ($recommendations['activities'] ?? [])),
+            'trip_days' => count((array) data_get($recommendations, 'trip_plan.days', [])),
+        ];
+    }
+
+    private function recommendationPrimaryCity(array $recommendations): ?string
+    {
+        if ($this->recommendationRouteCities($recommendations) !== null) {
+            return null;
+        }
+
+        $city = data_get($recommendations, 'intent.resolved_city')
+            ?? data_get($recommendations, 'intent.city')
+            ?? data_get($recommendations, 'intent.start_city');
+
+        return is_string($city) && trim($city) !== '' ? trim($city) : null;
+    }
+
+    private function recommendationRouteCities(array $recommendations): ?array
+    {
+        $cities = array_values(array_filter(
+            (array) data_get($recommendations, 'intent.mentioned_cities', []),
+            fn ($city) => is_string($city) && trim($city) !== ''
+        ));
+
+        return count($cities) > 1 ? $cities : null;
     }
 
     private function createSession(string $title): ChatSession
@@ -189,7 +283,7 @@ class ChatbotController extends Controller
         return $title !== '' ? $title : 'New Chat';
     }
 
-    private function requestPythonReply(ChatSession $session, string $message, array $history, array $recommendations): ?string
+    private function requestPythonReply(ChatSession $session, string $message, array $history, array $recommendations): array
     {
         $chatbotBaseUrl = rtrim((string) config('services.chatbot.base_url', 'http://127.0.0.1:5000'), '/');
 
@@ -206,6 +300,7 @@ class ChatbotController extends Controller
                     'restaurants' => $recommendations['restaurants'] ?? [],
                     'activities' => $recommendations['activities'] ?? [],
                     'trip_plan' => $recommendations['trip_plan'] ?? null,
+                    'diagnostics' => $recommendations['diagnostics'] ?? [],
                 ]);
         } catch (\Throwable $e) {
             Log::warning('Could not reach chatbot Python service.', [
@@ -214,7 +309,10 @@ class ChatbotController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return null;
+            return [
+                'reply' => null,
+                'failure_reason' => 'unreachable',
+            ];
         }
 
         if (!$pythonResponse->successful()) {
@@ -223,7 +321,10 @@ class ChatbotController extends Controller
                 'status' => $pythonResponse->status(),
             ]);
 
-            return null;
+            return [
+                'reply' => null,
+                'failure_reason' => 'bad_status_' . $pythonResponse->status(),
+            ];
         }
 
         $reply = trim((string) data_get($pythonResponse->json(), 'reply', ''));
@@ -233,14 +334,28 @@ class ChatbotController extends Controller
                 'session_id' => $session->id,
             ]);
 
-            return null;
+            return [
+                'reply' => null,
+                'failure_reason' => 'empty_reply',
+            ];
         }
 
-        return $reply;
+        return [
+            'reply' => $reply,
+            'failure_reason' => null,
+        ];
     }
 
     private function buildFallbackReply(array $recommendations): string
     {
+        if (data_get($recommendations, 'diagnostics.guidance.should_hold_results')) {
+            $guidanceReply = trim((string) data_get($recommendations, 'diagnostics.guidance.fallback_reply', ''));
+
+            if ($guidanceReply !== '') {
+                return $guidanceReply;
+            }
+        }
+
         $tripPlan = $recommendations['trip_plan'] ?? null;
         if (is_array($tripPlan) && !empty($tripPlan['days'])) {
             return $this->renderTripPlanFallback($tripPlan);
@@ -293,11 +408,16 @@ class ChatbotController extends Controller
             return $reply;
         }
 
-        if (!empty(data_get($structuredPayload, 'trip_plan.days', []))) {
-            return $reply;
+        return $reply;
+    }
+
+    private function syncStructuredPayloadWithReply(array $structuredPayload, string $reply): array
+    {
+        if ($reply === '' || !empty(data_get($structuredPayload, 'trip_plan.days', []))) {
+            return $structuredPayload;
         }
 
-        $leadLines = [];
+        $sections = [];
 
         foreach ((array) ($structuredPayload['sections'] ?? []) as $section) {
             if (!is_array($section)) {
@@ -306,76 +426,76 @@ class ChatbotController extends Controller
 
             $sectionType = (string) ($section['type'] ?? '');
             if (!in_array($sectionType, ['hotels', 'restaurants'], true)) {
+                $sections[] = $section;
                 continue;
             }
 
-            $titles = array_values(array_filter(array_map(
-                fn ($item) => is_array($item) ? trim((string) ($item['title'] ?? '')) : '',
-                (array) ($section['items'] ?? [])
-            )));
+            $items = array_values(array_filter(
+                (array) ($section['items'] ?? []),
+                'is_array'
+            ));
 
-            if (empty($titles)) {
+            if (empty($items)) {
                 continue;
             }
 
-            $missingTitles = array_values(array_filter($titles, fn ($title) => stripos($reply, $title) === false));
+            $matchedItems = array_values(array_filter($items, function (array $item) use ($reply) {
+                $title = trim((string) ($item['title'] ?? ''));
 
-            if (empty($missingTitles)) {
+                return $title !== '' && stripos($reply, $title) !== false;
+            }));
+
+            if (!empty($matchedItems)) {
+                $section['items'] = $matchedItems;
+                $sections[] = $section;
                 continue;
             }
 
-            $label = match ($sectionType) {
-                'hotels' => 'Top hotel matches',
-                'restaurants' => 'Top restaurant matches',
-                default => 'Top matches',
-            };
+            if ($this->replySignalsNoDirectMatch($reply)) {
+                continue;
+            }
 
-            $leadLines[] = $label . ': ' . $this->implodeNaturalList($titles) . '.';
+            $sections[] = $section;
         }
 
-        if (empty($leadLines)) {
-            return $reply;
-        }
+        $structuredPayload['sections'] = $sections;
 
-        return implode("\n", array_unique($leadLines)) . "\n\n" . $reply;
+        return $structuredPayload;
     }
 
-    private function implodeNaturalList(array $items): string
+    private function replySignalsNoDirectMatch(string $reply): bool
     {
-        $items = array_values(array_filter(array_map(
-            fn ($item) => trim((string) $item),
-            $items
-        )));
+        $normalized = strtolower(trim($reply));
+        $phrases = [
+            "don't have any specific",
+            'dont have any specific',
+            "don't have specific",
+            'dont have specific',
+            "i don't have",
+            'i dont have',
+            'do not have',
+            'not seeing a strong match',
+            'would you be open',
+            'open to exploring other types',
+            'different city',
+        ];
 
-        $count = count($items);
-
-        if ($count === 0) {
-            return '';
+        foreach ($phrases as $phrase) {
+            if (str_contains($normalized, $phrase)) {
+                return true;
+            }
         }
 
-        if ($count === 1) {
-            return $items[0];
-        }
-
-        if ($count === 2) {
-            return $items[0] . ' and ' . $items[1];
-        }
-
-        $lastItem = array_pop($items);
-
-        return implode(', ', $items) . ', and ' . $lastItem;
+        return false;
     }
 
     private function renderTripPlanFallback(array $tripPlan): string
     {
         $lines = [];
         $title = trim((string) ($tripPlan['title'] ?? 'Trip Plan'));
-        $summary = trim((string) ($tripPlan['summary'] ?? ''));
 
         $lines[] = $title !== '' ? $title : 'Trip Plan';
-        if ($summary !== '') {
-            $lines[] = $summary;
-        }
+        $lines[] = $this->buildTripPlanFallbackIntro($tripPlan);
 
         foreach ($tripPlan['days'] as $day) {
             if (!is_array($day)) {
@@ -422,14 +542,21 @@ class ChatbotController extends Controller
         }
 
         $title = trim((string) ($slot['title'] ?? ''));
-        $line = "{$label}: ";
+        $line = "{$label}:";
+        $parts = [];
 
-        if ($title !== '') {
-            $line .= "{$title} - ";
+        if ($title !== '' && !$this->isGenericTripSlotTitle($label, $title)) {
+            $parts[] = $this->ensureSentence($title);
         }
 
-        $line .= implode('; ', $activities);
-        $lines[] = $line;
+        foreach ($activities as $activity) {
+            $parts[] = $this->ensureSentence($activity);
+        }
+
+        if (!empty($parts)) {
+            $line .= ' ' . implode(' ', $parts);
+            $lines[] = trim($line);
+        }
     }
 
     private function appendTripMealLine(array &$lines, string $label, mixed $item, string $nameKey, string $locationKey): void
@@ -443,29 +570,115 @@ class ChatbotController extends Controller
             return;
         }
 
-        $details = [];
-
-        $location = trim((string) ($item[$locationKey] ?? ''));
-        if ($location !== '') {
-            $details[] = $location;
-        }
-
+        $location = $this->cleanTripLocation(
+            $name,
+            trim((string) ($item[$locationKey] ?? ''))
+        );
         $type = trim((string) ($item['food_type'] ?? ''));
-        if ($type !== '') {
-            $details[] = $type;
-        }
-
         $price = trim((string) ($item['price_tier'] ?? ($item['price_per_night'] ?? '')));
-        if ($price !== '') {
-            $details[] = $price;
-        }
 
         $line = "{$label}: {$name}";
-        if (!empty($details)) {
-            $line .= ' (' . implode(', ', $details) . ')';
+
+        if ($location !== '') {
+            $line .= " in {$location}";
         }
 
-        $lines[] = $line;
+        if ($label === 'Stay' && $price !== '') {
+            $line .= " with rates around {$price}";
+        } elseif ($location === '' && $type !== '') {
+            $line .= " for {$type}";
+        }
+
+        $lines[] = $this->ensureSentence($line);
+    }
+
+    private function buildTripPlanFallbackIntro(array $tripPlan): string
+    {
+        $title = strtolower(trim((string) ($tripPlan['title'] ?? '')));
+
+        if (str_contains($title, 'from ')) {
+            return 'Here is a cleaner route built from the strongest confirmed matches I could keep.';
+        }
+
+        return 'Here is a cleaner itinerary built from the strongest confirmed matches I could keep.';
+    }
+
+    private function isGenericTripSlotTitle(string $label, string $title): bool
+    {
+        $normalizedLabel = strtolower(trim($label));
+        $normalizedTitle = strtolower(trim($title));
+
+        return str_starts_with($normalizedTitle, $normalizedLabel . ' in ');
+    }
+
+    private function cleanTripLocation(string $name, string $location): string
+    {
+        $location = trim($location, " \t\n\r\0\x0B,.;");
+        if ($location === '') {
+            return '';
+        }
+
+        $parts = array_values(array_filter(array_map(
+            fn ($part) => trim($part),
+            explode(',', $location)
+        )));
+
+        if (empty($parts)) {
+            return $location;
+        }
+
+        $normalizedName = $this->normalizeTripComparisonText($name);
+        $firstPart = $this->normalizeTripComparisonText($parts[0]);
+
+        if (
+            $firstPart === $normalizedName
+            || str_starts_with($firstPart, $normalizedName)
+            || str_starts_with($normalizedName, $firstPart)
+            || $this->tripLocationPrefixContainsNameTokens($normalizedName, $firstPart)
+        ) {
+            array_shift($parts);
+        }
+
+        return trim(implode(', ', $parts), " \t\n\r\0\x0B,.;");
+    }
+
+    private function normalizeTripComparisonText(string $value): string
+    {
+        $value = strtolower($value);
+        $value = preg_replace('/[^a-z0-9]+/', ' ', $value);
+
+        return trim((string) $value);
+    }
+
+    private function tripLocationPrefixContainsNameTokens(string $normalizedName, string $normalizedLocationPrefix): bool
+    {
+        $nameTokens = array_values(array_filter(explode(' ', $normalizedName)));
+        $locationTokens = array_values(array_filter(explode(' ', $normalizedLocationPrefix)));
+
+        if (count($nameTokens) < 2 || empty($locationTokens)) {
+            return false;
+        }
+
+        return empty(array_diff($nameTokens, $locationTokens));
+    }
+
+    private function ensureSentence(string $value): string
+    {
+        $value = trim(preg_replace('/\s+/', ' ', $value) ?? '');
+        $value = str_replace('.;', '.', $value);
+        $value = preg_replace('/;\s*\./', '.', $value) ?? $value;
+        $value = preg_replace('/\.\.+/', '.', $value) ?? $value;
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (!in_array(substr($value, -1), ['.', '!', '?'], true)) {
+            $value .= '.';
+        }
+
+        return $value;
     }
 
     private function renderRecommendationSection(string $heading, array $items, callable $formatter): ?string

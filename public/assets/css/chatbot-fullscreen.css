@@ -3,36 +3,6 @@ body {
   min-height: 100%;
 }
 
-@media (min-width: 1281px) {
-  body.chatbot-layout {
-    min-height: 100dvh;
-    overflow: hidden;
-  }
-
-  body.chatbot-layout .content,
-  body.chatbot-layout .content > div {
-    min-height: 100dvh;
-  }
-
-  body.chatbot-layout .content > div {
-    display: flex;
-    flex-direction: column;
-  }
-
-  body.chatbot-layout #main {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .chatbot-page {
-    flex: 1 1 auto;
-    min-height: 0;
-    height: auto;
-  }
-}
-
 body.chatbot-layout,
 body.chatbot-layout .content,
 body.chatbot-layout .content > div,
@@ -1337,14 +1307,24 @@ body.chatbot-layout #main {
 
   .chatbot-page {
     flex: 1 1 auto;
-    min-height: 0;
-    height: auto;
-    padding-top: 0.95rem;
-    padding-bottom: 0.95rem;
+    min-height: calc(100dvh - var(--site-nav-height, 104px));
+    height: calc(100dvh - var(--site-nav-height, 104px));
+    padding: 0.95rem 1.1rem;
     overflow: hidden;
   }
 
   .chatbot-screen {
+    min-height: 0;
+    height: 100%;
     gap: 0.85rem;
+  }
+
+  .chatbot-screen__body {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .chatbot-landing {
+    overflow: hidden;
   }
 }
