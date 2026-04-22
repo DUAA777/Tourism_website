@@ -64,7 +64,11 @@ class ChatbotControllerTest extends TestCase
         $reply = $response->json('reply');
 
         $this->assertStringContainsString('2-Day Trip in Batroun', $reply);
+        $this->assertStringContainsString('A practical itinerary built from recommended stays, food, and activities.', $reply);
         $this->assertStringContainsString('Day 1 - Batroun', $reply);
+        $this->assertStringContainsString('Morning: Start with Batroun Seafront Walk.', $reply);
+        $this->assertStringContainsString('Lunch: Head to Harbor Lunch in Batroun Port for Seafood.', $reply);
+        $this->assertStringContainsString('Stay: Stay at Sunset Stay in Batroun Seafront with rates around 110$.', $reply);
         $this->assertStringContainsString('Day 2 - Batroun', $reply);
         $this->assertDatabaseHas('chat_messages', [
             'chat_session_id' => $response->json('session_id'),
@@ -336,6 +340,32 @@ class ChatbotControllerTest extends TestCase
             ->once();
     }
 
+    public function test_it_redacts_secret_like_message_previews_in_audit_logs(): void
+    {
+        Log::spy();
+
+        $this->mockRecommendationService($this->recommendationPayload());
+
+        Http::fake([
+            $this->chatbotServiceUrl() => Http::response(['reply' => 'Safe python reply'], 200),
+        ]);
+
+        $secretLikeMessage = 'AI' . 'za' . str_repeat('A', 32);
+
+        $response = $this->postJson(route('chatbot.send'), [
+            'message' => $secretLikeMessage,
+        ]);
+
+        $response->assertOk();
+
+        Log::shouldHaveReceived('info')
+            ->withArgs(function ($message, $context) {
+                return $message === 'Chatbot recommendation payload prepared.'
+                    && ($context['message_preview'] ?? null) === '[redacted]';
+            })
+            ->once();
+    }
+
     public function test_it_logs_fallback_delivery_metadata_when_python_fails(): void
     {
         Log::spy();
@@ -391,6 +421,118 @@ class ChatbotControllerTest extends TestCase
                     && ($context['trip_days'] ?? null) === 3;
             })
             ->once();
+    }
+
+    public function test_it_reuses_saved_session_context_for_follow_up_messages(): void
+    {
+        $service = Mockery::mock(RecommendationService::class);
+        $service->shouldReceive('buildResponseData')
+            ->once()
+            ->with('Find me a romantic hotel in Byblos', null)
+            ->andReturn([
+                'intent' => [
+                    'city' => 'byblos',
+                    'resolved_city' => 'byblos',
+                    'mentioned_cities' => ['byblos'],
+                    'requested_categories' => ['hotels'],
+                    'wants_hotel' => true,
+                    'wants_trip_plan' => false,
+                    'has_travel_signal' => true,
+                    'message_type' => 'hotel_recommendation',
+                ],
+                'hotels' => [
+                    [
+                        'id' => 82,
+                        'hotel_name' => 'Harbor Stay',
+                        'address' => 'Byblos Port',
+                        'price_per_night' => '120$',
+                        'rating_score' => 4.6,
+                    ],
+                ],
+                'restaurants' => [],
+                'activities' => [],
+                'trip_plan' => null,
+                'diagnostics' => [
+                    'summary_chips' => ['City: Byblos', 'Looking for: Hotels'],
+                ],
+            ]);
+
+        $service->shouldReceive('buildResponseData')
+            ->once()
+            ->with('Make it cheaper', Mockery::on(function ($context) {
+                return data_get($context, 'intent.resolved_city') === 'byblos'
+                    && data_get($context, 'intent.requested_categories.0') === 'hotels';
+            }))
+            ->andReturn([
+                'intent' => [
+                    'city' => 'byblos',
+                    'resolved_city' => 'byblos',
+                    'mentioned_cities' => ['byblos'],
+                    'requested_categories' => ['hotels'],
+                    'wants_hotel' => true,
+                    'wants_trip_plan' => false,
+                    'has_travel_signal' => true,
+                    'message_type' => 'hotel_recommendation',
+                    'follow_up_context' => [
+                        'is_follow_up' => true,
+                    ],
+                ],
+                'hotels' => [
+                    [
+                        'id' => 91,
+                        'hotel_name' => 'Budget Harbor Stay',
+                        'address' => 'Byblos Old Town',
+                        'price_per_night' => '75$',
+                        'rating_score' => 4.4,
+                    ],
+                ],
+                'restaurants' => [],
+                'activities' => [],
+                'trip_plan' => null,
+                'diagnostics' => [
+                    'summary_chips' => ['City: Byblos', 'Budget-aware'],
+                ],
+            ]);
+
+        $this->app->instance(RecommendationService::class, $service);
+
+        Http::fake([
+            $this->chatbotServiceUrl() => Http::sequence()
+                ->push(['reply' => 'First hotel suggestion'], 200)
+                ->push(['reply' => 'Cheaper follow-up suggestion'], 200),
+        ]);
+
+        $firstResponse = $this->postJson(route('chatbot.send'), [
+            'message' => 'Find me a romantic hotel in Byblos',
+        ]);
+
+        $firstResponse->assertOk();
+        $sessionId = (int) $firstResponse->json('session_id');
+
+        $secondResponse = $this->postJson(route('chatbot.send'), [
+            'message' => 'Make it cheaper',
+            'session_id' => $sessionId,
+        ]);
+
+        $secondResponse->assertOk()
+            ->assertJsonPath('session_id', $sessionId)
+            ->assertJsonPath('reply', 'Cheaper follow-up suggestion');
+
+        $session = ChatSession::findOrFail($sessionId);
+        $this->assertSame('byblos', data_get($session->context_payload, 'intent.resolved_city'));
+        $this->assertSame('Budget Harbor Stay', data_get($session->context_payload, 'hotels.0.hotel_name'));
+
+        Http::assertSent(function (HttpRequest $request) use ($sessionId) {
+            if ($request->url() !== $this->chatbotServiceUrl()) {
+                return false;
+            }
+
+            $payload = $request->data();
+
+            return (int) ($payload['session_id'] ?? 0) === $sessionId
+                && ($payload['message'] ?? null) === 'Make it cheaper'
+                && data_get($payload, 'session_context.intent.resolved_city') === 'byblos';
+        });
     }
 
     private function mockRecommendationService(array $payload): void

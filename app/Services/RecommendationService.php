@@ -11,10 +11,11 @@ use Illuminate\Support\Str;
 
 class RecommendationService
 {
-    public function buildResponseData(string $message): array
+    public function buildResponseData(string $message, ?array $sessionContext = null): array
     {
         $intent = $this->extractIntent($message);
-        $normalizedMessage = $this->normalizeText($message);
+        [$intent, $intentSourceMessage] = $this->applySessionContextToIntent($message, $intent, $sessionContext);
+        $normalizedMessage = $this->normalizeText($intentSourceMessage);
 
         if (($intent['should_hold_results'] ?? false) === true) {
             $diagnostics = $this->buildDiagnostics($intent, [], [], [], null);
@@ -71,6 +72,10 @@ class RecommendationService
                     fn ($hotel, $city) => in_array($city, $this->hotelCityCandidates($hotel), true),
                     4
                 );
+            }
+
+            if (!empty($intent['excluded_cities'])) {
+                $rankedHotels = $this->filterRankedItemsExcludingCities($rankedHotels, 'hotels', $intent['excluded_cities']);
             }
 
             $rankedHotels = $this->filterWeakRankedItems($rankedHotels, $intent, 'hotels');
@@ -130,7 +135,12 @@ class RecommendationService
                 );
             }
 
+            if (!empty($intent['excluded_cities'])) {
+                $rankedRestaurants = $this->filterRankedItemsExcludingCities($rankedRestaurants, 'restaurants', $intent['excluded_cities']);
+            }
+
             $rankedRestaurants = $this->filterWeakRankedItems($rankedRestaurants, $intent, 'restaurants');
+            $rankedRestaurants = $this->filterRankedItemsToExplicitCities($rankedRestaurants, 'restaurants', $intent);
 
             if ($intent['wants_trip_plan'] && count($intent['mentioned_cities']) > 1) {
                 $rankedRestaurants = $this->prioritizeTripCityCoverage(
@@ -187,7 +197,12 @@ class RecommendationService
                 );
             }
 
+            if (!empty($intent['excluded_cities'])) {
+                $rankedActivities = $this->filterRankedItemsExcludingCities($rankedActivities, 'activities', $intent['excluded_cities']);
+            }
+
             $rankedActivities = $this->filterWeakRankedItems($rankedActivities, $intent, 'activities');
+            $rankedActivities = $this->filterRankedItemsToExplicitCities($rankedActivities, 'activities', $intent);
 
             if ($intent['wants_trip_plan'] && count($intent['mentioned_cities']) > 1) {
                 $rankedActivities = $this->prioritizeTripCityCoverage(
@@ -209,6 +224,12 @@ class RecommendationService
             $rankedActivities = $this->applyNoCityActivityGuardrail($rankedActivities, $intent);
         }
 
+        if (!empty($intent['excluded_cities'])) {
+            $rankedHotels = $this->filterRankedItemsExcludingCities($rankedHotels, 'hotels', $intent['excluded_cities']);
+            $rankedRestaurants = $this->filterRankedItemsExcludingCities($rankedRestaurants, 'restaurants', $intent['excluded_cities']);
+            $rankedActivities = $this->filterRankedItemsExcludingCities($rankedActivities, 'activities', $intent['excluded_cities']);
+        }
+
         if (
             !empty($intent['wants_trip_plan'])
             && empty($intent['mentioned_cities'])
@@ -221,20 +242,38 @@ class RecommendationService
                 $intent['resolved_city'] = $resolvedTripCity;
                 $intent['city'] = $intent['city'] ?? $resolvedTripCity;
 
-                $cityScopedHotels = $this->filterRankedItemsByCity($rankedHotels, 'hotels', $resolvedTripCity);
-                if ($cityScopedHotels->isNotEmpty()) {
-                    $rankedHotels = $cityScopedHotels;
-                }
+                $rankedHotels = $this->filterRankedItemsByCity($rankedHotels, 'hotels', $resolvedTripCity);
+                $rankedRestaurants = $this->filterRankedItemsByCity($rankedRestaurants, 'restaurants', $resolvedTripCity);
+                $rankedActivities = $this->filterRankedItemsByCity($rankedActivities, 'activities', $resolvedTripCity);
+            } elseif (
+                (int) ($intent['day_count'] ?? 0) === 1
+                && empty($intent['requires_stay'])
+                && !empty($intent['can_plan_without_explicit_city'])
+                && ($rankedRestaurants->isNotEmpty() || $rankedActivities->isNotEmpty())
+            ) {
+                // A cityless one-day request can still be useful as grounded options.
+                // Avoid inventing a route when the city evidence is spread across Lebanon.
+                $intent['wants_trip_plan'] = false;
+                $intent['requested_categories'] = array_values(array_diff(
+                    (array) ($intent['requested_categories'] ?? []),
+                    ['trip_plan']
+                ));
+                $intent['message_type'] = $this->deriveMessageType($intent);
+            } else {
+                $intent['city'] = null;
+                $intent['resolved_city'] = null;
+                $intent['should_hold_results'] = true;
+                $intent['message_type'] = $this->deriveMessageType($intent);
+                $diagnostics = $this->buildDiagnostics($intent, [], [], [], null);
 
-                $cityScopedRestaurants = $this->filterRankedItemsByCity($rankedRestaurants, 'restaurants', $resolvedTripCity);
-                if ($cityScopedRestaurants->isNotEmpty()) {
-                    $rankedRestaurants = $cityScopedRestaurants;
-                }
-
-                $cityScopedActivities = $this->filterRankedItemsByCity($rankedActivities, 'activities', $resolvedTripCity);
-                if ($cityScopedActivities->isNotEmpty()) {
-                    $rankedActivities = $cityScopedActivities;
-                }
+                return [
+                    'intent' => $intent,
+                    'hotels' => [],
+                    'restaurants' => [],
+                    'activities' => [],
+                    'trip_plan' => null,
+                    'diagnostics' => $diagnostics,
+                ];
             }
         }
 
@@ -291,10 +330,21 @@ class RecommendationService
     {
         $text = $this->normalizeText($message);
         $mentionedCities = $this->extractMentionedCities($text);
+        $excludedCities = $this->extractExcludedCities($text);
+        if (!empty($excludedCities)) {
+            $mentionedCities = array_values(array_diff($mentionedCities, $excludedCities));
+        }
+        $countryScope = $this->containsAnyPhrase($text, [
+            'lebanon',
+            'anywhere',
+            'no specific city',
+            'across the country',
+            'around the country',
+        ]);
 
         $city = $mentionedCities[0] ?? null;
         $startCity = $mentionedCities[0] ?? null;
-        $endCity = $mentionedCities[1] ?? null;
+        $endCity = count($mentionedCities) > 1 ? $mentionedCities[array_key_last($mentionedCities)] : null;
 
         $vibeTags = $this->extractConceptMatches($text, $this->vibeConceptMap());
         $foodPreferences = $this->extractConceptMatches($text, $this->foodConceptMap());
@@ -303,19 +353,35 @@ class RecommendationService
         $activityTypes = $this->extractConceptMatches($text, $this->activityConceptMap());
         $timePreferences = $this->extractConceptMatches($text, $this->timeConceptMap());
 
+        $vibeTags = $this->removeNegatedConceptMatches($text, $vibeTags, $this->vibeConceptMap());
+        $foodPreferences = $this->removeNegatedConceptMatches($text, $foodPreferences, $this->foodConceptMap());
+        $occasionTags = $this->removeNegatedConceptMatches($text, $occasionTags, $this->occasionConceptMap());
+        $activityTypes = $this->removeNegatedConceptMatches($text, $activityTypes, $this->activityConceptMap());
+        $timePreferences = $this->removeNegatedConceptMatches($text, $timePreferences, $this->timeConceptMap());
+
         $budget = $this->extractBudgetPreference($text);
         $budgetMax = $this->extractBudgetAmount($message);
         $explicitDayCount = $this->extractDayCount($text);
         $dayCount = $explicitDayCount;
         $duration = $dayCount ? $this->durationKeyFromDayCount($dayCount) : null;
 
-        $wantsHotel = $this->containsAnyPhrase($text, ['hotel', 'hotels', 'stay', 'stays', 'room', 'rooms', 'accommodation', 'accommodations', 'resort', 'resorts', 'retreat', 'retreats']);
+        $noStayRequested = $this->containsNoStayRequest($text);
+        $noRestaurantRequested = $this->messageNegatesCategory($text, 'restaurants');
+        $noActivityRequested = $this->messageNegatesCategory($text, 'activities');
+        $wantsHotel = $this->containsAnyPhrase($text, ['hotel', 'hotels', 'stay', 'stays', 'room', 'rooms', 'accommodation', 'accommodations', 'resort', 'resorts', 'retreat', 'retreats', 'guesthouse', 'guesthouses', 'guest house', 'guest houses']);
+        if ($noStayRequested) {
+            $wantsHotel = false;
+        }
+
         $hasDateNightDrinkCue = $this->containsAnyPhrase($text, ['drink', 'drinks', 'cocktail', 'cocktails', 'wine'])
             && in_array('date', $occasionTags, true);
         $wantsRestaurant = $this->containsAnyPhrase($text, ['restaurant', 'restaurants', 'food', 'foods', 'dinner', 'lunch', 'breakfast', 'brunch', 'cafe', 'cafes', 'coffee', 'eat', 'dining'])
             || !empty($foodPreferences)
             || !empty(array_intersect($occasionTags, ['breakfast', 'lunch', 'dinner']))
             || $hasDateNightDrinkCue;
+        if ($noRestaurantRequested) {
+            $wantsRestaurant = false;
+        }
         $hasSpecificActivityCue = $this->containsAnyPhrase($text, [
             'activity', 'activities', 'things to do', 'visit', 'visiting',
             'explore', 'exploring', 'sight', 'sights',
@@ -323,17 +389,49 @@ class RecommendationService
             'promenade', 'nightlife', 'night out', 'night-out', 'rooftop', 'bars', 'club',
         ]);
         $hasGenericActivityPlaceCue = $this->containsAnyPhrase($text, ['place', 'places', 'destination', 'destinations']);
-        $hasStandaloneActivityConcept = !empty(array_intersect($activityTypes, ['walking', 'nightlife', 'hidden_gem', 'cultural', 'historical']));
+        $strongActivityConcepts = array_intersect($activityTypes, [
+            'walking',
+            'nightlife',
+            'hidden_gem',
+            'cultural',
+            'historical',
+            'touristy',
+            'scenic',
+            'beach',
+            'nature',
+            'city',
+        ]);
+        $restaurantCompatibleActivityConcepts = array_intersect($activityTypes, [
+            'walking',
+            'hidden_gem',
+            'cultural',
+            'historical',
+            'touristy',
+            'scenic',
+            'beach',
+            'nature',
+            'city',
+        ]);
+        $hasStandaloneActivityConcept = $wantsRestaurant
+            ? !empty($restaurantCompatibleActivityConcepts)
+            : !empty($strongActivityConcepts);
         $wantsActivity = $hasSpecificActivityCue
             || ($hasGenericActivityPlaceCue && !$wantsHotel && !$wantsRestaurant)
-            || ($hasStandaloneActivityConcept && !$wantsHotel && !$wantsRestaurant);
+            || ($hasStandaloneActivityConcept && !($wantsHotel && !$wantsRestaurant));
+        if ($noActivityRequested) {
+            $wantsActivity = false;
+        }
         $isRecommendationAsk = $this->containsAnyPhrase($text, ['find me', 'recommend', 'show me', 'suggest']);
         $hasPlanningVerb = $this->containsAnyPhrase($text, ['plan', 'build me', 'build', 'organize', 'schedule']);
         $hasTripKeyword = $this->containsAnyPhrase($text, [
             'trip', 'itinerary', 'day trip', 'vacation', 'holiday', 'road trip',
             'trip plan', 'travel plan', 'multi day', 'multi-day',
         ]);
-        $hasDurationCue = $explicitDayCount !== null || $this->containsAnyPhrase($text, [
+        if ($dayCount === null && $hasPlanningVerb && preg_match('/\ba\s+(?:[a-z]+\s+){0,3}day\b/', $text)) {
+            $dayCount = 1;
+            $duration = '1_day';
+        }
+        $hasDurationCue = $dayCount !== null || $this->containsAnyPhrase($text, [
             'weekend', 'one day', '1 day', 'two days', '2 days', '2 day', 'two day',
             'three days', '3 days', '3 day', 'three day', '2 nights', 'two nights',
             '2 night', 'two night', 'long weekend', 'couple days', 'couple of days',
@@ -346,9 +444,23 @@ class RecommendationService
 
         if (
             !$wantsTripPlan
+            && $dayCount === 1
+            && ($wantsRestaurant || $wantsActivity)
+        ) {
+            $wantsTripPlan = true;
+        }
+
+        if ($wantsTripPlan && $this->containsTripPlanNegation($text)) {
+            $wantsTripPlan = false;
+        }
+
+        if (
+            !$wantsTripPlan
             && $dayCount
             && $dayCount > 1
             && !$isRecommendationAsk
+            && !$this->looksLikeStayOnlyRecommendationRequest($text)
+            && (!$wantsHotel || $this->containsAnyPhrase($text, ['stay in', 'staying in', '2 nights', 'two nights', '2 night', 'two night']))
             && !$wantsRestaurant
             && !$wantsActivity
         ) {
@@ -360,7 +472,7 @@ class RecommendationService
             $duration = '2_days';
         }
 
-        $requiresStay = $wantsHotel || ($wantsTripPlan && ($dayCount ?? 0) > 1);
+        $requiresStay = !$noStayRequested && ($wantsHotel || ($wantsTripPlan && ($dayCount ?? 0) > 1));
 
         $semanticConcepts = array_values(array_unique(array_merge(
             $vibeTags,
@@ -383,7 +495,7 @@ class RecommendationService
             $requestedCategories[] = 'hotels';
         }
 
-        if ($wantsRestaurant || $wantsTripPlan) {
+        if ($wantsRestaurant || ($wantsTripPlan && !$noRestaurantRequested)) {
             $requestedCategories[] = 'restaurants';
         }
 
@@ -476,11 +588,20 @@ class RecommendationService
                 $shouldHoldResults = true;
             }
 
-            if ($this->shouldHoldCitylessHotelRequest($wantsHotel, $mentionedCities, $wantsTripPlan)) {
+            if ($this->shouldHoldCitylessHotelRequest(
+                $wantsHotel,
+                $mentionedCities,
+                $wantsTripPlan,
+                $vibeTags,
+                $audienceTags,
+                $timePreferences,
+                $budget,
+                $budgetMax
+            )) {
                 $shouldHoldResults = true;
             }
 
-            if ($this->shouldHoldCitylessRestaurantRequest(
+            if (!$wantsActivity && $this->shouldHoldCitylessRestaurantRequest(
                 $wantsRestaurant,
                 $mentionedCities,
                 $wantsTripPlan,
@@ -499,6 +620,10 @@ class RecommendationService
             $shouldHoldResults = true;
         }
 
+        if (empty($mentionedCities) && !$wantsTripPlan && $this->looksLikeContextDependentFollowUpRequest($text)) {
+            $shouldHoldResults = true;
+        }
+
         $responseTone = $this->inferResponseTone($text, $vibeTags, $occasionTags);
         $intent = [
             'city' => $city,
@@ -506,6 +631,7 @@ class RecommendationService
             'start_city' => $startCity,
             'end_city' => $endCity,
             'mentioned_cities' => $mentionedCities,
+            'excluded_cities' => $excludedCities,
             'vibe_tags' => array_values(array_unique($vibeTags)),
             'food_type' => $foodPreferences[0] ?? null,
             'food_preferences' => array_values(array_unique($foodPreferences)),
@@ -516,8 +642,14 @@ class RecommendationService
             'occasion_tags' => array_values(array_unique($occasionTags)),
             'audience_tags' => array_values(array_unique($audienceTags)),
             'activity_types' => array_values(array_unique($activityTypes)),
+            'excluded_categories' => array_values(array_filter([
+                $noStayRequested ? 'hotels' : null,
+                $noRestaurantRequested ? 'restaurants' : null,
+                $noActivityRequested ? 'activities' : null,
+            ])),
             'time_preferences' => array_values(array_unique($timePreferences)),
             'semantic_concepts' => $semanticConcepts,
+            'country_scope' => $countryScope,
             'requested_categories' => array_values(array_unique($requestedCategories)),
             'requires_stay' => $requiresStay,
             'wants_hotel' => $wantsHotel,
@@ -534,6 +666,861 @@ class RecommendationService
         $intent['message_type'] = $this->deriveMessageType($intent);
 
         return $intent;
+    }
+
+    private function applySessionContextToIntent(string $message, array $intent, ?array $sessionContext): array
+    {
+        $previousIntent = is_array($sessionContext['intent'] ?? null) ? $sessionContext['intent'] : null;
+        if ($previousIntent === null || !$this->shouldUseSessionContextForIntent($message, $intent, $previousIntent)) {
+            return [$intent, $message];
+        }
+
+        $mergedSeed = $this->mergeIntentSeedWithSessionContext($intent, $previousIntent, $message);
+        $intentSourceMessage = $this->buildIntentPromptFromSeed($mergedSeed);
+        $mergedIntent = $this->extractIntent($intentSourceMessage);
+        if (!empty($mergedSeed['excluded_cities'])) {
+            $excludedCities = array_values(array_unique(array_map(
+                fn ($city) => $this->normalizeText((string) $city),
+                (array) $mergedSeed['excluded_cities']
+            )));
+
+            $mergedIntent['excluded_cities'] = array_values(array_unique(array_merge(
+                (array) ($mergedIntent['excluded_cities'] ?? []),
+                $excludedCities
+            )));
+            $mergedIntent['mentioned_cities'] = array_values(array_diff(
+                (array) ($mergedIntent['mentioned_cities'] ?? []),
+                $excludedCities
+            ));
+
+            if (in_array($mergedIntent['resolved_city'] ?? null, $excludedCities, true)) {
+                $mergedIntent['city'] = $mergedIntent['mentioned_cities'][0] ?? null;
+                $mergedIntent['resolved_city'] = $mergedIntent['city'];
+            }
+        }
+        $mergedIntent = $this->enforceFollowUpCategoryMode(
+            $mergedIntent,
+            (string) ($mergedSeed['_category_mode'] ?? 'carry_previous')
+        );
+
+        $mergedIntent['follow_up_context'] = [
+            'is_follow_up' => true,
+            'previous_message_type' => $previousIntent['message_type'] ?? null,
+            'current_message' => trim($message),
+            'context_city' => $previousIntent['resolved_city'] ?? $previousIntent['city'] ?? null,
+            'carryover_fields' => $this->detectIntentCarryoverFields($intent, $previousIntent),
+        ];
+
+        if (!empty($intent['response_tone'])) {
+            $mergedIntent['response_tone'] = $intent['response_tone'];
+        }
+
+        return [$mergedIntent, $intentSourceMessage];
+    }
+
+    private function shouldUseSessionContextForIntent(string $message, array $intent, array $previousIntent): bool
+    {
+        $normalizedMessage = $this->normalizeText($message);
+        if ($normalizedMessage === '') {
+            return false;
+        }
+
+        if (!$this->hasUsableSessionIntent($previousIntent)) {
+            return false;
+        }
+
+        if ($this->looksLikeGreetingOnlyMessage($normalizedMessage)) {
+            return false;
+        }
+
+        if ($this->looksLikeMetaOnlyMessage($normalizedMessage)) {
+            return false;
+        }
+
+        if ($this->looksLikeFreshExplicitRequest($normalizedMessage, $intent)) {
+            return false;
+        }
+
+        if ($this->containsFollowUpRefinementCue($normalizedMessage)) {
+            return true;
+        }
+
+        if ($this->isShortIntentRefinement($normalizedMessage, $intent)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function looksLikeFreshExplicitRequest(string $message, array $intent): bool
+    {
+        $hasExplicitCategory = !empty($intent['wants_hotel'])
+            || !empty($intent['wants_restaurant'])
+            || !empty($intent['wants_activity'])
+            || !empty($intent['wants_trip_plan']);
+        $hasExplicitCity = !empty($intent['mentioned_cities']);
+
+        if (
+            $hasExplicitCategory
+            && $hasExplicitCity
+            && !$this->looksLikeContextDependentFollowUpRequest($message)
+        ) {
+            return true;
+        }
+
+        $startsFresh = preg_match('/^(find|recommend|suggest|show|plan|build|create|give)\b/u', $message) === 1
+            || str_starts_with($message, 'find me ')
+            || str_starts_with($message, 'recommend me ')
+            || str_starts_with($message, 'can you recommend ')
+            || str_starts_with($message, 'i want ')
+            || str_starts_with($message, 'i m with ')
+            || str_starts_with($message, 'im with ')
+            || str_starts_with($message, 'we re with ')
+            || str_starts_with($message, 'were with ')
+            || str_starts_with($message, 'we are with ');
+
+        if (!$startsFresh) {
+            return false;
+        }
+
+        $hasExplicitScope = !empty($intent['mentioned_cities'])
+            || !empty($intent['wants_hotel'])
+            || !empty($intent['wants_restaurant'])
+            || !empty($intent['wants_activity'])
+            || !empty($intent['wants_trip_plan']);
+
+        if (!$hasExplicitScope) {
+            return false;
+        }
+
+        return !$this->containsAnyPhrase($message, [
+            'same',
+            'instead',
+            'what about',
+            'turn it',
+            'make it',
+            'change it',
+            'switch it',
+            'plan it',
+            'extend it',
+            'shorten it',
+        ]);
+    }
+
+    private function hasUsableSessionIntent(array $intent): bool
+    {
+        return !empty($intent['has_travel_signal'])
+            || !empty($intent['wants_trip_plan'])
+            || !empty($intent['requested_categories'])
+            || !empty($intent['mentioned_cities'])
+            || !empty($intent['resolved_city']);
+    }
+
+    private function looksLikeGreetingOnlyMessage(string $message): bool
+    {
+        return in_array($message, [
+            'h',
+            'hi',
+            'hello',
+            'hey',
+            'yo',
+            'thanks',
+            'thank you',
+            'thx',
+            'nice',
+            'cool',
+            'great',
+            'awesome',
+            'perfect',
+            'ok',
+            'okay',
+        ], true);
+    }
+
+    private function looksLikeMetaOnlyMessage(string $message): bool
+    {
+        foreach ([
+            'is ai down',
+            'is the ai down',
+            'is chatbot down',
+            'is this working',
+            'are you there',
+            'are you working',
+            'did you break',
+        ] as $phrase) {
+            if (str_contains($message, $phrase)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function looksLikeContextDependentFollowUpRequest(string $message): bool
+    {
+        return $this->containsAnyPhrase($message, [
+            'same city',
+            'same vibe',
+            'same place',
+            'same budget',
+            'same but',
+            'same for',
+            'same one',
+            'make it',
+            'make them',
+            'change it',
+            'change to',
+            'switch it',
+            'switch to',
+            'move it to',
+            'move to',
+            'plan it',
+            'plan this',
+            'turn it',
+            'turn that',
+            'turn this',
+            'that one',
+            'those ones',
+            'the previous',
+            'previous one',
+            'last one',
+        ]);
+    }
+
+    private function containsTripPlanNegation(string $message): bool
+    {
+        return $this->containsAnyPhrase($message, [
+            'not a trip',
+            'not a full trip',
+            'not an itinerary',
+            'no trip',
+            'no itinerary',
+            'without a trip',
+            'without itinerary',
+            'just hotel',
+            'just hotels',
+            'only hotel',
+            'only hotels',
+            'hotel only',
+            'just restaurant',
+            'just restaurants',
+            'restaurant only',
+            'only restaurant',
+            'only restaurants',
+            'just activities',
+            'activity only',
+            'activities only',
+            'only activities',
+        ]);
+    }
+
+    private function containsNoStayRequest(string $message): bool
+    {
+        return $this->containsAnyPhrase($message, [
+            'no hotel',
+            'no hotels',
+            'no stay',
+            'no stays',
+            'without hotel',
+            'without hotels',
+            'without a hotel',
+            'without a stay',
+            'skip hotel',
+            'skip hotels',
+            'skip the hotel',
+            'remove hotel',
+            'remove the hotel',
+            'remove stay',
+            'remove the stay',
+        ]);
+    }
+
+    private function messageNegatesCategory(string $message, string $category): bool
+    {
+        return match ($category) {
+            'hotels' => $this->containsNoStayRequest($message),
+            'restaurants' => $this->containsAnyPhrase($message, [
+                'no restaurant',
+                'no restaurants',
+                'without restaurant',
+                'without restaurants',
+                'without food',
+                'skip restaurant',
+                'skip restaurants',
+                'skip dinner',
+                'remove restaurant',
+                'remove restaurants',
+            ]),
+            'activities' => $this->containsAnyPhrase($message, [
+                'no activity',
+                'no activities',
+                'without activity',
+                'without activities',
+                'without places',
+                'skip activity',
+                'skip activities',
+                'remove activity',
+                'remove activities',
+            ]),
+            default => false,
+        };
+    }
+
+    private function containsGenericCityRejection(string $message): bool
+    {
+        return $this->containsAnyPhrase($message, [
+            'dont like that city',
+            'don t like that city',
+            'do not like that city',
+            'dont like this city',
+            'don t like this city',
+            'do not like this city',
+            'i dont like that city',
+            'i don t like that city',
+            'i do not like that city',
+            'give me another city',
+            'another city',
+            'different city',
+            'somewhere else',
+            'another area',
+            'different area',
+        ]);
+    }
+
+    private function containsAddStayRequest(string $message): bool
+    {
+        return $this->containsAnyPhrase($message, [
+            'add a stay',
+            'add stay',
+            'add hotel',
+            'add hotels',
+            'add a hotel',
+            'add accommodation',
+            'include a stay',
+            'include stay',
+            'include hotel',
+            'include hotels',
+            'with a stay',
+            'with stay',
+            'with hotel',
+            'with hotels',
+            'hotel back',
+            'hotels back',
+            'stay back',
+            'bring back hotel',
+            'bring the hotel back',
+        ]);
+    }
+
+    private function looksLikeStayOnlyRecommendationRequest(string $message): bool
+    {
+        return $this->containsAnyPhrase($message, [
+            'where can we stay',
+            'where can i stay',
+            'where should we stay',
+            'where should i stay',
+            'where to stay',
+            'recommend a stay',
+            'recommend a hotel',
+            'find me a stay',
+            'find me a hotel',
+            'show me hotels',
+            'hotel recommendation',
+            'hotel options',
+        ]);
+    }
+
+    private function containsFollowUpRefinementCue(string $message): bool
+    {
+        return $this->containsAnyPhrase($message, [
+            'instead',
+            'actually',
+            'what about',
+            'same but',
+            'make it',
+            'make them',
+            'make this',
+            'make that',
+            'more ',
+            'less ',
+            'cheaper',
+            'budget',
+            'mid range',
+            'mid-range',
+            'luxury',
+            'premium',
+            'romantic',
+            'quiet',
+            'quieter',
+            'calm',
+            'lively',
+            'family',
+            'friends',
+            'couple',
+            'seafood',
+            'sushi',
+            'breakfast',
+            'lunch',
+            'dinner',
+            'with a stay',
+            'with hotel',
+            'with hotels',
+            'without a stay',
+            'without hotel',
+            'without hotels',
+            'no hotel',
+            'no hotels',
+            'add a stay',
+            'add hotel',
+            'add hotels',
+            'remove stay',
+            'remove the stay',
+            'remove hotel',
+            'remove hotels',
+            'remove the hotel',
+            'remove the hotels',
+            'hotel back',
+            'hotels back',
+            'extend it',
+            'shorten it',
+            'another option',
+            'another one',
+            'change it',
+            'change to',
+            'switch it',
+            'switch to',
+            'move it to',
+            'move to',
+            'plan it',
+            'plan this',
+            'keep the same',
+            'same city',
+            'same vibe',
+            'turn that',
+            'turn this',
+            'turn it',
+        ]);
+    }
+
+    private function isShortIntentRefinement(string $message, array $intent): bool
+    {
+        $wordCount = str_word_count($message);
+        if ($wordCount === 0 || $wordCount > 10) {
+            return false;
+        }
+
+        return !empty($intent['mentioned_cities'])
+            || !empty($intent['day_count'])
+            || !empty($intent['budget'])
+            || !empty($intent['budget_max'])
+            || !empty($intent['vibe_tags'])
+            || !empty($intent['food_preferences'])
+            || !empty($intent['occasion_tags'])
+            || !empty($intent['audience_tags'])
+            || !empty($intent['activity_types'])
+            || !empty($intent['time_preferences'])
+            || !empty($intent['requested_categories']);
+    }
+
+    private function mergeIntentSeedWithSessionContext(array $intent, array $previousIntent, string $message): array
+    {
+        $normalizedMessage = $this->normalizeText($message);
+        $categoryMode = $this->determineFollowUpCategoryMode($normalizedMessage, $intent, $previousIntent);
+        $hasExplicitCategoryCue = $this->messageExplicitlyRequestsCategory($normalizedMessage, 'hotels')
+            || $this->messageExplicitlyRequestsCategory($normalizedMessage, 'restaurants')
+            || $this->messageExplicitlyRequestsCategory($normalizedMessage, 'activities')
+            || !empty($intent['wants_trip_plan']);
+
+        $merged = [
+            'mentioned_cities' => !empty($intent['mentioned_cities']) ? (array) $intent['mentioned_cities'] : (array) ($previousIntent['mentioned_cities'] ?? []),
+            'vibe_tags' => !empty($intent['vibe_tags']) ? (array) $intent['vibe_tags'] : (array) ($previousIntent['vibe_tags'] ?? []),
+            'food_preferences' => !empty($intent['food_preferences']) ? (array) $intent['food_preferences'] : (array) ($previousIntent['food_preferences'] ?? []),
+            'occasion_tags' => !empty($intent['occasion_tags']) ? (array) $intent['occasion_tags'] : (array) ($previousIntent['occasion_tags'] ?? []),
+            'audience_tags' => !empty($intent['audience_tags']) ? (array) $intent['audience_tags'] : (array) ($previousIntent['audience_tags'] ?? []),
+            'activity_types' => !empty($intent['activity_types']) ? (array) $intent['activity_types'] : (array) ($previousIntent['activity_types'] ?? []),
+            'time_preferences' => !empty($intent['time_preferences']) ? (array) $intent['time_preferences'] : (array) ($previousIntent['time_preferences'] ?? []),
+            'excluded_cities' => !empty($intent['excluded_cities']) ? (array) $intent['excluded_cities'] : (array) ($previousIntent['excluded_cities'] ?? []),
+            'budget' => $this->intentValueOrFallback($intent, 'budget', $previousIntent),
+            'budget_max' => $this->intentValueOrFallback($intent, 'budget_max', $previousIntent),
+            'day_count' => $this->intentValueOrFallback($intent, 'day_count', $previousIntent),
+            'duration' => $this->intentValueOrFallback($intent, 'duration', $previousIntent),
+            'wants_trip_plan' => $categoryMode === 'trip_plan'
+                || (!empty($previousIntent['wants_trip_plan']) && $categoryMode === 'carry_previous'),
+            'requires_stay' => false,
+            'wants_hotel' => false,
+            'wants_restaurant' => false,
+            'wants_activity' => false,
+            '_category_mode' => $categoryMode,
+            '_suppress_stay' => $this->containsNoStayRequest($normalizedMessage),
+            '_force_stay' => $this->containsAddStayRequest($normalizedMessage),
+        ];
+
+        $previousResolvedCity = $this->normalizeText((string) ($previousIntent['resolved_city'] ?? $previousIntent['city'] ?? ''));
+        if ($previousResolvedCity !== '' && $this->containsGenericCityRejection($normalizedMessage)) {
+            $merged['excluded_cities'] = array_values(array_unique(array_merge(
+                (array) ($merged['excluded_cities'] ?? []),
+                [$previousResolvedCity]
+            )));
+
+            if (empty($intent['mentioned_cities'])) {
+                $merged['mentioned_cities'] = [];
+            }
+        }
+
+        if (empty($merged['mentioned_cities']) && empty($merged['excluded_cities'])) {
+            $resolvedCity = trim((string) ($previousIntent['resolved_city'] ?? $previousIntent['city'] ?? ''));
+            if ($resolvedCity !== '') {
+                $merged['mentioned_cities'] = [$resolvedCity];
+            }
+        } elseif (!empty($merged['excluded_cities'])) {
+            $merged['mentioned_cities'] = array_values(array_diff(
+                (array) ($merged['mentioned_cities'] ?? []),
+                (array) ($merged['excluded_cities'] ?? [])
+            ));
+        }
+
+        if (!empty($intent['day_count']) && empty($intent['duration'])) {
+            $merged['duration'] = $this->durationKeyFromDayCount((int) $intent['day_count']);
+        }
+
+        switch ($categoryMode) {
+            case 'hotels':
+                $merged['wants_hotel'] = true;
+                break;
+            case 'restaurants':
+                $merged['wants_restaurant'] = true;
+                break;
+            case 'activities':
+                $merged['wants_activity'] = true;
+                break;
+            case 'trip_plan':
+                $merged['wants_trip_plan'] = true;
+                $merged['wants_hotel'] = !$merged['_suppress_stay'] && (
+                    $merged['_force_stay']
+                    || !empty($intent['wants_hotel'])
+                    || !empty($intent['requires_stay'])
+                    || ((int) ($merged['day_count'] ?? 0)) > 1
+                );
+                $merged['wants_restaurant'] = true;
+                $merged['wants_activity'] = true;
+                break;
+            default:
+                $merged['wants_trip_plan'] = !empty($previousIntent['wants_trip_plan']);
+                $merged['wants_hotel'] = !empty($previousIntent['wants_hotel']);
+                $merged['wants_restaurant'] = !empty($previousIntent['wants_restaurant']);
+                $merged['wants_activity'] = !empty($previousIntent['wants_activity']);
+                break;
+        }
+
+        if (!$merged['wants_trip_plan'] && $hasExplicitCategoryCue) {
+            $merged['wants_hotel'] = $merged['wants_hotel'] || !empty($intent['wants_hotel']);
+            $merged['wants_restaurant'] = $merged['wants_restaurant'] || !empty($intent['wants_restaurant']);
+            $merged['wants_activity'] = $merged['wants_activity'] || !empty($intent['wants_activity']);
+        }
+
+        if ($merged['_suppress_stay']) {
+            $merged['wants_hotel'] = false;
+        }
+
+        if ($merged['_force_stay']) {
+            $merged['wants_hotel'] = true;
+        }
+
+        if ($merged['wants_trip_plan'] && empty($merged['day_count'])) {
+            $merged['day_count'] = (int) ($previousIntent['day_count'] ?? 2);
+            $merged['duration'] = $this->durationKeyFromDayCount((int) $merged['day_count']);
+        }
+
+        $merged['requires_stay'] = !$merged['_suppress_stay'] && (
+            $merged['wants_hotel']
+            || ($merged['wants_trip_plan'] && ((int) ($merged['day_count'] ?? 0)) > 1)
+        );
+
+        return $merged;
+    }
+
+    private function enforceFollowUpCategoryMode(array $intent, string $categoryMode): array
+    {
+        switch ($categoryMode) {
+            case 'hotels':
+                $intent['wants_trip_plan'] = false;
+                $intent['wants_hotel'] = true;
+                $intent['wants_restaurant'] = false;
+                $intent['wants_activity'] = false;
+                $intent['requires_stay'] = true;
+                $intent['requested_categories'] = ['hotels'];
+                break;
+
+            case 'restaurants':
+                $intent['wants_trip_plan'] = false;
+                $intent['wants_hotel'] = false;
+                $intent['wants_restaurant'] = true;
+                $intent['wants_activity'] = false;
+                $intent['requires_stay'] = false;
+                $intent['requested_categories'] = ['restaurants'];
+                break;
+
+            case 'activities':
+                $intent['wants_trip_plan'] = false;
+                $intent['wants_hotel'] = false;
+                $intent['wants_restaurant'] = false;
+                $intent['wants_activity'] = true;
+                $intent['requires_stay'] = false;
+                $intent['requested_categories'] = ['activities'];
+                break;
+
+            case 'trip_plan':
+                $requestedCategories = (array) ($intent['requested_categories'] ?? []);
+                $includeStay = !empty($intent['requires_stay'])
+                    || !empty($intent['wants_hotel'])
+                    || (((int) ($intent['day_count'] ?? 0)) > 1 && in_array('hotels', $requestedCategories, true));
+                $intent['wants_trip_plan'] = true;
+                $intent['wants_hotel'] = $includeStay;
+                $intent['wants_restaurant'] = true;
+                $intent['wants_activity'] = true;
+                $baseCategories = $includeStay
+                    ? ['hotels', 'restaurants', 'activities', 'trip_plan']
+                    : ['restaurants', 'activities', 'trip_plan'];
+                $intent['requested_categories'] = array_values(array_unique(array_merge(
+                    $baseCategories,
+                    array_values(array_diff($requestedCategories, $includeStay ? [] : ['hotels']))
+                )));
+                $intent['requires_stay'] = $includeStay;
+                break;
+        }
+
+        $intent['message_type'] = $this->deriveMessageType($intent);
+
+        return $intent;
+    }
+
+    private function intentValueOrFallback(array $intent, string $key, array $previousIntent): mixed
+    {
+        if (array_key_exists($key, $intent) && $intent[$key] !== null && $intent[$key] !== '') {
+            return $intent[$key];
+        }
+
+        return $previousIntent[$key] ?? null;
+    }
+
+    private function determineFollowUpCategoryMode(string $message, array $intent, array $previousIntent): string
+    {
+        if (
+            $this->containsAnyPhrase($message, ['turn that into', 'turn this into', 'turn it into', 'plan it as', 'plan this as'])
+            && (!empty($intent['day_count']) || !empty($intent['duration']))
+        ) {
+            return 'trip_plan';
+        }
+
+        if ($this->containsAnyPhrase($message, ['just hotels', 'only hotels', 'hotels only', 'hotel only', 'hotel options'])) {
+            return 'hotels';
+        }
+
+        if ($this->containsAnyPhrase($message, ['just restaurants', 'only restaurants', 'restaurants only', 'restaurant only', 'food only', 'dinner only'])) {
+            return 'restaurants';
+        }
+
+        if ($this->containsAnyPhrase($message, ['just activities', 'only activities', 'activities only', 'activity only', 'things to do only', 'just places'])) {
+            return 'activities';
+        }
+
+        if (!empty($intent['wants_trip_plan'])) {
+            return 'trip_plan';
+        }
+
+        if (!empty($previousIntent['wants_trip_plan'])) {
+            return 'carry_previous';
+        }
+
+        if (
+            $this->messageExplicitlyRequestsCategory($message, 'hotels')
+            || $this->messageExplicitlyRequestsCategory($message, 'restaurants')
+            || $this->messageExplicitlyRequestsCategory($message, 'activities')
+        ) {
+            if (
+                $this->messageExplicitlyRequestsCategory($message, 'hotels')
+                && !$this->messageExplicitlyRequestsCategory($message, 'restaurants')
+                && !$this->messageExplicitlyRequestsCategory($message, 'activities')
+            ) {
+                return 'hotels';
+            }
+
+            if (
+                $this->messageExplicitlyRequestsCategory($message, 'restaurants')
+                && !$this->messageExplicitlyRequestsCategory($message, 'hotels')
+                && !$this->messageExplicitlyRequestsCategory($message, 'activities')
+            ) {
+                return 'restaurants';
+            }
+
+            if (
+                $this->messageExplicitlyRequestsCategory($message, 'activities')
+                && !$this->messageExplicitlyRequestsCategory($message, 'hotels')
+                && !$this->messageExplicitlyRequestsCategory($message, 'restaurants')
+            ) {
+                return 'activities';
+            }
+        }
+
+        $previousCategoryModes = array_filter([
+            !empty($previousIntent['wants_hotel']) || !empty($previousIntent['requires_stay']) ? 'hotels' : null,
+            !empty($previousIntent['wants_restaurant']) ? 'restaurants' : null,
+            !empty($previousIntent['wants_activity']) ? 'activities' : null,
+        ]);
+
+        if (count($previousCategoryModes) === 1) {
+            return array_values($previousCategoryModes)[0];
+        }
+
+        return 'carry_previous';
+    }
+
+    private function messageExplicitlyRequestsCategory(string $message, string $category): bool
+    {
+        if ($this->messageNegatesCategory($message, $category)) {
+            return false;
+        }
+
+        return match ($category) {
+            'hotels' => $this->containsAnyPhrase($message, [
+                'hotel',
+                'hotels',
+                'stay',
+                'stays',
+                'room',
+                'rooms',
+                'accommodation',
+                'resort',
+                'guesthouse',
+                'guesthouses',
+                'guest house',
+                'guest houses',
+            ]),
+            'restaurants' => $this->containsAnyPhrase($message, [
+                'restaurant',
+                'restaurants',
+                'food',
+                'dinner',
+                'lunch',
+                'breakfast',
+                'brunch',
+                'cafe',
+                'coffee',
+                'sushi',
+                'pizza',
+            ]),
+            'activities' => $this->containsAnyPhrase($message, [
+                'activity',
+                'activities',
+                'things to do',
+                'place',
+                'places',
+                'walk',
+                'nightlife',
+                'rooftop',
+                'hidden gem',
+                'visit',
+                'explore',
+            ]),
+            default => false,
+        };
+    }
+
+    private function buildIntentPromptFromSeed(array $seed): string
+    {
+        $parts = [];
+        $cities = array_values(array_filter((array) ($seed['mentioned_cities'] ?? []), fn ($city) => is_string($city) && trim($city) !== ''));
+        $cityText = count($cities) > 1
+            ? implode(' to ', array_map(fn ($city) => Str::title((string) $city), $cities))
+            : (isset($cities[0]) ? Str::title((string) $cities[0]) : null);
+
+        if (!empty($seed['wants_trip_plan'])) {
+            $dayCount = (int) ($seed['day_count'] ?? 2);
+            $parts[] = $cityText !== null
+                ? "Plan a {$dayCount} day trip in {$cityText}"
+                : "Plan a {$dayCount} day trip";
+        } else {
+            $categories = [];
+            if (!empty($seed['wants_hotel'])) {
+                $categories[] = 'hotels';
+            }
+            if (!empty($seed['wants_restaurant'])) {
+                $categories[] = 'restaurants';
+            }
+            if (!empty($seed['wants_activity'])) {
+                $categories[] = 'activities';
+            }
+
+            $categoryText = empty($categories) ? 'travel options' : implode(', ', $categories);
+            $parts[] = $cityText !== null
+                ? 'Recommend ' . $categoryText . ' in ' . $cityText
+                : 'Recommend ' . $categoryText;
+        }
+
+        if (!empty($seed['_suppress_stay']) && !empty($seed['wants_trip_plan'])) {
+            $parts[] = 'without a stay';
+        } elseif (!empty($seed['wants_trip_plan']) && (!empty($seed['requires_stay']) || !empty($seed['wants_hotel']))) {
+            $parts[] = 'include a stay';
+        }
+
+        foreach ([
+            'vibe_tags' => 'prefer',
+            'food_preferences' => 'food',
+            'occasion_tags' => 'occasion',
+            'audience_tags' => 'audience',
+            'activity_types' => 'activities',
+            'time_preferences' => 'timing',
+        ] as $key => $label) {
+            $values = array_values(array_filter((array) ($seed[$key] ?? []), fn ($value) => is_string($value) && trim($value) !== ''));
+            if (empty($values)) {
+                continue;
+            }
+
+            $readableValues = implode(', ', array_map(fn ($value) => str_replace('_', ' ', (string) $value), $values));
+            $parts[] = $label . ' ' . $readableValues;
+        }
+
+        if (!empty($seed['budget'])) {
+            $parts[] = 'price preference ' . str_replace('_', ' ', (string) $seed['budget']);
+        }
+
+        if (!empty($seed['budget_max'])) {
+            $parts[] = 'under $' . (int) $seed['budget_max'];
+        }
+
+        return implode('. ', array_filter(array_map(fn ($part) => trim((string) $part), $parts))) . '.';
+    }
+
+    private function detectIntentCarryoverFields(array $intent, array $previousIntent): array
+    {
+        $fields = [];
+
+        foreach ([
+            'mentioned_cities',
+            'vibe_tags',
+            'food_preferences',
+            'occasion_tags',
+            'audience_tags',
+            'activity_types',
+            'time_preferences',
+            'budget',
+            'budget_max',
+            'day_count',
+            'duration',
+        ] as $field) {
+            $current = $intent[$field] ?? null;
+            $previous = $previousIntent[$field] ?? null;
+
+            if (($current === null || $current === [] || $current === '') && $previous !== null && $previous !== [] && $previous !== '') {
+                $fields[] = $field;
+            }
+        }
+
+        if (empty($intent['requested_categories']) && !empty($previousIntent['requested_categories'])) {
+            $fields[] = 'requested_categories';
+        }
+
+        return array_values(array_unique($fields));
     }
 
     private function evaluateHotel($hotel, array $intent, string $message): array
@@ -656,7 +1643,7 @@ class RecommendationService
 
         $restaurantPool = array_values($restaurants);
 
-        if ($isMultiCity && $dayCount >= 2) {
+        if ($isMultiCity && $dayCount >= 1) {
             return $this->buildMultiCityTripPlan($duration, $dayCount, $startCity, $endCity, $intent, $hotels, $restaurantPool, $activities, $includeStay);
         }
 
@@ -694,6 +1681,8 @@ class RecommendationService
 
             if ($hotel && $this->shouldIncludeStayOnDay($includeStay, $day, $dayCount)) {
                 $flow['stay'] = $hotel;
+            } elseif (!$hotel && $this->shouldIncludeStayOnDay($includeStay, $day, $dayCount)) {
+                $flow['stay'] = $this->buildUnavailableStaySlot($city);
             }
 
             $days[] = [
@@ -717,22 +1706,45 @@ class RecommendationService
 
     private function buildMultiCityTripPlan(string $duration, int $dayCount, string $startCity, string $endCity, array $intent, array $hotels, array $restaurants, array $activities, bool $includeStay): array
     {
-        $startCityKey = $this->normalizeText($intent['start_city'] ?? $startCity);
-        $endCityKey = $this->normalizeText($intent['end_city'] ?? $endCity);
-        $startActivities = array_values(array_filter($activities, fn ($a) => ($a['city'] ?? null) === strtolower($intent['start_city'])));
-        $endActivities = array_values(array_filter($activities, fn ($a) => ($a['city'] ?? null) === strtolower($intent['end_city'])));
-        $transitionDay = min(max(1, (int) ceil($dayCount / 2)), $dayCount - 1);
-        $startStay = $this->pickListItem($this->filterItemsByCity($hotels, $startCityKey), 0);
-        $endStay = $this->pickListItem($this->filterItemsByCity($hotels, $endCityKey), 0);
+        $routeCityKeys = array_values(array_unique(array_filter(
+            array_map(fn ($city) => $this->normalizeText((string) $city), (array) ($intent['mentioned_cities'] ?? [])),
+            fn ($city) => $city !== ''
+        )));
+
+        if (count($routeCityKeys) < 2) {
+            $routeCityKeys = array_values(array_unique(array_filter([
+                $this->normalizeText($intent['start_city'] ?? $startCity),
+                $this->normalizeText($intent['end_city'] ?? $endCity),
+            ])));
+        }
+
+        $routeCityLabels = array_map(fn ($city) => Str::title($city), $routeCityKeys);
+        $routeCityCount = max(1, count($routeCityKeys));
+        $startCityKey = $routeCityKeys[0] ?? $this->normalizeText($intent['start_city'] ?? $startCity);
+        $endCityKey = $routeCityKeys[$routeCityCount - 1] ?? $this->normalizeText($intent['end_city'] ?? $endCity);
+        $startCity = $routeCityLabels[0] ?? $startCity;
+        $endCity = $routeCityLabels[$routeCityCount - 1] ?? $endCity;
+
+        $dayCityIndexes = [];
+        for ($day = 1; $day <= $dayCount; $day++) {
+            $dayCityIndexes[$day] = $day === $dayCount
+                ? $routeCityCount - 1
+                : min($routeCityCount - 1, (int) floor((($day - 1) * $routeCityCount) / $dayCount));
+        }
+
         $usedMealsByCity = [];
 
         $days = [];
 
         for ($day = 1; $day <= $dayCount; $day++) {
-            $inStartCity = $day <= $transitionDay;
-            $city = $inStartCity ? $startCity : $endCity;
-            $cityKey = $inStartCity ? $startCityKey : $endCityKey;
-            $cityActivities = $inStartCity ? $startActivities : $endActivities;
+            $cityIndex = $dayCityIndexes[$day] ?? 0;
+            $nextCityIndex = $dayCityIndexes[$day + 1] ?? $cityIndex;
+            $cityKey = $routeCityKeys[$cityIndex] ?? $startCityKey;
+            $nextCityKey = $routeCityKeys[$nextCityIndex] ?? $cityKey;
+            $city = $routeCityLabels[$cityIndex] ?? Str::title($cityKey);
+            $nextCity = $routeCityLabels[$nextCityIndex] ?? Str::title($nextCityKey);
+            $isTransitionDay = $day < $dayCount && $nextCityKey !== $cityKey;
+            $cityActivities = array_values(array_filter($activities, fn ($a) => ($a['city'] ?? null) === $cityKey));
             $cityRestaurants = $this->filterItemsByCity($restaurants, $cityKey);
             $mealPool = $cityRestaurants;
 
@@ -752,11 +1764,11 @@ class RecommendationService
                 ],
             ];
 
-            if ($day === $transitionDay) {
+            if ($isTransitionDay) {
                 $flow['evening'] = [
-                    'title' => "Travel to {$endCity}",
+                    'title' => "Travel to {$nextCity}",
                     'activities' => [
-                        "Leave {$startCity} in the evening and continue toward {$endCity} at an easy pace before dinner.",
+                        "Leave {$city} in the evening and continue toward {$nextCity} at an easy pace before dinner.",
                     ],
                 ];
             } elseif ($day < $dayCount) {
@@ -768,11 +1780,11 @@ class RecommendationService
 
             $dinnerPool = $mealPool;
             $dinnerCityKey = $cityKey;
-            if ($day === $transitionDay) {
-                $endCityRestaurants = $this->filterItemsByCity($restaurants, $endCityKey);
-                if (!empty($endCityRestaurants)) {
-                    $dinnerPool = $endCityRestaurants;
-                    $dinnerCityKey = $endCityKey;
+            if ($isTransitionDay) {
+                $nextCityRestaurants = $this->filterItemsByCity($restaurants, $nextCityKey);
+                if (!empty($nextCityRestaurants)) {
+                    $dinnerPool = $nextCityRestaurants;
+                    $dinnerCityKey = $nextCityKey;
                 } else {
                     $dinnerPool = [];
                 }
@@ -785,12 +1797,14 @@ class RecommendationService
             $flow['dinner'] = $this->pickPlanningListItem($dinnerPool, (($day - 1) * 2) + 1, $usedMealsByCity[$dinnerCityKey]);
 
             if ($this->shouldIncludeStayOnDay($includeStay, $day, $dayCount)) {
-                $stay = $day === $transitionDay
-                    ? ($endStay ?? ($inStartCity ? $startStay : $endStay))
-                    : ($inStartCity ? $startStay : $endStay);
+                $stayCityKey = $isTransitionDay ? $nextCityKey : $cityKey;
+                $stayCity = $isTransitionDay ? $nextCity : $city;
+                $stay = $this->pickListItem($this->filterItemsByCity($hotels, $stayCityKey), 0);
 
                 if ($stay) {
                     $flow['stay'] = $stay;
+                } else {
+                    $flow['stay'] = $this->buildUnavailableStaySlot($stayCity);
                 }
             }
 
@@ -801,10 +1815,14 @@ class RecommendationService
             ];
         }
 
+        $routeTitle = count($routeCityLabels) > 2
+            ? implode(' to ', $routeCityLabels)
+            : "{$startCity} to {$endCity}";
+
         return [
             'duration' => $duration,
-            'title' => "{$dayCount}-Day Trip from {$startCity} to {$endCity}",
-            'summary' => "A route that eases from {$startCity} to {$endCity} with grounded stops along the way.",
+            'title' => "{$dayCount}-Day Trip from {$routeTitle}",
+            'summary' => "A route that eases through {$routeTitle} with grounded stops along the way.",
             'days' => $days,
         ];
     }
@@ -836,7 +1854,7 @@ class RecommendationService
         if (empty($picked)) {
             return match ($slot) {
                 'morning' => ['a relaxed walk and coffee'],
-                'afternoon' => ['exploring nearby streets and enjoying a local stop'],
+                'afternoon' => ['nearby streets and a local stop'],
                 'evening' => ['sunset views or a calm local stop'],
                 default => ['the local atmosphere'],
             };
@@ -1004,6 +2022,7 @@ class RecommendationService
             || empty($intent['wants_activity'])
             || !empty($intent['wants_hotel'])
             || !empty($intent['wants_restaurant'])
+            || !empty($intent['country_scope'])
         ) {
             return $items;
         }
@@ -1964,14 +2983,54 @@ class RecommendationService
         });
 
         $topCity = array_key_first($cityScores);
-        $topCategoryCount = count($cityCategories[$topCity] ?? []);
-        $topScore = (float) ($cityScores[$topCity] ?? 0);
+        $runnerUpCity = array_keys($cityScores)[1] ?? null;
 
-        if ($topCategoryCount < 2 && $topScore < 90) {
+        if (!$this->implicitTripCityLooksReliable($topCity, $runnerUpCity, $cityScores, $cityCategories, $intent)) {
             return null;
         }
 
         return $topCity;
+    }
+
+    private function implicitTripCityLooksReliable(
+        string $topCity,
+        ?string $runnerUpCity,
+        array $cityScores,
+        array $cityCategories,
+        array $intent
+    ): bool {
+        $topCategories = $cityCategories[$topCity] ?? [];
+        $topCategoryCount = count($topCategories);
+        $topScore = (float) ($cityScores[$topCity] ?? 0);
+        $signalScore = (int) ($intent['signal_score'] ?? 0);
+        $requiresStay = !empty($intent['requires_stay']);
+        $isFlexibleOneDayPlan = !$requiresStay
+            && (int) ($intent['day_count'] ?? 0) === 1
+            && !empty($intent['can_plan_without_explicit_city']);
+        $minimumCategoryCount = ($requiresStay && $signalScore <= 3) ? 3 : 2;
+        $minimumScore = $isFlexibleOneDayPlan ? 55.0 : ($signalScore <= 3 ? 100.0 : 90.0);
+
+        if ($requiresStay && empty($topCategories['hotels'])) {
+            return false;
+        }
+
+        if ($topCategoryCount < $minimumCategoryCount || $topScore < $minimumScore) {
+            return false;
+        }
+
+        if ($runnerUpCity === null) {
+            return true;
+        }
+
+        $runnerUpCategoryCount = count($cityCategories[$runnerUpCity] ?? []);
+        $runnerUpScore = (float) ($cityScores[$runnerUpCity] ?? 0);
+        $requiredGap = $isFlexibleOneDayPlan ? 6.0 : ($signalScore <= 3 ? 14.0 : 8.0);
+
+        if ($runnerUpCategoryCount >= $topCategoryCount && ($topScore - $runnerUpScore) < $requiredGap) {
+            return false;
+        }
+
+        return true;
     }
 
     private function addRankedCitySignals(
@@ -2042,16 +3101,73 @@ class RecommendationService
         })->values();
     }
 
+    private function filterRankedItemsToExplicitCities(Collection $items, string $category, array $intent): Collection
+    {
+        $cities = array_values(array_unique(array_filter(array_map(
+            fn ($city) => $this->normalizeText((string) $city),
+            $intent['mentioned_cities'] ?? []
+        ))));
+
+        if ($items->isEmpty() || empty($cities)) {
+            return $items;
+        }
+
+        return $items->filter(function ($row) use ($category, $cities) {
+            $item = $row['item'] ?? null;
+            if ($item === null) {
+                return false;
+            }
+
+            $itemCities = array_map(
+                fn ($city) => $this->normalizeText((string) $city),
+                $this->rankedItemCityCandidates($item, $category)
+            );
+
+            return !empty(array_intersect($cities, $itemCities));
+        })->values();
+    }
+
+    private function filterRankedItemsExcludingCities(Collection $items, string $category, array $excludedCities): Collection
+    {
+        $excludedCities = array_values(array_unique(array_filter(array_map(
+            fn ($city) => $this->normalizeText((string) $city),
+            $excludedCities
+        ))));
+
+        if ($items->isEmpty() || empty($excludedCities)) {
+            return $items;
+        }
+
+        return $items->reject(function ($row) use ($category, $excludedCities) {
+            $item = $row['item'] ?? null;
+            if ($item === null) {
+                return false;
+            }
+
+            $itemCities = array_map(
+                fn ($city) => $this->normalizeText((string) $city),
+                $this->rankedItemCityCandidates($item, $category)
+            );
+
+            return !empty(array_intersect($excludedCities, $itemCities));
+        })->values();
+    }
+
     private function rankedItemMatchesCity($item, string $category, string $city): bool
     {
-        $candidates = match ($category) {
+        $candidates = $this->rankedItemCityCandidates($item, $category);
+
+        return in_array($city, array_map(fn ($candidate) => $this->normalizeText((string) $candidate), $candidates), true);
+    }
+
+    private function rankedItemCityCandidates($item, string $category): array
+    {
+        return match ($category) {
             'hotels' => $this->hotelCityCandidates($item),
             'restaurants' => $this->restaurantCityCandidates($item),
             'activities' => $this->activityCityCandidates($item),
             default => [],
         };
-
-        return in_array($city, array_map(fn ($candidate) => $this->normalizeText((string) $candidate), $candidates), true);
     }
 
     private function restaurantCityCandidates($restaurant): array
@@ -2266,10 +3382,10 @@ class RecommendationService
         if ($requestedBudget && $candidateBudget) {
             $score += match ($requestedBudget) {
                 'budget' => match ($candidateBudget) {
-                    'budget' => 16,
+                    'budget' => 26,
                     'mid_range' => 8,
-                    'premium' => -8,
-                    'luxury' => -14,
+                    'premium' => -18,
+                    'luxury' => -28,
                     default => 0,
                 },
                 'mid_range' => match ($candidateBudget) {
@@ -2457,10 +3573,28 @@ class RecommendationService
             $dayCount !== null,
         ]);
 
-        $hasExperientialAnchor = !empty($vibeTags)
-            || !empty($foodPreferences)
-            || !empty($occasionTags)
-            || !empty($activityTypes);
+        $experienceVibes = array_values(array_diff($vibeTags, ['family']));
+        $experienceOccasions = array_values(array_diff($occasionTags, ['family']));
+        $experienceSignalCount = count(array_unique(array_merge(
+            $experienceVibes,
+            $foodPreferences,
+            $experienceOccasions,
+            $activityTypes,
+            $timePreferences,
+            $budget !== null ? [$budget] : [],
+            $budgetMax !== null ? ['budget_amount'] : []
+        )));
+        $specificDestinationAnchorCount = count(array_unique(array_merge(
+            array_diff($experienceVibes, ['romantic']),
+            $foodPreferences,
+            array_diff($experienceOccasions, ['date']),
+            $activityTypes,
+            $timePreferences,
+            $budget !== null ? [$budget] : [],
+            $budgetMax !== null ? ['budget_amount'] : []
+        )));
+
+        $hasExperientialAnchor = $experienceSignalCount >= 2 && $specificDestinationAnchorCount >= 1;
 
         return $hasExperientialAnchor && $anchorSignals >= 3;
     }
@@ -2468,9 +3602,31 @@ class RecommendationService
     private function shouldHoldCitylessHotelRequest(
         bool $wantsHotel,
         array $mentionedCities,
-        bool $wantsTripPlan
+        bool $wantsTripPlan,
+        array $vibeTags,
+        array $audienceTags,
+        array $timePreferences,
+        ?string $budget,
+        ?int $budgetMax
     ): bool {
-        return $wantsHotel && empty($mentionedCities) && !$wantsTripPlan;
+        if (!$wantsHotel || !empty($mentionedCities) || $wantsTripPlan) {
+            return false;
+        }
+
+        if ($budgetMax !== null) {
+            return false;
+        }
+
+        $experienceVibes = array_values(array_diff($vibeTags, ['family']));
+        $hasExperienceAnchor = !empty($experienceVibes) || !empty($timePreferences);
+        $hasSupportAnchor = !empty($audienceTags) || $budget !== null;
+        $hasBusinessAnchor = in_array('business', $audienceTags, true);
+
+        if ($hasBusinessAnchor) {
+            return false;
+        }
+
+        return !($hasExperienceAnchor || $hasSupportAnchor);
     }
 
     private function shouldHoldCitylessRestaurantRequest(
@@ -2501,7 +3657,7 @@ class RecommendationService
             || !empty(array_intersect($occasionTags, ['breakfast', 'lunch', 'dinner', 'date', 'night_out']))
             || !empty(array_intersect($timePreferences, ['breakfast', 'lunch', 'dinner']));
 
-        return !$hasDiningSpecificAnchor || $restaurantAnchorScore < 3;
+        return !$hasDiningSpecificAnchor || $restaurantAnchorScore < 2;
     }
 
     private function inferResponseTone(string $text, array $vibeTags, array $occasionTags): string
@@ -2541,6 +3697,10 @@ class RecommendationService
                     continue;
                 }
 
+                if ($this->isSuppressedCityAliasMatch($normalized, $canonical, $alias, $position)) {
+                    continue;
+                }
+
                 if (!array_key_exists($canonical, $positions) || $position < $positions[$canonical]) {
                     $positions[$canonical] = $position;
                 }
@@ -2550,6 +3710,82 @@ class RecommendationService
         asort($positions);
 
         return array_keys($positions);
+    }
+
+    private function isSuppressedCityAliasMatch(string $text, string $canonical, string $alias, int $position): bool
+    {
+        $aliasText = $this->normalizeText($alias);
+        $locationContextPattern = '/\b(?:minute drive from|minutes drive from|drive from|minutes from|minute from|mins from|min from|away from|outside of|outside|near|close to)\s+' . preg_quote($aliasText, '/') . '\b/u';
+        if ($aliasText !== '' && preg_match($locationContextPattern, $text)) {
+            return true;
+        }
+
+        $contextBefore = mb_substr(' ' . $text . ' ', max(0, $position - 44), min(44, $position));
+        if (preg_match('/\b(?:minute drive from|minutes drive from|drive from|minutes from|minute from|mins from|min from|away from|outside of|outside|near|close to)\s+$/u', $contextBefore)) {
+            return true;
+        }
+
+        if ($canonical === 'batroun' && $this->containsPhrase($text, 'smar jbeil')) {
+            return true;
+        }
+
+        if ($canonical !== 'byblos' || $this->normalizeText($alias) !== 'jbeil') {
+            return false;
+        }
+
+        foreach (['smar jbeil', 's mar jbeil'] as $suppressedPhrase) {
+            $phrasePosition = $this->phrasePosition($text, $suppressedPhrase);
+            if ($phrasePosition === null) {
+                continue;
+            }
+
+            $jbeilPosition = $phrasePosition + mb_strpos($suppressedPhrase, 'jbeil');
+            if ($position === $jbeilPosition) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function extractExcludedCities(string $text): array
+    {
+        $normalized = $this->normalizeText($text);
+        $excluded = [];
+
+        foreach ($this->cityAliasMap() as $canonical => $aliases) {
+            foreach ($aliases as $alias) {
+                $alias = $this->normalizeText($alias);
+                if ($alias === '') {
+                    continue;
+                }
+
+                foreach ([
+                    "dont like {$alias}",
+                    "don t like {$alias}",
+                    "do not like {$alias}",
+                    "dont want {$alias}",
+                    "don t want {$alias}",
+                    "do not want {$alias}",
+                    "avoid {$alias}",
+                    "skip {$alias}",
+                    "not {$alias}",
+                    "not in {$alias}",
+                    "instead of {$alias}",
+                    "other than {$alias}",
+                    "another city than {$alias}",
+                    "somewhere else than {$alias}",
+                    "anything but {$alias}",
+                ] as $phrase) {
+                    if ($this->containsPhrase($normalized, $phrase)) {
+                        $excluded[] = $canonical;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        return array_values(array_unique($excluded));
     }
 
     private function extractConceptMatches(string $text, array $conceptMap): array
@@ -2569,6 +3805,43 @@ class RecommendationService
         }
 
         return array_values(array_unique($matches));
+    }
+
+    private function removeNegatedConceptMatches(string $text, array $matches, array $conceptMap): array
+    {
+        if (empty($matches)) {
+            return [];
+        }
+
+        $text = $this->normalizeText($text);
+
+        return array_values(array_filter($matches, function (string $concept) use ($text, $conceptMap) {
+            $terms = array_values(array_unique(array_filter(array_merge(
+                [$concept, str_replace('_', ' ', $concept)],
+                (array) ($conceptMap[$concept] ?? [])
+            ))));
+
+            foreach ($terms as $term) {
+                $term = $this->normalizeText($term);
+                if ($term === '') {
+                    continue;
+                }
+
+                if ($this->containsAnyPhrase($text, [
+                    "not {$term}",
+                    "no {$term}",
+                    "avoid {$term}",
+                    "without {$term}",
+                    "don t want {$term}",
+                    "dont want {$term}",
+                    "do not want {$term}",
+                ])) {
+                    return false;
+                }
+            }
+
+            return true;
+        }));
     }
 
     private function normalizeConceptList(array|string|null $value, array $conceptMap): array
@@ -2640,13 +3913,39 @@ class RecommendationService
         return null;
     }
 
+    private function buildUnavailableStaySlot(string $city): array
+    {
+        return [
+            'title' => 'Stay note',
+            'note' => "I do not have a confirmed hotel match for {$city} in the current data, so choose the overnight stay separately before booking.",
+            'activities' => [],
+        ];
+    }
+
     private function extractDayCount(string $text): ?int
     {
         if (preg_match('/\b([1-9])\s*(day|days|night|nights)\b/', $text, $matches)) {
             return max(1, min(7, (int) $matches[1]));
         }
 
+        if (preg_match('/\b([1-9])\s+[a-z]+\s+(day|days|night|nights)\b/', $text, $matches)) {
+            return max(1, min(7, (int) $matches[1]));
+        }
+
         if (preg_match('/\b(one|two|three|four|five|six|seven)\s*(day|days|night|nights)\b/', $text, $matches)) {
+            return match ($matches[1]) {
+                'one' => 1,
+                'two' => 2,
+                'three' => 3,
+                'four' => 4,
+                'five' => 5,
+                'six' => 6,
+                'seven' => 7,
+                default => null,
+            };
+        }
+
+        if (preg_match('/\b(one|two|three|four|five|six|seven)\s+[a-z]+\s+(day|days|night|nights)\b/', $text, $matches)) {
             return match ($matches[1]) {
                 'one' => 1,
                 'two' => 2,
@@ -2901,7 +4200,7 @@ class RecommendationService
             'beach' => ['seaside', 'coastal', 'waterfront', 'sea', 'shore'],
             'sunset' => ['sundown', 'golden hour'],
             'nightlife' => ['night out', 'night-out', 'party', 'bars', 'club', 'cocktails'],
-            'cultural' => ['heritage', 'history', 'historical', 'old town', 'old city', 'souk', 'castle'],
+            'cultural' => ['heritage', 'history', 'historical', 'old town', 'old city', 'old streets', 'souk', 'castle', 'touristy', 'famous', 'must see', 'must-see', 'landmark', 'iconic'],
             'scenic' => ['view', 'views', 'panoramic', 'panorama', 'photo', 'photos'],
             'city' => ['downtown', 'urban'],
             'family' => ['kid friendly', 'kid-friendly', 'children'],
@@ -2912,7 +4211,7 @@ class RecommendationService
     private function foodConceptMap(): array
     {
         return [
-            'lebanese' => ['mezze', 'mezza', 'local cuisine'],
+            'lebanese' => ['mezze', 'mezza', 'local cuisine', 'local food', 'local'],
             'seafood' => ['fish', 'shrimp', 'oysters'],
             'italian' => ['pasta', 'risotto'],
             'pizza' => ['pizzeria'],
@@ -2959,8 +4258,9 @@ class RecommendationService
             'beach' => ['beach club', 'seaside', 'coastal'],
             'walking' => ['walk', 'walking', 'stroll', 'promenade'],
             'scenic' => ['view', 'views', 'photos'],
-            'cultural' => ['culture', 'heritage', 'souk'],
-            'historical' => ['historic', 'history', 'castle'],
+            'cultural' => ['culture', 'heritage', 'souk', 'old streets', 'old town', 'old city', 'touristy', 'famous', 'must see', 'must-see', 'landmark', 'iconic'],
+            'historical' => ['historic', 'history', 'castle', 'ancient', 'ruins', 'landmark', 'iconic'],
+            'touristy' => ['touristy', 'famous', 'must see', 'must-see', 'landmark', 'iconic'],
             'nightlife' => ['bars', 'party', 'club', 'night out', 'night-out', 'rooftop', 'drinks', 'bar hopping'],
             'city' => ['downtown', 'urban'],
             'food' => ['dessert', 'cafe', 'culinary'],
@@ -2973,18 +4273,18 @@ class RecommendationService
         return [
             'morning' => ['early'],
             'afternoon' => [],
-            'evening' => ['night'],
+            'evening' => ['night', 'tonight'],
             'sunset' => ['golden hour'],
             'breakfast' => [],
             'lunch' => [],
-            'dinner' => [],
+            'dinner' => ['tonight'],
         ];
     }
 
     private function budgetConceptMap(): array
     {
         return [
-            'budget' => ['cheap', 'affordable', 'value', 'low cost', 'low-cost'],
+            'budget' => ['cheap', 'cheaper', 'affordable', 'value', 'low cost', 'low-cost', 'less expensive', 'not expensive', 'not too expensive', 'not that expensive', 'not very expensive'],
             'mid_range' => ['mid range', 'mid-range', 'moderate', 'reasonable'],
             'premium' => ['premium', 'upscale'],
             'luxury' => ['luxurious', 'high end', 'high-end', 'expensive', 'five star', '5 star'],
@@ -3032,9 +4332,42 @@ class RecommendationService
     private function normalizeText(?string $text): string
     {
         $text = Str::lower($text ?? '');
+        $text = $this->normalizeCommonUserTypos($text);
         $text = preg_replace('/[^\pL\pN\s]+/u', ' ', $text);
         $text = preg_replace('/\s+/', ' ', $text);
 
         return trim($text);
+    }
+
+    private function normalizeCommonUserTypos(string $text): string
+    {
+        $replacements = [
+            '/\bhotelsin\b/u' => 'hotels in',
+            '/\bhotelin\b/u' => 'hotel in',
+            '/\brestaurantsin\b/u' => 'restaurants in',
+            '/\brestaurantin\b/u' => 'restaurant in',
+            '/\brestuarantsin\b/u' => 'restaurants in',
+            '/\brestuarantin\b/u' => 'restaurant in',
+            '/\bresturantsin\b/u' => 'restaurants in',
+            '/\bresturantin\b/u' => 'restaurant in',
+            '/\brestrauntsin\b/u' => 'restaurants in',
+            '/\brestrauntin\b/u' => 'restaurant in',
+            '/\brestuarants?\b/u' => 'restaurants',
+            '/\bresturants?\b/u' => 'restaurants',
+            '/\brestraunts?\b/u' => 'restaurants',
+            '/\brestuarant\b/u' => 'restaurant',
+            '/\bresturant\b/u' => 'restaurant',
+            '/\brestraunt\b/u' => 'restaurant',
+            '/\breccomendations?\b/u' => 'recommendations',
+            '/\breccomend\b/u' => 'recommend',
+            '/\brecomendations?\b/u' => 'recommendations',
+            '/\brecomend\b/u' => 'recommend',
+        ];
+
+        foreach ($replacements as $pattern => $replacement) {
+            $text = preg_replace($pattern, $replacement, $text) ?? $text;
+        }
+
+        return $text;
     }
 }

@@ -196,6 +196,293 @@ class RecommendationServiceTest extends TestCase
         $this->assertSame('Batroun Calm Stay', data_get($results, 'trip_plan.days.0.flow.stay.hotel_name'));
     }
 
+    public function test_it_holds_cityless_trip_requests_when_top_matches_do_not_agree_on_one_city(): void
+    {
+        Hotel::create([
+            'hotel_name' => 'Beirut Calm Stay',
+            'address' => 'Beirut Downtown',
+            'distance_from_beach' => '400 m',
+            'rating_score' => 4.5,
+            'review_count' => 120,
+            'price_per_night' => '120$',
+            'description' => 'A romantic boutique stay in Beirut.',
+            'stay_details' => 'Quiet rooms and a calm lounge.',
+            'vibe_tags' => ['romantic', 'relaxing'],
+            'audience_tags' => ['couple'],
+            'search_text' => 'beirut romantic calm boutique stay',
+        ]);
+
+        Restaurant::create([
+            'restaurant_name' => 'Batroun Sunset Table',
+            'location' => 'Batroun Harbor',
+            'rating' => 4.7,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Seafood',
+            'description' => 'A calm seaside dinner with sunset views.',
+            'vibe_tags' => ['romantic', 'relaxing', 'beach'],
+            'occasion_tags' => ['date', 'dinner'],
+            'search_text' => 'batroun seaside sunset romantic dinner',
+        ]);
+
+        Activity::create([
+            'name' => 'Byblos Harbor Pause',
+            'city' => 'byblos',
+            'category' => 'scenic',
+            'description' => 'A calm harbor walk with sea views.',
+            'location' => 'Byblos Harbor',
+            'best_time' => 'sunset',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['relaxing', 'beach', 'sunset'],
+            'occasion_tags' => ['date', 'casual'],
+            'search_text' => 'byblos calm harbor seaside sunset walk',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Plan me something romantic, beachy, and calm for 2 days');
+
+        $this->assertTrue($results['intent']['should_hold_results']);
+        $this->assertNull($results['intent']['resolved_city']);
+        $this->assertSame([], $results['hotels']);
+        $this->assertSame([], $results['restaurants']);
+        $this->assertSame([], $results['activities']);
+        $this->assertNull($results['trip_plan']);
+    }
+
+    public function test_it_reuses_previous_context_for_clear_follow_up_refinements(): void
+    {
+        Hotel::create([
+            'hotel_name' => 'Byblos Budget Hideaway',
+            'address' => 'Byblos Old Town',
+            'distance_from_beach' => '250 m',
+            'rating_score' => 4.4,
+            'review_count' => 95,
+            'price_per_night' => '65$',
+            'description' => 'A quiet romantic stay close to the old town.',
+            'stay_details' => 'Simple rooms for a calm weekend.',
+            'vibe_tags' => ['romantic', 'relaxing'],
+            'audience_tags' => ['couple'],
+            'search_text' => 'byblos quiet romantic budget hotel',
+        ]);
+
+        Hotel::create([
+            'hotel_name' => 'Byblos Premium Escape',
+            'address' => 'Byblos Seafront',
+            'distance_from_beach' => '120 m',
+            'rating_score' => 4.8,
+            'review_count' => 180,
+            'price_per_night' => '180$',
+            'description' => 'A premium romantic stay with sea views.',
+            'stay_details' => 'Large rooms and a polished coastal feel.',
+            'vibe_tags' => ['romantic', 'beach'],
+            'audience_tags' => ['couple'],
+            'search_text' => 'byblos premium romantic seafront hotel',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Make it more budget friendly', [
+            'intent' => [
+                'city' => 'byblos',
+                'resolved_city' => 'byblos',
+                'mentioned_cities' => ['byblos'],
+                'vibe_tags' => ['romantic', 'relaxing'],
+                'requested_categories' => ['hotels'],
+                'wants_hotel' => true,
+                'wants_restaurant' => false,
+                'wants_activity' => false,
+                'wants_trip_plan' => false,
+                'has_travel_signal' => true,
+                'message_type' => 'hotel_recommendation',
+            ],
+        ]);
+
+        $this->assertFalse($results['intent']['should_hold_results']);
+        $this->assertSame('byblos', $results['intent']['resolved_city']);
+        $this->assertSame('Byblos Budget Hideaway', $results['hotels'][0]['hotel_name']);
+        $this->assertTrue((bool) data_get($results, 'intent.follow_up_context.is_follow_up'));
+        $this->assertContains('mentioned_cities', (array) data_get($results, 'intent.follow_up_context.carryover_fields', []));
+    }
+
+    public function test_short_hotel_refinements_do_not_expand_into_activity_results(): void
+    {
+        Hotel::create([
+            'hotel_name' => 'Byblos Budget Stay',
+            'address' => 'Byblos Old Town',
+            'distance_from_beach' => '250 m',
+            'rating_score' => 8.4,
+            'review_count' => 95,
+            'price_per_night' => '65$',
+            'description' => 'A budget hotel close to the old town.',
+            'stay_details' => 'Simple rooms for a practical stay.',
+            'vibe_tags' => ['cozy'],
+            'audience_tags' => ['friends'],
+            'search_text' => 'byblos budget hotel old town stay',
+        ]);
+
+        Hotel::create([
+            'hotel_name' => 'Byblos Premium Stay',
+            'address' => 'Byblos Marina',
+            'distance_from_beach' => '120 m',
+            'rating_score' => 9.0,
+            'review_count' => 190,
+            'price_per_night' => '180$',
+            'description' => 'A premium hotel near the marina.',
+            'stay_details' => 'Polished rooms and a more upscale stay.',
+            'vibe_tags' => ['luxury'],
+            'audience_tags' => ['couple'],
+            'search_text' => 'byblos premium expensive hotel marina stay',
+        ]);
+
+        Activity::create([
+            'name' => 'Byblos Marina Walk',
+            'city' => 'byblos',
+            'category' => 'walking',
+            'description' => 'A scenic walk by the marina.',
+            'location' => 'Byblos Marina',
+            'best_time' => 'evening',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['scenic'],
+            'occasion_tags' => ['casual'],
+            'search_text' => 'byblos marina activity walk',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $first = $service->buildResponseData('Recommend a budget hotel in Byblos near the old town');
+        $second = $service->buildResponseData('more expensive', ['intent' => $first['intent']]);
+
+        $this->assertSame('hotel_recommendation', $second['intent']['message_type']);
+        $this->assertTrue((bool) $second['intent']['wants_hotel']);
+        $this->assertFalse((bool) $second['intent']['wants_activity']);
+        $this->assertSame([], $second['activities']);
+        $this->assertSame('Byblos Premium Stay', $second['hotels'][0]['hotel_name']);
+    }
+
+    public function test_explicit_new_requests_do_not_inherit_previous_trip_context(): void
+    {
+        Restaurant::create([
+            'restaurant_name' => 'Byblos Sushi Table',
+            'location' => 'Byblos Old Town',
+            'rating' => 4.4,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Japanese, Sushi',
+            'description' => 'A relaxed sushi dinner spot in Byblos.',
+            'vibe_tags' => ['casual'],
+            'occasion_tags' => ['dinner'],
+            'search_text' => 'byblos japanese sushi dinner',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Find me a Japanese sushi dinner in Byblos', [
+            'intent' => [
+                'city' => 'batroun',
+                'resolved_city' => 'batroun',
+                'mentioned_cities' => ['batroun'],
+                'food_preferences' => ['seafood'],
+                'vibe_tags' => ['beach', 'sunset'],
+                'requested_categories' => ['hotels', 'restaurants', 'activities', 'trip_plan'],
+                'wants_trip_plan' => true,
+                'day_count' => 2,
+                'duration' => '2_days',
+                'has_travel_signal' => true,
+                'message_type' => 'trip_plan',
+            ],
+        ]);
+
+        $this->assertSame('restaurant_recommendation', $results['intent']['message_type']);
+        $this->assertSame('byblos', $results['intent']['resolved_city']);
+        $this->assertFalse((bool) $results['intent']['wants_trip_plan']);
+        $this->assertNull(data_get($results, 'intent.follow_up_context'));
+        $this->assertSame('Byblos Sushi Table', $results['restaurants'][0]['restaurant_name']);
+        $this->assertNull($results['trip_plan']);
+    }
+
+    public function test_explicit_city_category_phrases_do_not_inherit_previous_trip_context_without_a_fresh_verb(): void
+    {
+        Hotel::create([
+            'hotel_name' => 'Beirut Rated Stay',
+            'address' => 'Beirut Downtown',
+            'distance_from_beach' => '1 km',
+            'rating_score' => 9.1,
+            'review_count' => 200,
+            'price_per_night' => '150$',
+            'description' => 'A polished Beirut hotel with a strong rating.',
+            'stay_details' => 'Comfortable city rooms for business or leisure.',
+            'vibe_tags' => ['business'],
+            'audience_tags' => ['business'],
+            'search_text' => 'beirut highly rated hotel downtown',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('highest rated beirut hotels', [
+            'intent' => [
+                'city' => 'batroun',
+                'resolved_city' => 'batroun',
+                'mentioned_cities' => ['batroun'],
+                'vibe_tags' => ['fun'],
+                'requested_categories' => ['hotels', 'restaurants', 'activities', 'trip_plan'],
+                'wants_trip_plan' => true,
+                'wants_hotel' => true,
+                'wants_restaurant' => true,
+                'wants_activity' => true,
+                'day_count' => 2,
+                'duration' => '2_days',
+                'has_travel_signal' => true,
+                'message_type' => 'trip_plan',
+            ],
+        ]);
+
+        $this->assertSame('hotel_recommendation', $results['intent']['message_type']);
+        $this->assertSame('beirut', $results['intent']['resolved_city']);
+        $this->assertFalse((bool) $results['intent']['wants_trip_plan']);
+        $this->assertNull(data_get($results, 'intent.follow_up_context'));
+        $this->assertSame('Beirut Rated Stay', $results['hotels'][0]['hotel_name']);
+        $this->assertNull($results['trip_plan']);
+    }
+
+    public function test_it_handles_common_category_typos_and_missing_spaces(): void
+    {
+        Restaurant::create([
+            'restaurant_name' => 'Saida Table',
+            'location' => 'Saida Corniche',
+            'rating' => 4.5,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Lebanese',
+            'description' => 'A simple Lebanese restaurant in Saida.',
+            'vibe_tags' => ['casual'],
+            'occasion_tags' => ['lunch'],
+            'search_text' => 'saida restaurant lebanese lunch',
+        ]);
+
+        Hotel::create([
+            'hotel_name' => 'Beirut Hotel Match',
+            'address' => 'Beirut, Lebanon',
+            'distance_from_beach' => '1 km',
+            'rating_score' => 8.7,
+            'review_count' => 160,
+            'price_per_night' => '120$',
+            'description' => 'A comfortable hotel in Beirut.',
+            'stay_details' => 'Central rooms for a reliable stay.',
+            'vibe_tags' => ['business'],
+            'audience_tags' => ['business'],
+            'search_text' => 'beirut hotel central rated stay',
+        ]);
+
+        $service = app(RecommendationService::class);
+
+        $restaurantResults = $service->buildResponseData('restuarants saida');
+        $this->assertSame('restaurant_recommendation', $restaurantResults['intent']['message_type']);
+        $this->assertSame('saida', $restaurantResults['intent']['resolved_city']);
+        $this->assertSame('Saida Table', $restaurantResults['restaurants'][0]['restaurant_name']);
+        $this->assertSame([], $restaurantResults['activities']);
+
+        $hotelResults = $service->buildResponseData('Give the highest rated Hotelsin beirut');
+        $this->assertSame('hotel_recommendation', $hotelResults['intent']['message_type']);
+        $this->assertSame('beirut', $hotelResults['intent']['resolved_city']);
+        $this->assertSame('Beirut Hotel Match', $hotelResults['hotels'][0]['hotel_name']);
+        $this->assertNull($hotelResults['trip_plan']);
+    }
+
     public function test_it_keeps_low_signal_no_city_activity_results_compact_and_grounded(): void
     {
         Activity::create([
@@ -255,7 +542,7 @@ class RecommendationServiceTest extends TestCase
         ]);
 
         $service = app(RecommendationService::class);
-        $results = $service->buildResponseData('Find me places in Lebanon for a quiet day');
+        $results = $service->buildResponseData('Find me places for a quiet day');
 
         $this->assertFalse($results['intent']['should_hold_results']);
         $this->assertLessThanOrEqual(3, count($results['activities']));
@@ -263,6 +550,39 @@ class RecommendationServiceTest extends TestCase
             ['byblos'],
             array_values(array_unique(array_filter(array_column($results['activities'], 'city'))))
         );
+    }
+
+    public function test_country_scope_activity_requests_stay_diverse_across_cities(): void
+    {
+        foreach ([
+            ['name' => 'Tripoli Hidden Alley', 'city' => 'tripoli', 'location' => 'Tripoli Old Quarter'],
+            ['name' => 'Byblos Old Town Pause', 'city' => 'byblos', 'location' => 'Byblos Old Town'],
+            ['name' => 'Batroun Harbor Corner', 'city' => 'batroun', 'location' => 'Batroun Harbor'],
+        ] as $row) {
+            Activity::create([
+                'name' => $row['name'],
+                'city' => $row['city'],
+                'category' => 'hidden_gem',
+                'description' => 'A calm, less touristy place for a quiet day.',
+                'location' => $row['location'],
+                'best_time' => 'afternoon',
+                'duration_estimate' => '1 hour',
+                'price_type' => 'free',
+                'vibe_tags' => ['hidden_gem', 'relaxing'],
+                'occasion_tags' => ['casual'],
+                'search_text' => $row['city'] . ' hidden gem quiet local place',
+            ]);
+        }
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Give me hidden gem places in Lebanon for a quiet day');
+        $cities = array_values(array_unique(array_filter(array_column($results['activities'], 'city'))));
+
+        $this->assertFalse($results['intent']['should_hold_results']);
+        $this->assertTrue($results['intent']['country_scope']);
+        $this->assertNull($results['intent']['city']);
+        $this->assertNull($results['intent']['resolved_city']);
+        $this->assertGreaterThanOrEqual(2, count($cities));
     }
 
     public function test_it_diversifies_no_city_semantic_results_across_cities(): void
@@ -329,7 +649,7 @@ class RecommendationServiceTest extends TestCase
         $this->assertSame([], $results['restaurants']);
     }
 
-    public function test_it_holds_cityless_hotel_requests_even_with_budget_or_audience_hints(): void
+    public function test_it_can_recommend_cityless_hotel_requests_with_budget_or_audience_hints(): void
     {
         Hotel::create([
             'hotel_name' => 'Harbor Suites',
@@ -362,9 +682,68 @@ class RecommendationServiceTest extends TestCase
         $service = app(RecommendationService::class);
         $results = $service->buildResponseData('Recommend an affordable family stay');
 
-        $this->assertTrue($results['intent']['should_hold_results']);
-        $this->assertSame('guidance', $results['intent']['message_type']);
-        $this->assertSame([], $results['hotels']);
+        $this->assertFalse($results['intent']['should_hold_results']);
+        $this->assertSame('hotel_recommendation', $results['intent']['message_type']);
+        $this->assertNotEmpty($results['hotels']);
+    }
+
+    public function test_hotel_weekend_requests_stay_as_hotel_recommendations_without_forcing_trip_plan(): void
+    {
+        Hotel::create([
+            'hotel_name' => 'Byblos Weekend Stay',
+            'address' => 'Byblos Old Town',
+            'distance_from_beach' => '300 m',
+            'rating_score' => 8.8,
+            'review_count' => 140,
+            'price_per_night' => '95$',
+            'description' => 'A quiet romantic hotel for a calm weekend in Byblos.',
+            'stay_details' => 'Comfortable rooms close to the old town.',
+            'vibe_tags' => ['romantic', 'relaxing'],
+            'audience_tags' => ['couple'],
+            'search_text' => 'byblos romantic quiet weekend hotel stay',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Romantic hotel in Byblos for a quiet weekend');
+
+        $this->assertFalse($results['intent']['should_hold_results']);
+        $this->assertSame('hotel_recommendation', $results['intent']['message_type']);
+        $this->assertFalse($results['intent']['wants_trip_plan']);
+        $this->assertNull($results['trip_plan']);
+        $this->assertSame('Byblos Weekend Stay', $results['hotels'][0]['hotel_name']);
+    }
+
+    public function test_multi_day_trip_without_confirmed_hotel_data_includes_a_stay_note(): void
+    {
+        foreach ([
+            ['name' => 'Zahle Riverside Walk', 'best_time' => 'morning'],
+            ['name' => 'Explore Zahle Old Streets', 'best_time' => 'afternoon'],
+            ['name' => 'Zahle Evening by Berdawni', 'best_time' => 'evening'],
+        ] as $row) {
+            Activity::create([
+                'name' => $row['name'],
+                'city' => 'zahle',
+                'category' => 'culture',
+                'description' => 'A relaxed family-friendly Zahle activity.',
+                'location' => 'Zahle',
+                'best_time' => $row['best_time'],
+                'duration_estimate' => '1 hour',
+                'price_type' => 'free',
+                'vibe_tags' => ['relaxing', 'family'],
+                'occasion_tags' => ['family'],
+                'search_text' => 'zahle family trip relaxed cultural activity',
+            ]);
+        }
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Plan a 3 day family trip in Zahle');
+
+        $this->assertFalse($results['intent']['should_hold_results']);
+        $this->assertSame('trip_plan', $results['intent']['message_type']);
+        $this->assertCount(3, $results['trip_plan']['days']);
+        $this->assertSame('Stay note', data_get($results, 'trip_plan.days.0.flow.stay.title'));
+        $this->assertStringContainsString('do not have a confirmed hotel match', data_get($results, 'trip_plan.days.0.flow.stay.note'));
+        $this->assertNull(data_get($results, 'trip_plan.days.0.flow.stay.hotel_name'));
     }
 
     public function test_it_cleans_redundant_result_locations_in_results_and_trip_plan(): void
@@ -888,6 +1267,66 @@ class RecommendationServiceTest extends TestCase
         $this->assertSame('Byblos', $results['trip_plan']['days'][2]['location']);
     }
 
+    public function test_three_city_trip_preserves_the_full_route(): void
+    {
+        foreach ([
+            ['city' => 'Beirut', 'hotel' => 'Beirut City Stay', 'restaurant' => 'Beirut Lunch Table', 'activity' => 'Beirut Corniche Walk'],
+            ['city' => 'Byblos', 'hotel' => 'Byblos Port Stay', 'restaurant' => 'Byblos Dinner Table', 'activity' => 'Byblos Old Town Walk'],
+            ['city' => 'Tyre', 'hotel' => 'Tyre Beach Stay', 'restaurant' => 'Tyre Seafood Table', 'activity' => 'Tyre Beach Walk'],
+        ] as $seed) {
+            Hotel::create([
+                'hotel_name' => $seed['hotel'],
+                'address' => "{$seed['city']} Center",
+                'distance_from_beach' => '200 m',
+                'rating_score' => 4.6,
+                'review_count' => 120,
+                'price_per_night' => '120$',
+                'description' => "A reliable stay in {$seed['city']}.",
+                'stay_details' => 'Good base for a route trip.',
+                'vibe_tags' => ['relaxing'],
+                'audience_tags' => ['friends'],
+                'search_text' => strtolower("{$seed['city']} hotel stay route"),
+            ]);
+
+            Restaurant::create([
+                'restaurant_name' => $seed['restaurant'],
+                'location' => "{$seed['city']} Waterfront",
+                'rating' => 4.5,
+                'price_tier' => 'Mid-range',
+                'food_type' => 'Lebanese',
+                'description' => "A grounded meal stop in {$seed['city']}.",
+                'vibe_tags' => ['casual'],
+                'occasion_tags' => ['lunch', 'dinner'],
+                'search_text' => strtolower("{$seed['city']} restaurant lunch dinner"),
+            ]);
+
+            Activity::create([
+                'name' => $seed['activity'],
+                'city' => strtolower($seed['city']) === 'tyre' ? 'tyre' : strtolower($seed['city']),
+                'category' => 'walking',
+                'description' => "A simple walk in {$seed['city']}.",
+                'location' => "{$seed['city']} Center",
+                'best_time' => 'morning',
+                'duration_estimate' => '1 hour',
+                'price_type' => 'free',
+                'vibe_tags' => ['relaxing'],
+                'occasion_tags' => ['casual'],
+                'search_text' => strtolower("{$seed['city']} walking activity"),
+            ]);
+        }
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Plan a 3 day trip from Beirut to Byblos to Tyre');
+
+        $this->assertSame(['beirut', 'byblos', 'tyre'], $results['intent']['mentioned_cities']);
+        $this->assertSame('beirut', $results['intent']['start_city']);
+        $this->assertSame('tyre', $results['intent']['end_city']);
+        $this->assertSame('3-Day Trip from Beirut to Byblos to Tyre', $results['trip_plan']['title']);
+        $this->assertSame('Beirut', $results['trip_plan']['days'][0]['location']);
+        $this->assertSame('Byblos', $results['trip_plan']['days'][1]['location']);
+        $this->assertSame('Tyre', $results['trip_plan']['days'][2]['location']);
+    }
+
     public function test_it_scopes_restaurants_by_city_across_searchable_metadata(): void
     {
         Restaurant::create([
@@ -919,6 +1358,75 @@ class RecommendationServiceTest extends TestCase
 
         $this->assertSame('Marina Table', $results['restaurants'][0]['restaurant_name']);
         $this->assertSame('beirut', $results['restaurants'][0]['city']);
+    }
+
+    public function test_restaurant_city_matching_ignores_drive_from_context(): void
+    {
+        Restaurant::create([
+            'restaurant_name' => 'Beirut Wine Counter',
+            'location' => 'Gemmayzeh, Beirut',
+            'rating' => 4.7,
+            'price_tier' => 'Premium',
+            'food_type' => 'Wine Bar',
+            'description' => 'An intimate Beirut wine bar for romantic date nights.',
+            'vibe_tags' => ['romantic', 'city'],
+            'occasion_tags' => ['date', 'dinner'],
+            'search_text' => 'beirut romantic wine bar date night',
+        ]);
+
+        Restaurant::create([
+            'restaurant_name' => 'Mountain Wine Chalet',
+            'location' => 'Kfardebian',
+            'rating' => 5.0,
+            'price_tier' => 'Premium',
+            'food_type' => 'Wine Bar',
+            'description' => 'A romantic mountain wine chalet around a 45 minute drive from Beirut.',
+            'vibe_tags' => ['romantic', 'scenic'],
+            'occasion_tags' => ['date', 'dinner'],
+            'search_text' => 'mountain wine bar romantic dinner',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Recommend a romantic wine bar in Beirut');
+
+        $names = array_column($results['restaurants'], 'restaurant_name');
+
+        $this->assertContains('Beirut Wine Counter', $names);
+        $this->assertNotContains('Mountain Wine Chalet', $names);
+    }
+
+    public function test_smar_jbeil_restaurants_do_not_leak_into_batroun_city_requests(): void
+    {
+        Restaurant::create([
+            'restaurant_name' => 'Batroun Harbor Wine Bar',
+            'location' => 'Batroun Old Souk',
+            'rating' => 4.7,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Wine Bar',
+            'description' => 'A relaxed wine bar in Batroun for quiet evenings.',
+            'vibe_tags' => ['relaxing', 'romantic'],
+            'occasion_tags' => ['date', 'dinner'],
+            'search_text' => 'batroun wine bar romantic dinner',
+        ]);
+
+        Restaurant::create([
+            'restaurant_name' => 'Smar Jbeil Deli',
+            'location' => 'Smar Jbeil, Lebanon',
+            'rating' => 4.9,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Wine Bar',
+            'description' => 'A hidden gem wine bar in Smar Jbeil, Batroun district.',
+            'vibe_tags' => ['hidden_gem', 'romantic'],
+            'occasion_tags' => ['date', 'dinner'],
+            'search_text' => 'smar jbeil wine bar',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Recommend a romantic wine bar in Batroun');
+        $names = array_column($results['restaurants'], 'restaurant_name');
+
+        $this->assertContains('Batroun Harbor Wine Bar', $names);
+        $this->assertNotContains('Smar Jbeil Deli', $names);
     }
 
     public function test_it_scopes_activities_by_city_even_with_case_or_location_variation(): void
@@ -956,5 +1464,297 @@ class RecommendationServiceTest extends TestCase
 
         $this->assertSame('Hidden Harbor Corner', $results['activities'][0]['name']);
         $this->assertSame('Batroun', $results['activities'][0]['city']);
+    }
+
+    public function test_negated_expensive_language_maps_to_budget_not_luxury(): void
+    {
+        Activity::create([
+            'name' => 'Budget Sunset Walk',
+            'city' => 'byblos',
+            'category' => 'scenic',
+            'description' => 'A romantic seaside sunset walk that is easy and affordable.',
+            'location' => 'Byblos Harbor',
+            'best_time' => 'sunset',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['romantic', 'sunset'],
+            'occasion_tags' => ['date'],
+            'search_text' => 'romantic affordable budget sunset walk byblos',
+        ]);
+
+        Activity::create([
+            'name' => 'Premium Wine Stop',
+            'city' => 'zahle',
+            'category' => 'wine',
+            'description' => 'A premium romantic wine experience.',
+            'location' => 'Zahle Wine Area',
+            'best_time' => 'afternoon',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'premium',
+            'vibe_tags' => ['romantic', 'luxury'],
+            'occasion_tags' => ['date'],
+            'search_text' => 'romantic expensive luxury wine stop',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('I want something romantic but not too expensive');
+
+        $this->assertSame('budget', $results['intent']['budget']);
+        $this->assertNotContains('luxury', $results['intent']['semantic_concepts']);
+        $this->assertSame('Budget Sunset Walk', $results['activities'][0]['name']);
+    }
+
+    public function test_negative_city_preference_excludes_that_city(): void
+    {
+        Activity::create([
+            'name' => 'Tripoli City Walk',
+            'city' => 'tripoli',
+            'category' => 'city',
+            'description' => 'A city walk in Tripoli.',
+            'location' => 'Tripoli Center',
+            'best_time' => 'afternoon',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['city'],
+            'occasion_tags' => ['casual'],
+            'search_text' => 'tripoli city walk',
+        ]);
+
+        Activity::create([
+            'name' => 'Byblos Alternative Walk',
+            'city' => 'byblos',
+            'category' => 'city',
+            'description' => 'A relaxed alternative city walk in an old coastal town.',
+            'location' => 'Byblos Old Souk',
+            'best_time' => 'afternoon',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['city', 'relaxing'],
+            'occasion_tags' => ['casual'],
+            'search_text' => 'byblos alternative city walk old coastal town',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData("I don't like Tripoli, suggest another city");
+        $cities = array_values(array_unique(array_column($results['activities'], 'city')));
+
+        $this->assertSame(['tripoli'], $results['intent']['excluded_cities']);
+        $this->assertNull($results['intent']['resolved_city']);
+        $this->assertNotContains('tripoli', $cities);
+        $this->assertContains('byblos', $cities);
+    }
+
+    public function test_cityless_culture_and_local_food_request_returns_mixed_results(): void
+    {
+        Activity::create([
+            'name' => 'Old Streets Culture Walk',
+            'city' => 'zahle',
+            'category' => 'cultural',
+            'description' => 'A cultural walk through old streets and local heritage.',
+            'location' => 'Old Zahle',
+            'best_time' => 'afternoon',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['cultural', 'local'],
+            'occasion_tags' => ['casual'],
+            'search_text' => 'culture old streets local heritage',
+        ]);
+
+        Restaurant::create([
+            'restaurant_name' => 'Local Heritage Table',
+            'location' => 'Byblos Old Souk',
+            'rating' => 4.5,
+            'price_tier' => 'Mid-range',
+            'food_type' => 'Lebanese',
+            'description' => 'A local food spot near old streets and heritage lanes.',
+            'vibe_tags' => ['local', 'cultural'],
+            'occasion_tags' => ['lunch'],
+            'search_text' => 'local food culture old streets lebanese',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('I want culture, old streets, and local food');
+
+        $this->assertFalse($results['intent']['should_hold_results']);
+        $this->assertSame('mixed_recommendation', $results['intent']['message_type']);
+        $this->assertContains('restaurants', $results['intent']['requested_categories']);
+        $this->assertContains('activities', $results['intent']['requested_categories']);
+        $this->assertNotEmpty($results['restaurants']);
+        $this->assertNotEmpty($results['activities']);
+    }
+
+    public function test_family_where_should_we_go_request_does_not_inherit_unrelated_previous_budget(): void
+    {
+        Activity::create([
+            'name' => 'Family Harbor Stop',
+            'city' => 'byblos',
+            'category' => 'family',
+            'description' => 'A gentle family-friendly stop for kids and parents.',
+            'location' => 'Byblos Harbor',
+            'best_time' => 'morning',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['family', 'relaxing'],
+            'occasion_tags' => ['family'],
+            'search_text' => 'family kids friendly where should we go',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData("I'm with family and kids, where should we go?", [
+            'intent' => [
+                'has_travel_signal' => true,
+                'message_type' => 'restaurant_recommendation',
+                'requested_categories' => ['restaurants'],
+                'wants_restaurant' => true,
+                'food_preferences' => ['seafood'],
+                'budget' => 'luxury',
+                'vibe_tags' => ['romantic'],
+            ],
+        ]);
+
+        $this->assertNull($results['intent']['budget']);
+        $this->assertSame([], $results['intent']['food_preferences']);
+        $this->assertTrue((bool) $results['intent']['wants_activity']);
+        $this->assertFalse((bool) $results['intent']['wants_restaurant']);
+    }
+
+    public function test_guesthouse_language_is_treated_as_a_stay_request(): void
+    {
+        Hotel::create([
+            'hotel_name' => 'Byblos Calm Guesthouse',
+            'address' => 'Byblos',
+            'distance_from_beach' => '700 m',
+            'rating_score' => 8.8,
+            'review_count' => 45,
+            'price_per_night' => 75,
+            'room_type' => 'Guesthouse room',
+            'hotel_class' => 'Guesthouse',
+            'description' => 'A cozy guesthouse for a calm stay near the old town.',
+            'vibe_tags' => ['cozy', 'relaxing'],
+            'audience_tags' => ['couple'],
+            'search_text' => 'byblos cozy guesthouse calm stay',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('I want a cozy guesthouse in Byblos');
+
+        $this->assertSame('hotel_recommendation', $results['intent']['message_type']);
+        $this->assertTrue((bool) $results['intent']['wants_hotel']);
+        $this->assertSame('Byblos Calm Guesthouse', $results['hotels'][0]['hotel_name']);
+        $this->assertSame([], $results['activities']);
+    }
+
+    public function test_activity_only_follow_up_does_not_inherit_previous_hotel_mode(): void
+    {
+        Activity::create([
+            'name' => 'Byblos Heritage Walk',
+            'city' => 'byblos',
+            'category' => 'cultural',
+            'description' => 'A cultural walk through the old streets.',
+            'location' => 'Byblos Old Town',
+            'best_time' => 'afternoon',
+            'duration_estimate' => '1 hour',
+            'price_type' => 'free',
+            'vibe_tags' => ['cultural'],
+            'occasion_tags' => ['casual'],
+            'search_text' => 'byblos activities cultural walk old streets',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('Activities only, no restaurants', [
+            'intent' => [
+                'has_travel_signal' => true,
+                'message_type' => 'hotel_recommendation',
+                'requested_categories' => ['hotels'],
+                'wants_hotel' => true,
+                'requires_stay' => true,
+                'resolved_city' => 'byblos',
+                'mentioned_cities' => ['byblos'],
+            ],
+        ]);
+
+        $this->assertSame('activity_recommendation', $results['intent']['message_type']);
+        $this->assertFalse((bool) $results['intent']['wants_hotel']);
+        $this->assertFalse((bool) $results['intent']['wants_restaurant']);
+        $this->assertTrue((bool) $results['intent']['wants_activity']);
+        $this->assertSame([], $results['hotels']);
+        $this->assertSame([], $results['restaurants']);
+        $this->assertNotEmpty($results['activities']);
+    }
+
+    public function test_generic_city_rejection_excludes_previous_city(): void
+    {
+        Hotel::create([
+            'hotel_name' => 'Batroun Stay',
+            'address' => 'Batroun',
+            'distance_from_beach' => '200 m',
+            'rating_score' => 8.5,
+            'review_count' => 60,
+            'price_per_night' => 90,
+            'room_type' => 'Standard room',
+            'hotel_class' => 'Mid range',
+            'description' => 'A stay in Batroun.',
+            'vibe_tags' => ['relaxing'],
+            'audience_tags' => ['family'],
+            'search_text' => 'batroun hotel stay',
+        ]);
+
+        Hotel::create([
+            'hotel_name' => 'Byblos Alternative Stay',
+            'address' => 'Byblos',
+            'distance_from_beach' => '300 m',
+            'rating_score' => 8.7,
+            'review_count' => 80,
+            'price_per_night' => 85,
+            'room_type' => 'Standard room',
+            'hotel_class' => 'Mid range',
+            'description' => 'A family-friendly alternative stay.',
+            'vibe_tags' => ['relaxing'],
+            'audience_tags' => ['family'],
+            'search_text' => 'byblos family hotel alternative',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData("I don't like that city, give me another", [
+            'intent' => [
+                'has_travel_signal' => true,
+                'message_type' => 'hotel_recommendation',
+                'requested_categories' => ['hotels'],
+                'wants_hotel' => true,
+                'requires_stay' => true,
+                'resolved_city' => 'batroun',
+                'mentioned_cities' => ['batroun'],
+                'budget' => 'mid_range',
+                'audience_tags' => ['family'],
+            ],
+        ]);
+
+        $this->assertContains('batroun', $results['intent']['excluded_cities']);
+        $this->assertNotSame('batroun', $results['hotels'][0]['city']);
+        $this->assertSame('Byblos Alternative Stay', $results['hotels'][0]['hotel_name']);
+    }
+
+    public function test_touristy_and_famous_request_returns_activity_ideas(): void
+    {
+        Activity::create([
+            'name' => 'Byblos Castle Landmark',
+            'city' => 'byblos',
+            'category' => 'historical',
+            'description' => 'An iconic landmark and famous must-see heritage stop.',
+            'location' => 'Byblos Castle',
+            'best_time' => 'morning',
+            'duration_estimate' => '90 minutes',
+            'price_type' => 'low',
+            'vibe_tags' => ['cultural', 'scenic'],
+            'occasion_tags' => ['casual'],
+            'search_text' => 'touristy famous iconic must see landmark byblos',
+        ]);
+
+        $service = app(RecommendationService::class);
+        $results = $service->buildResponseData('I want something touristy and famous');
+
+        $this->assertFalse((bool) $results['intent']['should_hold_results']);
+        $this->assertSame('activity_recommendation', $results['intent']['message_type']);
+        $this->assertSame('Byblos Castle Landmark', $results['activities'][0]['name']);
     }
 }

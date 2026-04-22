@@ -7,6 +7,8 @@ const chatbotPage = document.querySelector('.chatbot-page');
 const sendUrl = chatbotPage?.dataset.sendUrl || '/chatbot/message';
 const newSessionUrl = chatbotPage?.dataset.newSessionUrl || '/chatbot/new-session';
 const userName = (chatbotPage?.dataset.userName || 'there').trim() || 'there';
+const userInitial = (chatbotPage?.dataset.userInitial || 'U').trim().slice(0, 1).toUpperCase() || 'U';
+const userPhoto = (chatbotPage?.dataset.userPhoto || '').trim();
 const csrfToken = chatbotPage?.dataset.csrfToken
     || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
     || '';
@@ -207,7 +209,7 @@ function removeTypingMessage(typingId) {
 }
 
 function addMessage(text, className, label, entityLinks = [], options = {}) {
-    const avatar = className === 'user-message' ? 'Y' : 'YN';
+    const avatar = className === 'user-message' ? getUserAvatarHtml() : 'YN';
     const avatarClass = className === 'user-message' ? 'user-avatar' : 'bot-avatar';
     const cleanText = String(text || '').trim();
     const formattedText = className === 'bot-message'
@@ -218,7 +220,7 @@ function addMessage(text, className, label, entityLinks = [], options = {}) {
 
     chatBox.insertAdjacentHTML('beforeend', `
         <div class="message ${className}${messageClass}">
-            <div class="message-avatar ${avatarClass}">${escapeHtml(avatar)}</div>
+            <div class="message-avatar ${avatarClass}">${avatar}</div>
             <div class="message-body">
                 <div class="message-label">${escapeHtml(label)}</div>
                 <div class="message-text">${formattedText}</div>
@@ -448,27 +450,16 @@ function renderTripPlanInline(text, entityLinks, tripPlan) {
         return formatBotText(text, entityLinks);
     }
 
-    const titleHtml = parsedTrip.title
-        ? `<div class="trip-inline__title">${escapeHtml(String(parsedTrip.title))}</div>`
+    const title = String(tripPlan?.title || parsedTrip.title || '').trim();
+    const titleHtml = title
+        ? `<div class="trip-inline__title">${escapeHtml(title)}</div>`
         : '';
-
-    const introHtml = parsedTrip.intro.length
-        ? parsedTrip.intro.map(paragraph => `<p>${formatBotText(paragraph, entityLinks)}</p>`).join('')
-        : '';
-    const outroHtml = parsedTrip.outro.length
-        ? `
-            <div class="trip-inline__outro">
-                ${parsedTrip.outro.map(paragraph => `<p>${formatBotText(paragraph, entityLinks)}</p>`).join('')}
-            </div>
-        `
-        : '';
+    const introHtml = buildTripIntroHtml(parsedTrip.intro, title, entityLinks);
+    const outroHtml = buildTripOutroHtml(parsedTrip.outro, entityLinks);
 
     return `
         <div class="trip-inline">
-            <div class="trip-inline__intro">
-                ${titleHtml}
-                ${introHtml}
-            </div>
+            ${(titleHtml || introHtml) ? `<div class="trip-inline__intro">${titleHtml}${introHtml}</div>` : ''}
             <div class="trip-inline__days">
                 ${mergedDays.map(day => renderTripInlineDay(day, entityLinks)).join('')}
             </div>
@@ -477,12 +468,46 @@ function renderTripPlanInline(text, entityLinks, tripPlan) {
     `;
 }
 
+function buildTripIntroHtml(introLines, title, entityLinks = []) {
+    const normalizedTitle = normalizeTripLine(title);
+    const lines = Array.isArray(introLines)
+        ? introLines
+            .map(line => String(line || '').trim())
+            .filter(Boolean)
+            .filter(line => normalizeTripLine(line) !== normalizedTitle)
+            .slice(0, 2)
+        : [];
+
+    return lines
+        .map(line => `<p class="trip-inline__copy">${formatBotText(line, entityLinks)}</p>`)
+        .join('');
+}
+
+function buildTripOutroHtml(outroLines, entityLinks = []) {
+    const lines = Array.isArray(outroLines)
+        ? outroLines
+            .map(line => String(line || '').trim())
+            .filter(Boolean)
+            .slice(0, 1)
+        : [];
+
+    if (!lines.length) {
+        return '';
+    }
+
+    return `
+        <div class="trip-inline__outro">
+            ${lines.map(line => `<p class="trip-inline__copy">${formatBotText(line, entityLinks)}</p>`).join('')}
+        </div>
+    `;
+}
+
 function parseTripReply(text, tripPlan) {
-    const cleanLines = String(text || '')
+    const cleanLines = expandTripReplyLines(String(text || '')
         .split(/\n+/)
         .map(line => line.trim())
         .filter(Boolean)
-        .filter(line => !/^Top .+ matches:/i.test(line));
+        .filter(line => !/^Top .+ matches:/i.test(line)));
 
     const fallbackTitle = String(tripPlan?.title || '').trim();
     const lines = [...cleanLines];
@@ -500,6 +525,20 @@ function parseTripReply(text, tripPlan) {
         : [];
 
     lines.forEach(line => {
+        const dayThemeMatch = line.match(/^Day\s+(\d+)\s*:\s*(.+)$/i);
+        if (dayThemeMatch) {
+            currentDay = {
+                dayNumber: Number(dayThemeMatch[1]),
+                heading: `Day ${dayThemeMatch[1]}`,
+                location: '',
+                intro: [dayThemeMatch[2].trim()],
+                slots: [],
+            };
+            days.push(currentDay);
+            currentSlot = null;
+            return;
+        }
+
         const dayMatch = line.match(/^Day\s+(\d+)(?:\s*(?:-|in)\s*(.+?))?:?$/i);
         if (dayMatch) {
             currentDay = {
@@ -575,6 +614,32 @@ function parseTripReply(text, tripPlan) {
     };
 }
 
+function expandTripReplyLines(lines) {
+    return (Array.isArray(lines) ? lines : [])
+        .flatMap(line => splitInlineTripSlotLabels(line))
+        .map(line => line.trim())
+        .filter(Boolean);
+}
+
+function splitInlineTripSlotLabels(line) {
+    const text = String(line || '').trim();
+    if (!text) {
+        return [];
+    }
+
+    const withColonBreaks = text.replace(
+        /\s+(?=(Morning|Lunch|Afternoon|Evening|Dinner|Stay)\s*:)/g,
+        '\n'
+    );
+
+    const withReadableBreaks = withColonBreaks.replace(
+        /\s+(?=(Morning|Lunch|Afternoon|Evening|Dinner|Stay)\s+(Start|Begin|Head|For|Enjoy|Spend|As|Keep|Take|Cap|End|Stay|You'll|You\b))/g,
+        '\n'
+    );
+
+    return withReadableBreaks.split(/\n+/);
+}
+
 function mergeTripDaysWithFallback(parsedDays, tripPlan) {
     const fallbackDays = Array.isArray(tripPlan?.days) ? tripPlan.days : [];
     const normalizedParsedDays = Array.isArray(parsedDays) ? parsedDays.filter(Boolean) : [];
@@ -601,11 +666,19 @@ function mergeTripDaysWithFallback(parsedDays, tripPlan) {
         const parsedSlotsByKey = new Map(
             (Array.isArray(parsedDay?.slots) ? parsedDay.slots : [])
                 .filter(slot => slot && slot.label)
-                .map(slot => [String(slot.label).trim().toLowerCase(), slot])
+                .map(slot => {
+                    const normalizedSlot = normalizeParsedTripSlot(slot);
+                    return [String(normalizedSlot.label).trim().toLowerCase(), normalizedSlot];
+                })
         );
 
         const mergedSlots = slotOrder
-            .map((slotKey) => parsedSlotsByKey.get(slotKey) || buildFallbackTripSlot(slotKey, fallbackDay.flow?.[slotKey]))
+            .map((slotKey) => {
+                const parsedSlot = parsedSlotsByKey.get(slotKey);
+                return hasRenderableTripSlot(parsedSlot)
+                    ? parsedSlot
+                    : buildFallbackTripSlot(slotKey, fallbackDay.flow?.[slotKey]);
+            })
             .filter(Boolean);
 
         return {
@@ -630,7 +703,16 @@ function buildFallbackTripSlot(slotKey, slotValue) {
 
     if (slotKey === 'stay') {
         const hotelName = String(slotValue.hotel_name || '').trim();
+        const note = String(slotValue.note || '').trim();
         if (!hotelName) {
+            if (note) {
+                return {
+                    label,
+                    title: String(slotValue.title || 'Stay note').trim(),
+                    content: note,
+                };
+            }
+
             return null;
         }
 
@@ -709,13 +791,24 @@ function detectExplicitTripSlot(line) {
         };
     }
 
+    const prefixedSlotMatch = line.match(/^(Morning|Lunch|Afternoon|Evening|Dinner|Stay)\b\s+(.+)$/i);
+    if (prefixedSlotMatch) {
+        const label = capitalizeLabel(prefixedSlotMatch[1]);
+        const rest = prefixedSlotMatch[2].trim();
+        const fullLine = line.trim();
+        const headingOnly = isShortTripSlotHeading(rest);
+
+        return {
+            label,
+            title: headingOnly ? fullLine : '',
+            content: headingOnly ? '' : rest,
+        };
+    }
+
     const headingPatterns = [
-        { label: 'Morning', pattern: /^(Morning\b.*|Final Morning)$/i },
-        { label: 'Lunch', pattern: /^Lunch\b.*$/i },
-        { label: 'Afternoon', pattern: /^(Afternoon\b.*|Wrap up and explore)$/i },
-        { label: 'Evening', pattern: /^Evening\b.*$/i },
-        { label: 'Dinner', pattern: /^Dinner\b.*$/i },
-        { label: 'Stay', pattern: /^(Stay\b.*|Overnight\b.*)$/i },
+        { label: 'Morning', pattern: /^Final Morning$/i },
+        { label: 'Afternoon', pattern: /^Wrap up and explore$/i },
+        { label: 'Stay', pattern: /^Overnight\b.*$/i },
     ];
 
     const headingMatch = headingPatterns.find(({ pattern }) => pattern.test(line));
@@ -728,6 +821,54 @@ function detectExplicitTripSlot(line) {
         title: line.trim(),
         content: '',
     };
+}
+
+function normalizeParsedTripSlot(slot) {
+    const label = capitalizeLabel(slot?.label || '');
+    let title = stripTripSlotLabelPrefix(slot?.title, label);
+    let content = stripTripSlotLabelPrefix(slot?.content, label);
+
+    if (title && !content && isVerboseTripSlotTitle(title)) {
+        content = title;
+        title = '';
+    }
+
+    return {
+        ...slot,
+        label,
+        title,
+        content,
+    };
+}
+
+function stripTripSlotLabelPrefix(value, label) {
+    const text = String(value || '').trim();
+    if (!text || !label) {
+        return text;
+    }
+
+    return text
+        .replace(new RegExp(`^${escapeRegExp(label)}\\b\\s*[:-]?\\s*`, 'i'), '')
+        .trim();
+}
+
+function hasRenderableTripSlot(slot) {
+    return !!(slot && (String(slot.title || '').trim() || String(slot.content || '').trim()));
+}
+
+function isShortTripSlotHeading(value) {
+    const text = String(value || '').trim();
+
+    return !!text
+        && text.length <= 42
+        && !/[.!?]/.test(text)
+        && !/^(start|begin|head|enjoy|spend|as|for|you|you'll|take|visit|explore|savor|relax)\b/i.test(text);
+}
+
+function isVerboseTripSlotTitle(value) {
+    const text = String(value || '').trim();
+
+    return text.length > 55 || /[.!?]/.test(text);
 }
 
 function detectImplicitTripSlot(line) {
@@ -926,19 +1067,15 @@ function escapeRegExp(text) {
     return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function buildEntityLinkPatternSafe(name) {
-    const patternCore = String(name || '')
-        .trim()
-        .split(/\s+/)
-        .map(part => escapeRegExp(part)
-            .replace(/['’]/g, "['’]")
-            .replace(/-/g, '[-–—]'))
-        .join('\\s+');
+function getUserAvatarHtml() {
+    if (userPhoto) {
+        return `<img src="${escapeHtml(userPhoto)}" alt="${escapeHtml(userName)}" class="message-avatar__image">`;
+    }
 
-    return new RegExp(`(^|[^A-Za-z0-9])(${patternCore})(?=$|[^A-Za-z0-9])`, 'gi');
+    return escapeHtml(userInitial);
 }
 
-function buildEntityLinkPattern(name) {
+function buildEntityLinkPatternSafe(name) {
     const patternCore = String(name || '')
         .trim()
         .split(/\s+/)

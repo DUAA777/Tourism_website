@@ -9,6 +9,11 @@ class ChatSession extends Model
     protected $fillable = [
         'user_id',
         'title',
+        'context_payload',
+    ];
+
+    protected $casts = [
+        'context_payload' => 'array',
     ];
 
     public function messages()

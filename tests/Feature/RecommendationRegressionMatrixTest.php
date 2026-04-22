@@ -371,14 +371,21 @@ class RecommendationRegressionMatrixTest extends TestCase
         }
 
         $tripGuidanceCases = [
-            ['guide-trip-no-city-1', 'Plan a 2 day seaside trip with sunset and seafood', 2],
-            ['guide-trip-no-city-2', 'Plan a romantic weekend by the sea', 2],
             ['guide-trip-no-city-3', 'I want a 3 day family trip', 3],
             ['guide-trip-no-city-4', 'Build me a 2 night getaway', 2],
         ];
 
         foreach ($tripGuidanceCases as [$label, $prompt, $dayCount]) {
             $cases[] = $this->case($label, $prompt, null, true, $dayCount, true, ['trip_plan'], [], 'none');
+        }
+
+        $strongCitylessTripCases = [
+            ['cityless-strong-seaside-trip', 'Plan a 2 day seaside trip with sunset and seafood', 2],
+            ['cityless-strong-romantic-sea-weekend', 'Plan a romantic weekend by the sea', 2],
+        ];
+
+        foreach ($strongCitylessTripCases as [$label, $prompt, $dayCount]) {
+            $cases[] = $this->case($label, $prompt, null, false, $dayCount, true, ['trip_plan', 'hotels'], [], 'trip_plan', true, false);
         }
 
         return $cases;

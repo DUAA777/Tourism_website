@@ -20,6 +20,8 @@
     data-new-session-url="{{ route('chatbot.newSession') }}"
     data-csrf-token="{{ csrf_token() }}"
     data-user-name="{{ $chatUserName }}"
+    data-user-initial="{{ $chatUserInitial }}"
+    data-user-photo="{{ $chatUserPhoto ?? '' }}"
 >
     <div class="chatbot-screen">
         <header class="chatbot-screen__top">

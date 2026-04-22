@@ -4,14 +4,17 @@ import re
 from flask import Flask, request, jsonify
 from google import genai
 from google.genai import types
+from config import ENV
 
 app = Flask(__name__)
 
 GEMINI_MODEL = "gemini-2.5-flash"
-api_key = os.getenv("GEMINI_API_KEY")
+api_key = os.getenv("GEMINI_API_KEY", ENV.get("GEMINI_API_KEY"))
 
 if not api_key:
-    raise RuntimeError("GEMINI_API_KEY is missing from environment variables.")
+    raise RuntimeError("GEMINI_API_KEY is missing from environment variables and .env.")
+
+os.environ.setdefault("GEMINI_API_KEY", api_key)
 
 client = genai.Client(api_key=api_key)
 
@@ -123,6 +126,27 @@ def compact_diagnostics(diagnostics):
         "tone": {
             "response_tone": tone.get("response_tone") or "neutral",
         },
+    }
+
+
+def compact_session_context(session_context):
+    if not isinstance(session_context, dict):
+        return {}
+
+    intent = session_context.get("intent") if isinstance(session_context.get("intent"), dict) else {}
+    diagnostics = session_context.get("diagnostics") if isinstance(session_context.get("diagnostics"), dict) else {}
+
+    return {
+        "intent": {
+            "city": intent.get("city"),
+            "resolved_city": intent.get("resolved_city"),
+            "mentioned_cities": intent.get("mentioned_cities") or [],
+            "requested_categories": intent.get("requested_categories") or [],
+            "wants_trip_plan": bool(intent.get("wants_trip_plan")),
+        },
+        "summary_chips": (session_context.get("summary_chips") or diagnostics.get("summary_chips") or [])[:6],
+        "last_user_message": (session_context.get("last_user_message") or "").strip(),
+        "last_reply": (session_context.get("last_reply") or "").strip()[:500],
     }
 
 
@@ -369,6 +393,7 @@ def build_conversation_notes(message, intent, hotels, restaurants, activities, t
     guidance = diagnostics.get("guidance") or {}
     confidence = diagnostics.get("confidence") or {}
     tone = diagnostics.get("tone") or {}
+    follow_up_context = intent.get("follow_up_context") or {}
     should_hold_recommendation_results = bool(
         guidance.get("should_hold_results")
         or looks_like_small_talk
@@ -386,12 +411,14 @@ def build_conversation_notes(message, intent, hotels, restaurants, activities, t
         "is_open_ended_request": is_open_ended_request,
         "looks_like_small_talk": looks_like_small_talk,
         "looks_like_meta_chat": looks_like_meta_chat,
+        "is_follow_up": bool(follow_up_context.get("is_follow_up")),
         "should_hold_recommendation_results": should_hold_recommendation_results,
         "should_guide_user_gently": should_hold_recommendation_results or (not has_specific_city),
         "wants_trip_plan": bool(intent.get("wants_trip_plan")),
         "requires_stay": bool(intent.get("requires_stay")),
         "guidance_reason": guidance.get("reason"),
         "follow_up_hints": guidance.get("follow_up_hints") or [],
+        "carryover_fields": follow_up_context.get("carryover_fields") or [],
         "confidence_overall": confidence.get("overall"),
         "signal_score": confidence.get("signal_score"),
         "response_tone": tone.get("response_tone") or intent.get("response_tone") or "neutral",
@@ -412,7 +439,7 @@ def sanitize_recommendation_payload(conversation_notes, hotels, restaurants, act
     return hotels, restaurants, activities, trip_plan
 
 
-def build_prompt_data(intent, hotels, restaurants, activities, trip_plan, diagnostics=None):
+def build_prompt_data(intent, hotels, restaurants, activities, trip_plan, diagnostics=None, session_context=None):
     return {
         "intent": {
             "city": intent.get("city"),
@@ -434,6 +461,7 @@ def build_prompt_data(intent, hotels, restaurants, activities, trip_plan, diagno
             "requires_stay": intent.get("requires_stay", False),
             "wants_trip_plan": intent.get("wants_trip_plan", False),
             "response_tone": intent.get("response_tone"),
+            "follow_up_context": intent.get("follow_up_context") or {},
         },
         "conversation_notes": build_conversation_notes(
             "",
@@ -449,6 +477,7 @@ def build_prompt_data(intent, hotels, restaurants, activities, trip_plan, diagno
         "activities": [compact_activity(a) for a in activities[:6]],
         "trip_plan": compact_trip_plan(trip_plan),
         "diagnostics": compact_diagnostics(diagnostics),
+        "session_context": compact_session_context(session_context),
     }
 
 
@@ -723,6 +752,38 @@ def dedupe_paragraphs(paragraphs):
     return cleaned
 
 
+def polish_goofy_phrasing(text):
+    text = text or ""
+
+    replacements = [
+        (r"\bSeafood\b", "seafood"),
+        (r"\bMid-range\b", "mid-range"),
+        (r"\bPremium\b", "premium"),
+        (r"\boften boasts\b", "offers"),
+        (r"\bboasts\b", "offers"),
+        (r"\bwith rates around ([0-9]+)\$", r"at around $\1 per night"),
+    ]
+
+    for pattern, replacement in replacements:
+        text = re.sub(pattern, replacement, text)
+
+    return text.strip()
+
+
+def normalize_trip_slot_line_breaks(text):
+    text = text or ""
+
+    text = re.sub(
+        r"\s+(?=(Morning|Lunch|Afternoon|Evening|Dinner|Stay)\s*:)",
+        "\n",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    return text.strip()
+
+
 def polish_generated_reply(text, trip_plan=None):
     text = (text or "").replace("**", "").strip()
     if not text:
@@ -736,6 +797,9 @@ def polish_generated_reply(text, trip_plan=None):
 
     polished = "\n\n".join(paragraphs).strip()
     polished = re.sub(r"\n{3,}", "\n\n", polished)
+    polished = polish_goofy_phrasing(polished)
+    if trip_plan:
+        polished = normalize_trip_slot_line_breaks(polished)
 
     return polished.strip()
 
@@ -870,20 +934,55 @@ def render_restaurant_fallback_reply(intent, restaurants):
     return "\n\n".join([line for line in lines if line])
 
 
+def activity_city_list(activities, limit=3):
+    cities = []
+
+    for activity in (activities or [])[:limit]:
+        city = display_city(activity.get("city"))
+        if city and city not in cities:
+            cities.append(city)
+
+    return cities
+
+
+def format_activity_location(activity):
+    name = clean_text(activity.get("name"))
+    location = clean_text(activity.get("location") or "").strip(" ,.;")
+    city = display_city(activity.get("city"))
+
+    if normalize_compare_text(location) == normalize_compare_text(name):
+        location = ""
+
+    if location and city and normalize_compare_text(city) not in normalize_compare_text(location):
+        return f"{location}, {city}"
+
+    return location or city
+
+
 def render_activity_fallback_reply(intent, activities):
-    city = display_city(intent.get("city")) or display_city((activities[0] or {}).get("city"))
-    city_part = f" in {city}" if city else ""
+    explicit_city = display_city(intent.get("city") or intent.get("resolved_city"))
+    activity_cities = activity_city_list(activities)
+
+    if explicit_city:
+        city_part = f" in {explicit_city}"
+    elif intent.get("country_scope") or len(activity_cities) > 1:
+        city_part = " across Lebanon"
+    elif len(activity_cities) == 1:
+        city_part = f" in {activity_cities[0]}"
+    else:
+        city_part = ""
+
     intro = f"For places to visit{city_part}, these are the strongest ideas I can still stand behind right now."
     lines = [ensure_sentence(intro)]
 
     for activity in activities[:3]:
         name = clean_text(activity.get("name"))
-        location = clean_text(activity.get("location") or activity.get("city") or "")
+        location = clean_text(format_activity_location(activity))
         best_time = clean_text(activity.get("best_time"))
 
         details = []
         if location:
-            details.append(f"in {location}")
+            details.append(f"around {location}")
         if best_time:
             details.append(f"best in the {best_time}")
 
@@ -1006,6 +1105,10 @@ def render_trip_plan_slot(key, value):
     label = key.replace("_", " ").title()
 
     if isinstance(value, dict):
+        note = clean_text(value.get("note"))
+        if note and key == "stay":
+            return f"{label}\n{ensure_sentence(note)}"
+
         if value.get("hotel_name"):
             sentence = render_trip_hotel_slot(value)
             return f"{label}\n{sentence}" if sentence else None
@@ -1062,6 +1165,56 @@ def render_trip_plan_text(trip_plan, intent=None, prefix=None):
     return "\n\n".join(parts).strip()
 
 
+def trip_slot_has_renderable_content(key, value):
+    if isinstance(value, str):
+        return bool(clean_text(value))
+
+    if not isinstance(value, dict):
+        return False
+
+    if key == "stay":
+        return bool(clean_text(value.get("hotel_name")) or clean_text(value.get("note")))
+
+    if key in {"lunch", "dinner"}:
+        return bool(clean_text(value.get("restaurant_name")))
+
+    if value.get("title") and value.get("activities"):
+        activities = value.get("activities") or []
+        return any(clean_text(activity) for activity in activities)
+
+    return bool(
+        clean_text(value.get("title"))
+        or clean_text(value.get("note"))
+        or clean_text(value.get("description"))
+    )
+
+
+def expected_trip_slot_labels(day):
+    flow = day.get("flow", {}) if isinstance(day, dict) else {}
+    if not isinstance(flow, dict):
+        return []
+
+    labels = []
+    for key, value in flow.items():
+        if trip_slot_has_renderable_content(key, value):
+            labels.append(key.replace("_", " ").title())
+
+    return labels
+
+
+def split_reply_into_day_sections(reply):
+    reply = reply or ""
+    matches = list(re.finditer(r"\bDay\s+(\d+)\b", reply, re.IGNORECASE))
+    sections = {}
+
+    for index, match in enumerate(matches):
+        day_number = match.group(1)
+        next_start = matches[index + 1].start() if index + 1 < len(matches) else len(reply)
+        sections[str(day_number)] = reply[match.start():next_start]
+
+    return sections
+
+
 def trip_plan_reply_is_complete(reply, trip_plan):
     if not trip_plan:
         return True
@@ -1071,14 +1224,22 @@ def trip_plan_reply_is_complete(reply, trip_plan):
         return True
 
     reply = reply or ""
+    day_sections = split_reply_into_day_sections(reply)
 
     for day in days:
         day_number = day.get("day")
         if day_number is None:
             continue
 
-        if not re.search(rf"\bDay\s+{re.escape(str(day_number))}\b", reply, re.IGNORECASE):
+        day_key = str(day_number)
+        day_section = day_sections.get(day_key, "")
+
+        if not day_section:
             return False
+
+        for label in expected_trip_slot_labels(day):
+            if not re.search(rf"\b{re.escape(label)}\b", day_section, re.IGNORECASE):
+                return False
 
     return True
 
@@ -1198,16 +1359,19 @@ IMPORTANT RULES:
 37. If the reply opens with a sentence like "Here is your 2-day trip in Byblos", do not repeat the same trip title again on its own line.
 38. If a trip day is missing a dinner, stay, or another slot in the data, simply leave that slot out instead of inventing one.
 39. When a place location starts with the same place name, avoid repeating the name twice in the same sentence.
+40. If intent.follow_up_context.is_follow_up is true, treat the reply as a continuation of the same request. Do not reset the conversation or ask the user to repeat details that are already present unless the new request is still ambiguous after the carried context.
 
 FOR TRIP PLANS:
 - Structure the answer clearly by Day 1, Day 2, Day 3
 - For each day, mention morning, lunch, afternoon, evening, and stay/dinner when available
+- Put each trip slot on its own separate labeled line. Do not combine Lunch, Afternoon, Evening, Dinner, or Stay inside the Morning paragraph.
 - Use the activity blocks to make the trip feel rich and realistic
 - Mention why a hotel or restaurant fits when useful
 - Make the route feel logical and smooth
 - Write the itinerary like polished website travel copy, not like raw database output
 - Keep the tone warm and natural, with short human-friendly descriptions for each part of the day
 - Avoid sounding mechanical or repetitive
+- Keep cuisine/common category words natural in sentences: write "seafood" and "mid-range" lowercase unless they start a sentence; keep country cuisines like Lebanese, French, Japanese capitalized.
 - Keep the intro short: one concise setup paragraph is enough before Day 1
 - Do not repeat the city name in every sentence when the context is already clear
 - Vary verbs across the plan instead of starting every section with the same wording
@@ -1259,6 +1423,7 @@ def chat():
         activities = data.get("activities") or []
         trip_plan = data.get("trip_plan")
         diagnostics = compact_diagnostics(data.get("diagnostics") or {})
+        session_context = compact_session_context(data.get("session_context") or {})
 
         if not message:
             return jsonify({"reply": "Tell me what kind of trip you're looking for."}), 400
@@ -1287,6 +1452,7 @@ def chat():
             prompt_activities,
             prompt_trip_plan,
             diagnostics,
+            session_context,
         )
         prompt_data["conversation_notes"] = build_conversation_notes(
             message,
@@ -1312,6 +1478,7 @@ USER REQUEST:
 RESPONSE BEHAVIOR:
 - If conversation_notes.should_guide_user_gently is true, guide the user like a human planner instead of sounding like a form.
 - If conversation_notes.is_open_ended_request is true, offer a few natural directions before asking one light follow-up.
+- If conversation_notes.is_follow_up is true, continue from the carried context naturally instead of restarting from zero.
 - If conversation_notes.has_specific_city is false but there are good matches, it is okay to recommend across cities naturally.
 - If conversation_notes.should_hold_recommendation_results is true, do not invent or force specific place recommendations. Guide the user first.
 - If diagnostics.confidence.overall is "needs_guidance" or "low", prefer a helpful narrowing response over overconfident recommendations.

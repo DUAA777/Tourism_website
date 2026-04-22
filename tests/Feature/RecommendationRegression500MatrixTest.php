@@ -383,7 +383,7 @@ class RecommendationRegression500MatrixTest extends TestCase
             $cases[] = $this->case("{$cityKey}-trip-2day", "Plan a 2 day seaside trip in {$cityName} with sunset and seafood", $cityKey, null, false, 2, true, ['trip_plan', 'hotels'], [], ['hotels', 'restaurants', 'activities'], true, true);
             $cases[] = $this->case("{$cityKey}-trip-weekend", "Plan a romantic weekend in {$cityName} by the sea", $cityKey, null, false, 2, true, ['trip_plan', 'hotels'], [], ['hotels', 'restaurants', 'activities'], true, true);
             $cases[] = $this->case("{$cityKey}-trip-family", "Plan a 3 day family trip in {$cityName}", $cityKey, null, false, 3, true, ['trip_plan', 'hotels'], [], ['hotels', 'restaurants', 'activities'], true, true);
-            $cases[] = $this->case("{$cityKey}-trip-1day", "Plan a 1 day cultural trip in {$cityName}", $cityKey, null, false, 1, true, ['trip_plan'], ['hotels'], ['hotels', 'restaurants', 'activities'], true, false, true);
+            $cases[] = $this->case("{$cityKey}-trip-1day", "Plan a 1 day cultural trip in {$cityName}", $cityKey, null, false, 1, true, ['trip_plan'], ['hotels'], ['restaurants', 'activities'], true, false, true);
             $cases[] = $this->case("{$cityKey}-trip-2night", "Build me a 2 night beach escape in {$cityName} with good food", $cityKey, null, false, 2, true, ['trip_plan', 'hotels'], [], ['hotels', 'restaurants', 'activities'], true, true);
         }
 
@@ -404,7 +404,7 @@ class RecommendationRegression500MatrixTest extends TestCase
             $cases[] = $this->case("{$cityKey}-alias-hidden", "Show me a quiet hidden gem place in {$alias}", $cityKey, null, false, null, false, ['activities'], [], ['activities']);
             $cases[] = $this->case("{$cityKey}-alias-nightlife", "Show me a rooftop nightlife activity in {$alias}", $cityKey, null, false, null, false, ['activities'], [], ['activities']);
             $cases[] = $this->case("{$cityKey}-alias-trip-2day", "Plan a 2 day trip in {$alias} with Japanese food and quiet places", $cityKey, null, false, 2, true, ['trip_plan', 'hotels'], [], ['hotels', 'restaurants', 'activities'], true, true);
-            $cases[] = $this->case("{$cityKey}-alias-trip-1day", "Plan a 1 day cultural trip in {$alias}", $cityKey, null, false, 1, true, ['trip_plan'], ['hotels'], ['hotels', 'restaurants', 'activities'], true, false, true);
+            $cases[] = $this->case("{$cityKey}-alias-trip-1day", "Plan a 1 day cultural trip in {$alias}", $cityKey, null, false, 1, true, ['trip_plan'], ['hotels'], ['restaurants', 'activities'], true, false, true);
         }
 
         return $cases;
@@ -639,17 +639,22 @@ class RecommendationRegression500MatrixTest extends TestCase
         $cases = [];
 
         foreach ($this->tripGuidancePrompts() as $index => $config) {
+            $hold = $config['hold'] ?? true;
+            $expectedNonEmpty = $hold ? [] : ['hotels', 'restaurants', 'activities'];
+
             $cases[] = $this->case(
                 'guide-trip-' . ($index + 1),
                 $config['prompt'],
                 null,
                 null,
-                true,
+                $hold,
                 $config['day_count'],
                 true,
-                ['trip_plan'],
+                $hold ? ['trip_plan'] : ['trip_plan', 'hotels'],
                 [],
-                []
+                $expectedNonEmpty,
+                true,
+                !$hold && $config['day_count'] > 1
             );
         }
 
@@ -927,7 +932,7 @@ class RecommendationRegression500MatrixTest extends TestCase
             ['prompt' => 'Need a one day getaway plan.', 'day_count' => 1],
             ['prompt' => 'Plan a 2 day trip.', 'day_count' => 2],
             ['prompt' => 'Build me a 2 day getaway.', 'day_count' => 2],
-            ['prompt' => 'Organize a 2 day seaside escape.', 'day_count' => 2],
+            ['prompt' => 'Organize a 2 day seaside escape.', 'day_count' => 2, 'hold' => false],
             ['prompt' => 'I need a weekend plan.', 'day_count' => 2],
             ['prompt' => 'Plan a romantic weekend.', 'day_count' => 2],
             ['prompt' => 'I want a 2 night trip.', 'day_count' => 2],
