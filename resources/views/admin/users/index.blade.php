@@ -11,14 +11,18 @@
         </a>
     </div>
     
-    <form method="GET" class="search-form">
-        <input type="text" name="search" placeholder="Search by name or email..." value="{{ request('search') }}">
-        <select name="role">
-            <option value="">All Roles</option>
-            <option value="user" {{ request('role') == 'user' ? 'selected' : '' }}>User</option>
-            <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>Admin</option>
-        </select>
-        <button type="submit" class="btn-secondary">Filter</button>
+    <form method="GET" class="search-form user-filter-form">
+        <div class="filter-control filter-control-search">
+            <i class="ri-search-line"></i>
+            <input type="text" name="search" placeholder="Search by name or email..." value="{{ request('search') }}">
+        </div>
+        <div class="filter-control filter-control-select">
+            <select name="role" onchange="this.form.submit()">
+                <option value="">All Roles</option>
+                <option value="user" {{ request('role') == 'user' ? 'selected' : '' }}>User</option>
+                <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>Admin</option>
+            </select>
+        </div>
     </form>
     
     <div class="table-responsive">
@@ -51,10 +55,13 @@
                         <a href="{{ route('admin.users.edit', $user) }}" class="btn-icon btn-edit">
                             <i class="ri-edit-line"></i>
                         </a>
-                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline-form">
+                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline-form js-delete-form"
+                              data-delete-title="Delete user?"
+                              data-delete-message="Delete {{ $user->name }}? This removes the account and cannot be undone."
+                              data-delete-confirm="Delete User">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn-icon btn-delete" onclick="return confirm('Are you sure?')">
+                            <button type="submit" class="btn-icon btn-delete" title="Delete">
                                 <i class="ri-delete-bin-line"></i>
                             </button>
                         </form>
@@ -65,6 +72,6 @@
         </table>
     </div>
     
-    {{ $users->links() }}
+    {{ $users->appends(request()->query())->links() }}
 </div>
 @endsection

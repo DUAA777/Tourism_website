@@ -75,19 +75,20 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="rating_score">Rating Score (0-5)</label>
+                        <label for="rating_score">Rating Score (0-10)</label>
                         <div class="rating-input">
                             <input type="number" id="rating_score" name="rating_score" 
-                                   step="0.1" min="0" max="5"
+                                   step="0.1" min="0" max="10"
                                    value="{{ old('rating_score', $hotel->rating_score) }}">
                             <div class="star-rating" id="ratingStars">
                                 @php
                                     $currentRating = old('rating_score', $hotel->rating_score);
+                                    $currentStarRating = min(5, max(0, ((float) $currentRating) / 2));
                                 @endphp
                                 @for($i = 1; $i <= 5; $i++)
-                                    @if($i <= floor($currentRating))
+                                    @if($i <= floor($currentStarRating))
                                         <i class="ri-star-fill" data-rating="{{ $i }}"></i>
-                                    @elseif($i - 0.5 <= $currentRating)
+                                    @elseif($i - 0.5 <= $currentStarRating)
                                         <i class="ri-star-half-fill" data-rating="{{ $i }}"></i>
                                     @else
                                         <i class="ri-star-line" data-rating="{{ $i }}"></i>
@@ -387,21 +388,44 @@
             </div>
             
             <div class="card-body">
+                @php
+                    $normalizeTags = function ($value) {
+                        if (is_array($value)) {
+                            $tags = $value;
+                        } elseif (is_string($value) && trim($value) !== '') {
+                            $decoded = json_decode($value, true);
+                            $tags = is_array($decoded) ? $decoded : explode(',', $value);
+                        } else {
+                            $tags = [];
+                        }
+
+                        return collect($tags)
+                            ->map(fn ($tag) => trim((string) $tag))
+                            ->filter()
+                            ->unique()
+                            ->values()
+                            ->all();
+                    };
+
+                    $vibeTags = $normalizeTags(old('vibe_tags', $hotel->getRawOriginal('vibe_tags') ?? $hotel->vibe_tags));
+                    $audienceTags = $normalizeTags(old('audience_tags', $hotel->getRawOriginal('audience_tags') ?? $hotel->audience_tags));
+                @endphp
+
                 <div class="form-group">
                     <label>What's the atmosphere like?</label>
                     <div class="tags-input-container">
-                        <input type="text" id="vibeTagInput" placeholder="Type a tag and press Enter">
-                        <input type="hidden" id="vibeTagsHidden" name="vibe_tags" value='{{ json_encode(old('vibe_tags', is_array($hotel->vibe_tags) ? $hotel->vibe_tags : json_decode($hotel->vibe_tags ?? '[]', true))) }}'>
-                        <div class="tags-list" id="vibeTagsList">
-                            @php
-                                $vibeTags = old('vibe_tags', is_array($hotel->vibe_tags) ? $hotel->vibe_tags : json_decode($hotel->vibe_tags ?? '[]', true));
-                            @endphp
-                            @if(is_array($vibeTags))
-                                @foreach($vibeTags as $tag)
+                        <input type="hidden" id="vibeTagsHidden" name="vibe_tags" value='@json($vibeTags)'>
+                        <div class="current-tags-block">
+                            <span class="current-tags-label">Current vibe tags</span>
+                            <div class="tags-list" id="vibeTagsList" data-empty-label="No vibe tags saved yet">
+                                @forelse($vibeTags as $tag)
                                     <div class="tag">{{ $tag }} <i class="ri-close-line"></i></div>
-                                @endforeach
-                            @endif
+                                @empty
+                                    <span class="tag-empty">No vibe tags saved yet</span>
+                                @endforelse
+                            </div>
                         </div>
+                        <input type="text" id="vibeTagInput" placeholder="Type a tag and press Enter">
                     </div>
                     <small>Examples: Luxury, Boutique, Family-friendly, Romantic, Business, Eco-friendly, Budget, Modern, Vintage</small>
                 </div>
@@ -416,18 +440,18 @@
                 <div class="form-group">
                     <label>Who is this hotel for?</label>
                     <div class="tags-input-container">
-                        <input type="text" id="audienceTagInput" placeholder="Type a tag and press Enter">
-                        <input type="hidden" id="audienceTagsHidden" name="audience_tags" value='{{ json_encode(old('audience_tags', is_array($hotel->audience_tags) ? $hotel->audience_tags : json_decode($hotel->audience_tags ?? '[]', true))) }}'>
-                        <div class="tags-list" id="audienceTagsList">
-                            @php
-                                $audienceTags = old('audience_tags', is_array($hotel->audience_tags) ? $hotel->audience_tags : json_decode($hotel->audience_tags ?? '[]', true));
-                            @endphp
-                            @if(is_array($audienceTags))
-                                @foreach($audienceTags as $tag)
+                        <input type="hidden" id="audienceTagsHidden" name="audience_tags" value='@json($audienceTags)'>
+                        <div class="current-tags-block">
+                            <span class="current-tags-label">Current audience tags</span>
+                            <div class="tags-list" id="audienceTagsList" data-empty-label="No audience tags saved yet">
+                                @forelse($audienceTags as $tag)
                                     <div class="tag">{{ $tag }} <i class="ri-close-line"></i></div>
-                                @endforeach
-                            @endif
+                                @empty
+                                    <span class="tag-empty">No audience tags saved yet</span>
+                                @endforelse
+                            </div>
                         </div>
+                        <input type="text" id="audienceTagInput" placeholder="Type a tag and press Enter">
                     </div>
                     <small>Examples: Couples, Families, Solo Travelers, Business Travelers, Groups, Seniors, Digital Nomads</small>
                 </div>
@@ -453,7 +477,12 @@
         
         <div class="form-actions">
             <div class="action-buttons">
-                <button type="button" class="btn-danger" id="deleteBtn">
+                <button type="button" class="btn-danger"
+                        data-delete-target="deleteHotelForm"
+                        data-delete-title="Move hotel to trash?"
+                        data-delete-message="Move {{ $hotel->hotel_name }} to trash? You can restore it later from the trash section."
+                        data-delete-confirm="Move to Trash"
+                        data-delete-confirm-class="btn-warning">
                     <i class="ri-delete-bin-line"></i> Move to Trash
                 </button>
                 <button type="button" class="btn-secondary" onclick="window.history.back()">
@@ -465,31 +494,14 @@
             </div>
         </div>
     </form>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="modal-overlay" style="display: none;">
-    <div class="modal-container">
-        <div class="modal-header">
-            <i class="ri-delete-bin-line"></i>
-            <h3>Move to Trash</h3>
-            <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p>Are you sure you want to move <strong>{{ $hotel->hotel_name }}</strong> to trash?</p>
-            <p class="warning-text">This action can be undone. You can restore it later from the trash section.</p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-secondary modal-cancel">Cancel</button>
-            <form action="{{ route('admin.hotels.destroy', $hotel) }}" method="POST" style="display: inline;">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn-warning">
-                    <i class="ri-delete-bin-line"></i> Move to Trash
-                </button>
-            </form>
-        </div>
-    </div>
+    <form id="deleteHotelForm" action="{{ route('admin.hotels.destroy', $hotel) }}" method="POST" class="js-delete-form" style="display: none;"
+          data-delete-title="Move hotel to trash?"
+          data-delete-message="Move {{ $hotel->hotel_name }} to trash? You can restore it later from the trash section."
+          data-delete-confirm="Move to Trash"
+          data-delete-confirm-class="btn-warning">
+        @csrf
+        @method('DELETE')
+    </form>
 </div>
 
 @push('styles')
@@ -1243,11 +1255,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         function updateStars(value) {
             const rating = parseFloat(value) || 0;
+            const starRating = Math.min(5, Math.max(0, rating / 2));
             stars.forEach((star, index) => {
                 const starValue = index + 1;
-                if (starValue <= Math.floor(rating)) {
+                if (starValue <= Math.floor(starRating)) {
                     star.className = 'ri-star-fill';
-                } else if (starValue - 0.5 <= rating) {
+                } else if (starValue - 0.5 <= starRating) {
                     star.className = 'ri-star-half-fill';
                 } else {
                     star.className = 'ri-star-line';
@@ -1257,7 +1270,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         stars.forEach(star => {
             star.addEventListener('click', function() {
-                const rating = this.getAttribute('data-rating');
+                const rating = parseInt(this.getAttribute('data-rating'), 10) * 2;
                 ratingInput.value = rating;
                 updateStars(rating);
             });
@@ -1287,7 +1300,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ratingInput.addEventListener('input', function() {
             let value = parseFloat(this.value);
             if (isNaN(value)) value = 0;
-            value = Math.min(5, Math.max(0, value));
+            value = Math.min(10, Math.max(0, value));
             this.value = value.toFixed(1);
             updateStars(value);
         });
@@ -1409,6 +1422,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         function updateDisplay() {
+            if (tags.length === 0) {
+                list.innerHTML = `<span class="tag-empty">${escapeHtml(list.dataset.emptyLabel || 'No tags saved yet')}</span>`;
+                updateHidden();
+                return;
+            }
+
             list.innerHTML = tags.map(tag => `
                 <div class="tag">
                     ${escapeHtml(tag)}

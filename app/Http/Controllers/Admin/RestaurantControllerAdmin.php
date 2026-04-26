@@ -9,6 +9,28 @@ use Illuminate\Support\Str;
 
 class RestaurantControllerAdmin extends Controller
 {
+    private function priceTierOptions(): array
+    {
+        $preferredOrder = ['Budget', 'Mid-range', 'Premium', 'Luxury'];
+
+        $databaseTiers = Restaurant::query()
+            ->whereNotNull('price_tier')
+            ->where('price_tier', '!=', '')
+            ->pluck('price_tier')
+            ->map(fn ($tier) => trim((string) $tier))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $tiers = collect($preferredOrder)
+            ->merge($databaseTiers)
+            ->unique()
+            ->values();
+
+        return $tiers->mapWithKeys(fn ($tier) => [$tier => $tier])->all();
+    }
+
     public function index(Request $request)
     {
         $query = Restaurant::query();
@@ -66,7 +88,7 @@ class RestaurantControllerAdmin extends Controller
         
         // Get filter options
         $foodTypes = Restaurant::distinct('food_type')->whereNotNull('food_type')->pluck('food_type');
-        $priceTiers = ['$', '$$', '$$$', '$$$$'];
+        $priceTiers = array_keys($this->priceTierOptions());
         $locations = Restaurant::distinct('location')->pluck('location');
         
         return view('admin.restaurants.index', compact('restaurants', 'foodTypes', 'priceTiers', 'locations'));
@@ -74,7 +96,7 @@ class RestaurantControllerAdmin extends Controller
 
     public function create()
     {
-        $priceTiers = ['$' => 'Budget Friendly', '$$' => 'Moderate', '$$$' => 'Expensive', '$$$$' => 'Luxury'];
+        $priceTiers = $this->priceTierOptions();
         $foodTypes = ['Italian', 'Chinese', 'Japanese', 'Mexican', 'Indian', 'Thai', 'French', 'American', 'Mediterranean', 'Seafood', 'Steakhouse', 'Vegetarian', 'Vegan', 'Fast Food', 'Cafe'];
         $restaurantTypes = ['Fine Dining', 'Casual Dining', 'Fast Food', 'Cafe', 'Buffet', 'Food Truck', 'Pub', 'Bar'];
         
@@ -91,7 +113,7 @@ class RestaurantControllerAdmin extends Controller
             'tags' => 'nullable|string',
             'location' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price_tier' => 'nullable|string|in:$,$$,$$$,$$$$',
+            'price_tier' => 'nullable|string|max:255',
             'food_type' => 'nullable|string|max:255',
             'phone_number' => 'nullable|string|max:255',
             'opening_hours' => 'nullable|string',
@@ -125,7 +147,7 @@ class RestaurantControllerAdmin extends Controller
 
     public function edit(Restaurant $restaurant)
     {
-        $priceTiers = ['$' => 'Budget Friendly', '$$' => 'Moderate', '$$$' => 'Expensive', '$$$$' => 'Luxury'];
+        $priceTiers = $this->priceTierOptions();
         $foodTypes = ['Italian', 'Chinese', 'Japanese', 'Mexican', 'Indian', 'Thai', 'French', 'American', 'Mediterranean', 'Seafood', 'Steakhouse', 'Vegetarian', 'Vegan', 'Fast Food', 'Cafe'];
         $restaurantTypes = ['Fine Dining', 'Casual Dining', 'Fast Food', 'Cafe', 'Buffet', 'Food Truck', 'Pub', 'Bar'];
         $tagsArray = $restaurant->tags_array;
@@ -143,7 +165,7 @@ class RestaurantControllerAdmin extends Controller
             'tags' => 'nullable|string',
             'location' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price_tier' => 'nullable|string|in:$,$$,$$$,$$$$',
+            'price_tier' => 'nullable|string|max:255',
             'food_type' => 'nullable|string|max:255',
             'phone_number' => 'nullable|string|max:255',
             'opening_hours' => 'nullable|string',

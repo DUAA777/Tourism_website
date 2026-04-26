@@ -10,7 +10,12 @@
 @section('content')
 @php
     $chatUser = auth()->user();
-    $chatUserPhoto = $chatUser && $chatUser->profile_picture ? asset($chatUser->profile_picture) : null;
+    $chatUserPhotoPath = $chatUser && $chatUser->profile_picture ? trim((string) $chatUser->profile_picture) : null;
+    $chatUserPhoto = $chatUserPhotoPath
+        ? (filter_var($chatUserPhotoPath, FILTER_VALIDATE_URL)
+            ? $chatUserPhotoPath
+            : asset(ltrim($chatUserPhotoPath, '/')))
+        : null;
     $chatUserInitial = strtoupper(substr(trim((string) ($chatUser->name ?? 'U')) ?: 'U', 0, 1));
     $chatUserName = trim((string) ($chatUser->name ?? 'there')) ?: 'there';
 @endphp
@@ -172,5 +177,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/js/chatbot.js') }}"></script>
+<script src="{{ asset('assets/js/chatbot.js') }}?v={{ filemtime(public_path('assets/js/chatbot.js')) }}"></script>
 @endpush

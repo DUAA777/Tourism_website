@@ -489,7 +489,7 @@ body {
   overflow: hidden;
   background:
     linear-gradient(90deg, rgba(14,31,57,0.86) 0%, rgba(14,31,57,0.62) 48%, rgba(14,31,57,0.28) 100%),
-    url("/images/showcase-bg.jpg") center/cover no-repeat;
+    url("/images/home3.jpg") center/cover no-repeat;
   box-shadow: var(--shadow-soft);
 }
 

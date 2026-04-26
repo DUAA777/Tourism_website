@@ -89,7 +89,7 @@
                                     <option value="">Select Price Range</option>
                                     @foreach($priceTiers as $tier => $label)
                                         <option value="{{ $tier }}" {{ old('price_tier') == $tier ? 'selected' : '' }}>
-                                            {{ $tier }} - {{ $label }}
+                                            {{ $tier === $label ? $tier : $tier . ' - ' . $label }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -617,13 +617,18 @@ const priceIndicator = document.getElementById('priceIndicator');
 
 priceTier.addEventListener('change', function() {
     const value = this.value;
-    let width = '0%';
+    const priceWidths = {
+        '$': '25%',
+        '$$': '50%',
+        '$$$': '75%',
+        '$$$$': '100%',
+        'Budget': '25%',
+        'Mid-range': '50%',
+        'Premium': '75%',
+        'Luxury': '100%',
+    };
     
-    if (value === '$') width = '33%';
-    else if (value === '$$') width = '66%';
-    else if (value === '$$$') width = '100%';
-    
-    priceIndicator.style.width = width;
+    priceIndicator.style.width = priceWidths[value] || '0%';
 });
 
 // Form Validation

@@ -123,7 +123,14 @@
                     </p>
                 </div>
 
-                <form action="{{ route('profile.password.request') }}" method="POST" class="profile-form profile-form--inline">
+                <form
+                    action="{{ route('profile.password.request') }}"
+                    method="POST"
+                    class="profile-form profile-form--inline js-profile-reset-form"
+                    data-reset-title="Request password reset?"
+                    data-reset-message="Send a secure password reset link to {{ $user->email }}? You will finish the password change from your email inbox."
+                    data-reset-confirm="Send Reset Link"
+                >
                     @csrf
                     <div class="profile-form__actions">
                         <button type="submit" class="profile-btn profile-btn--primary">Request Password Change</button>
@@ -133,6 +140,20 @@
         </div>
     </div>
 </section>
+
+<div class="profile-confirm-modal" id="profileResetConfirm" aria-hidden="true">
+    <div class="profile-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="profileResetConfirmTitle">
+        <div class="profile-confirm-icon">
+            <i class="ri-mail-send-line"></i>
+        </div>
+        <h3 id="profileResetConfirmTitle">Request password reset?</h3>
+        <p id="profileResetConfirmMessage">We will send a secure password reset link to your email.</p>
+        <div class="profile-confirm-actions">
+            <button type="button" class="profile-btn profile-btn--ghost" data-reset-cancel>Cancel</button>
+            <button type="button" class="profile-btn profile-btn--primary" data-reset-confirm>Send Reset Link</button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')

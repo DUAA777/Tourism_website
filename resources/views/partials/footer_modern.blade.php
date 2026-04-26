@@ -1,4 +1,10 @@
 <footer class="site-footer" id="contact">
+  @php
+    $footerContactEmail = config('mail.contact.address', 'hello@yallanemshi.com');
+    $footerContactPhone = '+961 70 000 000';
+    $footerContactPhoneHref = '+96170000000';
+    $footerContactLocation = 'Lebanon';
+  @endphp
   <div class="section__container footer__container">
     <div class="footer__top">
       <div class="footer__brand">
@@ -33,40 +39,26 @@
         <h4>Reach our team</h4>
         <ul class="footer__links">
           <li>
-            <a href="tel:+96182847272">
+            <a href="tel:{{ $footerContactPhoneHref }}">
               <span><i class="ri-phone-fill"></i></span>
-              <span>+961 82 847 272</span>
+              <span>{{ $footerContactPhone }}</span>
             </a>
           </li>
           <li>
-            <a href="mailto:info@yallanemshi.com">
+            <a href="mailto:{{ $footerContactEmail }}">
               <span><i class="ri-mail-send-line"></i></span>
-              <span>info@yallanemshi.com</span>
+              <span>{{ $footerContactEmail }}</span>
             </a>
           </li>
           <li>
             <a href="{{ route('contactUs') }}">
               <span><i class="ri-map-pin-2-fill"></i></span>
-              <span>Beirut, Lebanon</span>
+              <span>{{ $footerContactLocation }}</span>
             </a>
           </li>
         </ul>
       </div>
 
-      <div class="footer__column footer__column--subscribe">
-        <p class="footer__eyebrow">Newsletter</p>
-        <h4>Get new ideas first</h4>
-        <p class="footer__subscribe-copy">
-          New routes, food spots, and seasonal recommendations from around Lebanon.
-        </p>
-        <form action="/" class="footer__form">
-          <label class="footer__input-wrap">
-            <i class="ri-mail-line" aria-hidden="true"></i>
-            <input type="email" placeholder="Enter your email" aria-label="Email address" />
-          </label>
-          <button class="btn" type="submit">Subscribe</button>
-        </form>
-      </div>
     </div>
 
     <div class="footer__bottom">

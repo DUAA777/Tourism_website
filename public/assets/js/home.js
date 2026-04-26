@@ -178,9 +178,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let activeFilter = 'all';
     let searchTimeout;
+    let latestRequestId = 0;
 
     function filterCards() {
         const searchTerm = searchInput.value.trim().toLowerCase();
+        const requestId = ++latestRequestId;
         
         // Show loading state
         grid.innerHTML = '<div class="loading-spinner"><i class="ri-loader-4-line"></i> Loading destinations...</div>';
@@ -188,12 +190,17 @@ document.addEventListener("DOMContentLoaded", function () {
         // Make AJAX request to search
         const params = new URLSearchParams({
             search: searchTerm,
-            filter: activeFilter
+            filter: activeFilter,
+            _: String(Date.now())
         });
 
-        fetch(`${searchUrl}?${params.toString()}`)
+        fetch(`${searchUrl}?${params.toString()}`, { cache: 'no-store' })
             .then(response => response.json())
             .then(places => {
+                if (requestId !== latestRequestId) {
+                    return;
+                }
+
                 if (places.length === 0) {
                     grid.innerHTML = '<div class="no-results"><i class="ri-emotion-sad-line"></i> No destinations found. Try a different search!</div>';
                     return;
@@ -223,6 +230,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 }).join('');
             })
             .catch(error => {
+                if (requestId !== latestRequestId) {
+                    return;
+                }
+
                 console.error('Error:', error);
                 grid.innerHTML = '<div class="error-message"><i class="ri-error-warning-line"></i> Something went wrong. Please try again.</div>';
             });

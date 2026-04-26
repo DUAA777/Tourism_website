@@ -1,3 +1,7 @@
+:root {
+  --chatbot-nav-offset: 78px;
+}
+
 html,
 body {
   min-height: 100%;
@@ -11,12 +15,14 @@ body.chatbot-layout #main {
 }
 
 body.chatbot-layout #main {
-  min-height: calc(100dvh - var(--site-nav-height, 104px));
+  min-height: calc(100dvh - var(--chatbot-nav-offset));
+  height: calc(100dvh - var(--chatbot-nav-offset));
 }
 
 .chatbot-page {
-  min-height: calc(100dvh - var(--site-nav-height, 104px));
-  height: calc(100dvh - var(--site-nav-height, 104px));
+  min-height: calc(100dvh - var(--chatbot-nav-offset));
+  height: calc(100dvh - var(--chatbot-nav-offset));
+  box-sizing: border-box;
   padding: 1.2rem;
   background: url("../images/chatbot-bg.jpg") center center / cover no-repeat;
   overflow: hidden;
@@ -545,6 +551,7 @@ body.chatbot-layout #main {
   width: 40px;
   height: 40px;
   min-width: 40px;
+  aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
   border-radius: 14px;
@@ -558,8 +565,11 @@ body.chatbot-layout #main {
   width: 100%;
   height: 100%;
   display: block;
+  border-radius: inherit;
   object-fit: cover;
-  object-position: center;
+  object-position: center center;
+  transform: none !important;
+  rotate: 0deg !important;
 }
 
 .bot-avatar {
@@ -567,9 +577,25 @@ body.chatbot-layout #main {
   color: var(--primary-color);
 }
 
-.user-avatar {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-color-dark));
+.chat-user-avatar {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 999px;
+  background: transparent;
   color: #ffffff;
+  padding: 0;
+}
+
+.chat-user-avatar .message-avatar__image {
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  display: block;
+  border-radius: 999px;
+  object-position: center center;
+  clip-path: circle(50% at 50% 50%);
 }
 
 .message-body {
@@ -1031,6 +1057,7 @@ body.chatbot-layout #main {
 .chat-input-icon--avatar {
   position: relative;
   display: block;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   padding: 0;
 }
@@ -1048,8 +1075,12 @@ body.chatbot-layout #main {
   inset: 0;
   width: 100% !important;
   height: 100% !important;
+  display: block;
   object-fit: cover;
   object-position: center center;
+  image-orientation: from-image;
+  transform: none !important;
+  rotate: 0deg !important;
 }
 
 .chat-input-avatar-fallback {
@@ -1154,7 +1185,7 @@ body.chatbot-layout #main {
 @media (max-width: 1024px) {
   .chatbot-page {
     height: auto;
-    min-height: calc(100dvh - var(--site-nav-height, 104px));
+    min-height: calc(100dvh - var(--chatbot-nav-offset));
     overflow: visible;
   }
 
@@ -1299,6 +1330,10 @@ body.chatbot-layout #main {
 }
 
 @media (min-width: 1025px) {
+  :root {
+    --chatbot-nav-offset: 98px;
+  }
+
   body.chatbot-layout {
     min-height: 100dvh;
     overflow: hidden;
@@ -1317,14 +1352,15 @@ body.chatbot-layout #main {
   body.chatbot-layout #main {
     flex: 1 1 auto;
     min-height: 0;
+    height: calc(100dvh - var(--chatbot-nav-offset));
     display: flex;
     flex-direction: column;
   }
 
   .chatbot-page {
     flex: 1 1 auto;
-    min-height: calc(100dvh - var(--site-nav-height, 104px));
-    height: calc(100dvh - var(--site-nav-height, 104px));
+    min-height: calc(100dvh - var(--chatbot-nav-offset));
+    height: calc(100dvh - var(--chatbot-nav-offset));
     padding: 0.95rem 1.1rem;
     overflow: hidden;
   }

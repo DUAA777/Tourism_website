@@ -60,14 +60,18 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     if (accountTrigger) {
-        accountTrigger.addEventListener("click", function () {
-            if (window.innerWidth > mobileBreakpoint) return;
+        accountTrigger.addEventListener("click", function (event) {
+            event.stopPropagation();
             const isOpen = !accountMenu.classList.contains("is-open");
             setAccountMenuState(isOpen);
         });
     }
 
     document.addEventListener("click", function (event) {
+        if (accountMenu && !accountMenu.contains(event.target)) {
+            setAccountMenuState(false);
+        }
+
         if (window.innerWidth > mobileBreakpoint) return;
         if (!navLinks.classList.contains("open")) return;
 

@@ -24,6 +24,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
     // User Management
+    Route::post('/users/{user}/password-reset', [UserController::class, 'sendPasswordReset'])->name('users.password-reset');
     Route::resource('users', UserController::class);
     
     // Restaurant Management

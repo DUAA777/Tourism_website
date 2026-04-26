@@ -20,8 +20,8 @@
     </div>
     
     <!-- Filters -->
-    <div class="filters-card">
-        <form method="GET" class="filters-form">
+    <div class="filters-card hotel-filters-card">
+        <form method="GET" class="filters-form hotel-filter-form">
             <input type="hidden" name="trashed" value="{{ request('trashed') }}">
             
             <div class="filter-group">
@@ -32,8 +32,9 @@
             <div class="filter-group">
                 <select name="min_rating" class="filter-select">
                     <option value="">All Ratings</option>
-                    <option value="4" {{ request('min_rating') == '4' ? 'selected' : '' }}>4+ Stars</option>
-                    <option value="3" {{ request('min_rating') == '3' ? 'selected' : '' }}>3+ Stars</option>
+                    <option value="8" {{ request('min_rating') == '8' ? 'selected' : '' }}>8+/10</option>
+                    <option value="7" {{ request('min_rating') == '7' ? 'selected' : '' }}>7+/10</option>
+                    <option value="6" {{ request('min_rating') == '6' ? 'selected' : '' }}>6+/10</option>
                 </select>
             </div>
             
@@ -122,20 +123,25 @@
                                 <i class="ri-restart-line"></i>
                             </button>
                         </form>
-                        <form action="{{ route('admin.hotels.force-delete', $hotel->id) }}" method="POST" class="inline-form">
+                        <form action="{{ route('admin.hotels.force-delete', $hotel->id) }}" method="POST" class="inline-form js-delete-form"
+                              data-delete-title="Permanently delete hotel?"
+                              data-delete-message="Permanently delete {{ $hotel->hotel_name }}? This cannot be undone."
+                              data-delete-confirm="Delete Permanently">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn-icon btn-delete" title="Permanently Delete" 
-                                    onclick="return confirm('This action cannot be undone. Are you sure?')">
+                            <button type="submit" class="btn-icon btn-delete" title="Permanently Delete">
                                 <i class="ri-delete-bin-7-line"></i>
                             </button>
                         </form>
                     @else
-                        <form action="{{ route('admin.hotels.destroy', $hotel) }}" method="POST" class="inline-form">
+                        <form action="{{ route('admin.hotels.destroy', $hotel) }}" method="POST" class="inline-form js-delete-form"
+                              data-delete-title="Move hotel to trash?"
+                              data-delete-message="Move {{ $hotel->hotel_name }} to trash? You can restore it later from the trash section."
+                              data-delete-confirm="Move to Trash"
+                              data-delete-confirm-class="btn-warning">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn-icon btn-delete" title="Move to Trash"
-                                    onclick="return confirm('Move this hotel to trash?')">
+                            <button type="submit" class="btn-icon btn-delete" title="Move to Trash">
                                 <i class="ri-delete-bin-line"></i>
                             </button>
                         </form>

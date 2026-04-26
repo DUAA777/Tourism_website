@@ -139,7 +139,7 @@
     </div>
 
     <div class="why-us__image-wrap">
-        <img src="{{ asset('images/showcase-bg.jpg') }}" alt="Why choose us">
+        <img src="{{ asset('images/home2.jpg') }}" alt="Why choose us">
     </div>
 </section>
 
@@ -242,6 +242,14 @@
             @php
                 $reviewerName = $review->user->name ?? 'Traveler';
                 $reviewerInitial = strtoupper(substr($reviewerName, 0, 1));
+                $reviewerPhotoPath = $review->user && $review->user->profile_picture
+                    ? trim((string) $review->user->profile_picture)
+                    : null;
+                $reviewerPhoto = $reviewerPhotoPath
+                    ? (filter_var($reviewerPhotoPath, FILTER_VALIDATE_URL)
+                        ? $reviewerPhotoPath
+                        : asset(ltrim($reviewerPhotoPath, '/')))
+                    : null;
             @endphp
             <article class="review-card">
                 <div class="review-stars">
@@ -251,7 +259,11 @@
                 </div>
                 <p class="review-text">{{ $review->review_text }}</p>
                 <div class="review-user">
-                    <div class="review-avatar">{{ $reviewerInitial }}</div>
+                    @if($reviewerPhoto)
+                        <img src="{{ $reviewerPhoto }}" alt="{{ $reviewerName }}">
+                    @else
+                        <div class="review-avatar">{{ $reviewerInitial }}</div>
+                    @endif
                     <div>
                         <h4>{{ $reviewerName }}</h4>
                         <span>Traveler</span>

@@ -1,9 +1,12 @@
 import pandas as pd
 import numpy as np
 import re
+import os
 from collections import Counter
 from datetime import datetime
 import warnings
+
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "4")
 
 try:
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -575,7 +578,7 @@ class RestaurantService:
                                                   if col in final_output.columns],
                                          errors='ignore')
 
-        print(f"Final recommendations: {final_output}")
+        print(f"Final recommendations: {len(final_output)} rows")
 
         # Prepare output
         recommendations_list = self.prepare_output(final_output)
@@ -662,13 +665,17 @@ class RestaurantService:
             else 0.0
         )
 
+        similar_df['price_match'] = similar_df['price_tier'].apply(
+            lambda x: self.price_match_score(x, target_price_tier)
+        )
 
         # Calculate final similarity score with weights
         similar_df['final_similarity'] = (
                 similar_df['similarity_score'] * 0.45 +
                 similar_df['food_type_match'] * 0.25 +
                 similar_df['tag_match'] * 0.15 +
-                similar_df['location_match'] * 0.15
+                similar_df['location_match'] * 0.10 +
+                similar_df['price_match'] * 0.05
         )
 
         # Boost same-cluster restaurants
@@ -717,6 +724,22 @@ class RestaurantService:
         union = len(tags1_set | tags2_set)
 
         return intersection / union if union > 0 else 0.0
+
+    def price_match_score(self, price_tier, target_price_tier):
+        """Score restaurants with similar price tiers without assuming the field format."""
+        price = "" if price_tier is None else str(price_tier).strip().lower()
+        target = "" if target_price_tier is None else str(target_price_tier).strip().lower()
+
+        if not price or not target:
+            return 0.0
+
+        if price == target:
+            return 1.0
+
+        if price[0] == target[0]:
+            return 0.5
+
+        return 0.0
 
     def get_stats(self):
         """Get comprehensive restaurant statistics"""

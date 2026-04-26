@@ -45,64 +45,97 @@ class HomeController extends Controller
             ->with('review_success', 'Thanks! Your review has been added.');
     }
     
-public function searchDestinations(Request $request)
-{
-    $searchTerm = $request->get('search', '');
-    $filter = $request->get('filter', 'all');
-    
-    $places = collect();
+    public function searchDestinations(Request $request)
+    {
+        $searchTerm = trim((string) $request->get('search', ''));
+        $filter = strtolower(trim((string) $request->get('filter', 'all')));
 
-    // 1. Search in Restaurants
-    if ($filter === 'all' || $filter === 'restaurants') {
-        $restaurants = Restaurant::query()
-            ->when($searchTerm, function($q) use ($searchTerm) {
-                $q->where('restaurant_name', 'like', "%{$searchTerm}%")
-                  ->orWhere('location', 'like', "%{$searchTerm}%");
-            })
-            ->limit(8)
-            ->get()
-            ->map(function($item) {
-                return [
-                    'id' => $item->id,
-                    'title' => $item->restaurant_name,
-                    'image' => $item->image,
-                    'location' => $item->location,
-                    'rating' => $item->rating,
-                    'category' => $item->restaurant_type,
-                    'type' => 'restaurant' // Helper to distinguish in UI
-                ];
-            });
-        $places = $places->merge($restaurants);
+        $restaurantLimit = $filter === 'all' ? 4 : 8;
+        $hotelLimit = $filter === 'all' ? 4 : 8;
+
+        $places = collect();
+
+        if ($filter === 'all' || $filter === 'restaurants') {
+            $restaurants = Restaurant::query()
+                ->when($searchTerm !== '', function ($q) use ($searchTerm) {
+                    $q->where(function ($query) use ($searchTerm) {
+                        $query->where('restaurant_name', 'like', "%{$searchTerm}%")
+                            ->orWhere('location', 'like', "%{$searchTerm}%")
+                            ->orWhere('food_type', 'like', "%{$searchTerm}%")
+                            ->orWhere('restaurant_type', 'like', "%{$searchTerm}%");
+                    });
+                })
+                ->inRandomOrder()
+                ->limit($restaurantLimit)
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'title' => $item->restaurant_name,
+                        'image' => $item->image,
+                        'location' => $item->location,
+                        'rating' => $item->rating,
+                        'category' => $item->restaurant_type,
+                        'type' => 'restaurant',
+                    ];
+                });
+
+            $places = $places->merge($restaurants);
+        }
+
+        if ($filter === 'all' || $filter === 'hotels') {
+            $hotels = Hotel::query()
+                ->when($searchTerm !== '', function ($q) use ($searchTerm) {
+                    $q->where(function ($query) use ($searchTerm) {
+                        $query->where('hotel_name', 'like', "%{$searchTerm}%")
+                            ->orWhere('address', 'like', "%{$searchTerm}%")
+                            ->orWhere('room_type', 'like', "%{$searchTerm}%");
+                    });
+                })
+                ->inRandomOrder()
+                ->limit($hotelLimit)
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'title' => $item->hotel_name,
+                        'image' => $item->hotel_image,
+                        'location' => $item->address,
+                        'rating' => $item->rating_score,
+                        'category' => $item->room_type,
+                        'type' => 'hotel',
+                    ];
+                });
+
+            $places = $places->merge($hotels);
+        }
+
+        if ($filter === 'all') {
+            $places = $places->values();
+
+            $interleaved = collect();
+            $restaurants = $places->where('type', 'restaurant')->values();
+            $hotels = $places->where('type', 'hotel')->values();
+            $maxRows = max($restaurants->count(), $hotels->count());
+
+            for ($i = 0; $i < $maxRows; $i++) {
+                if ($restaurants->has($i)) {
+                    $interleaved->push($restaurants->get($i));
+                }
+                if ($hotels->has($i)) {
+                    $interleaved->push($hotels->get($i));
+                }
+            }
+
+            return response()
+                ->json($interleaved->take(8)->values())
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        }
+
+        return response()
+            ->json($places->take(8)->values())
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
-
-    // 2. Search in Hotels
-    if ($filter === 'all' || $filter === 'hotels') {
-        $hotels = Hotel::query()
-            ->when($searchTerm, function($q) use ($searchTerm) {
-                $q->where('hotel_name', 'like', "%{$searchTerm}%")
-                  ->orWhere('address', 'like', "%{$searchTerm}%");
-            })
-            ->limit(8)
-            ->get()
-            ->map(function($item) {
-                return [
-                    'id' => $item->id,
-                    'title' => $item->hotel_name,
-                    'image' => $item->hotel_image,
-                    'location' => $item->address,
-                    'rating' => $item->rating_score,
-                    'category' => $item->room_type,
-                    'type' => 'hotel'
-                ];
-            });
-        $places = $places->merge($hotels);
-    }
-
-    // Standardize the final collection
-    $finalResults = $places->take(8)->values();
-
-    return response()->json($finalResults);
-}
     
     public function showRestaurant($id)
     {

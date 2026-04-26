@@ -4,6 +4,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 
 class UserController extends Controller
 {
@@ -12,8 +13,12 @@ class UserController extends Controller
         $query = User::query();
         
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('email', 'like', '%' . $request->search . '%');
+            $search = trim((string) $request->search);
+
+            $query->where(function ($searchQuery) use ($search) {
+                $searchQuery->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%');
+            });
         }
         
         if ($request->filled('role')) {
@@ -35,7 +40,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'phone' => 'nullable|string|max:45',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:8|confirmed',
             'is_admin' => 'boolean',
         ]);
 
@@ -57,23 +62,29 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:45',
-            'password' => 'nullable|string|min:6|confirmed',
             'is_admin' => 'boolean',
         ]);
 
-        if (!empty($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
-        } else {
-            unset($validated['password']);
-        }
+        $validated['is_admin'] = $user->id === auth()->id()
+            ? true
+            : $request->has('is_admin');
 
-        $validated['is_admin'] = $request->has('is_admin');
         $user->update($validated);
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User updated successfully.');
+    }
+
+    public function sendPasswordReset(User $user)
+    {
+        $status = Password::sendResetLink([
+            'email' => $user->email,
+        ]);
+
+        return $status === Password::RESET_LINK_SENT
+            ? back()->with('success', 'Password reset link sent to ' . $user->email . '.')
+            : back()->with('error', __($status));
     }
 
     public function destroy(User $user)

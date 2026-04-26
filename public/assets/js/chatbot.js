@@ -210,7 +210,7 @@ function removeTypingMessage(typingId) {
 
 function addMessage(text, className, label, entityLinks = [], options = {}) {
     const avatar = className === 'user-message' ? getUserAvatarHtml() : 'YN';
-    const avatarClass = className === 'user-message' ? 'user-avatar' : 'bot-avatar';
+    const avatarClass = className === 'user-message' ? 'chat-user-avatar' : 'bot-avatar';
     const cleanText = String(text || '').trim();
     const formattedText = className === 'bot-message'
         ? formatBotContent(cleanText, entityLinks, options.structured || null)
@@ -468,6 +468,99 @@ function renderTripPlanInline(text, entityLinks, tripPlan) {
     `;
 }
 
+function getStructuredTripDays(tripPlan) {
+    const days = Array.isArray(tripPlan?.days) ? tripPlan.days : [];
+    const slotOrder = ['morning', 'lunch', 'afternoon', 'evening', 'dinner', 'stay'];
+
+    return days.map((day, index) => {
+        if (!day || typeof day !== 'object') {
+            return null;
+        }
+
+        const flow = day.flow && typeof day.flow === 'object' ? day.flow : {};
+        const slots = slotOrder
+            .map(slotKey => buildFallbackTripSlot(slotKey, flow[slotKey]))
+            .filter(Boolean);
+
+        return {
+            dayNumber: Number(day.day) || (index + 1),
+            heading: `Day ${Number(day.day) || (index + 1)}`,
+            intro: [],
+            location: String(day.location || '').trim(),
+            slots,
+        };
+    }).filter(Boolean);
+}
+
+function extractTripIntroLines(text, tripPlan) {
+    const paragraphs = splitTripIntroParagraphs(text);
+    const title = String(tripPlan?.title || '').trim();
+    const titleNorm = normalizeTripLine(title);
+
+    return paragraphs
+        .filter(paragraph => {
+            const normalized = normalizeTripLine(paragraph);
+
+            if (!normalized) {
+                return false;
+            }
+
+            if (titleNorm && normalized === titleNorm) {
+                return false;
+            }
+
+            if (/^day\s+\d+\b/i.test(paragraph)) {
+                return false;
+            }
+
+            if (/^(Morning|Lunch|Afternoon|Evening|Dinner|Stay)\b/i.test(paragraph)) {
+                return false;
+            }
+
+            if (isGenericTripCompanionIntro(paragraph, title)) {
+                return false;
+            }
+
+            return true;
+        })
+        .slice(0, 2);
+}
+
+function splitTripIntroParagraphs(text) {
+    return String(text || '')
+        .split(/\n\s*\n|\n+/)
+        .map(paragraph => paragraph.trim())
+        .filter(Boolean);
+}
+
+function isGenericTripCompanionIntro(paragraph, title = '') {
+    const normalized = normalizeTripLine(paragraph);
+    const normalizedTitle = normalizeTripLine(title);
+
+    if (!normalized) {
+        return true;
+    }
+
+    const genericStarts = [
+        'here is your',
+        'here is a clear',
+        'here is a',
+        'i put together',
+        'i built',
+        'this is a',
+    ];
+
+    if (genericStarts.some(start => normalized.startsWith(start))) {
+        return true;
+    }
+
+    if (normalizedTitle && normalized.includes(normalizedTitle)) {
+        return true;
+    }
+
+    return false;
+}
+
 function buildTripIntroHtml(introLines, title, entityLinks = []) {
     const normalizedTitle = normalizeTripLine(title);
     const lines = Array.isArray(introLines)
@@ -532,6 +625,20 @@ function parseTripReply(text, tripPlan) {
                 heading: `Day ${dayThemeMatch[1]}`,
                 location: '',
                 intro: [dayThemeMatch[2].trim()],
+                slots: [],
+            };
+            days.push(currentDay);
+            currentSlot = null;
+            return;
+        }
+
+        const inlineDayMatch = line.match(/^Day\s+(\d+)\b\s+(.+)$/i);
+        if (inlineDayMatch) {
+            currentDay = {
+                dayNumber: Number(inlineDayMatch[1]),
+                heading: `Day ${inlineDayMatch[1]}`,
+                location: '',
+                intro: [inlineDayMatch[2].trim()],
                 slots: [],
             };
             days.push(currentDay);
@@ -627,13 +734,18 @@ function splitInlineTripSlotLabels(line) {
         return [];
     }
 
-    const withColonBreaks = text.replace(
+    const withDayBreaks = text.replace(
+        /\s+(?=Day\s+\d+\b)/g,
+        '\n'
+    );
+
+    const withColonBreaks = withDayBreaks.replace(
         /\s+(?=(Morning|Lunch|Afternoon|Evening|Dinner|Stay)\s*:)/g,
         '\n'
     );
 
     const withReadableBreaks = withColonBreaks.replace(
-        /\s+(?=(Morning|Lunch|Afternoon|Evening|Dinner|Stay)\s+(Start|Begin|Head|For|Enjoy|Spend|As|Keep|Take|Cap|End|Stay|You'll|You\b))/g,
+        /\s+(?=(Morning|Lunch|Afternoon|Evening|Dinner|Stay)\s+(in\b|at\b|Start|Begin|Head|For|Enjoy|Spend|As|Keep|Take|Cap|End|Stay|You'll|You\b|Final\b|Wrap\b|Overnight\b))/g,
         '\n'
     );
 
@@ -675,9 +787,12 @@ function mergeTripDaysWithFallback(parsedDays, tripPlan) {
         const mergedSlots = slotOrder
             .map((slotKey) => {
                 const parsedSlot = parsedSlotsByKey.get(slotKey);
-                return hasRenderableTripSlot(parsedSlot)
+                const fallbackFlowValue = fallbackDay.flow?.[slotKey];
+                const fallbackSlot = buildFallbackTripSlot(slotKey, fallbackFlowValue);
+
+                return shouldUseParsedTripSlot(slotKey, parsedSlot, fallbackFlowValue)
                     ? parsedSlot
-                    : buildFallbackTripSlot(slotKey, fallbackDay.flow?.[slotKey]);
+                    : (fallbackSlot || (hasRenderableTripSlot(parsedSlot) ? parsedSlot : null));
             })
             .filter(Boolean);
 
@@ -692,6 +807,40 @@ function mergeTripDaysWithFallback(parsedDays, tripPlan) {
     }).filter(Boolean);
 
     return mergedDays;
+}
+
+function shouldUseParsedTripSlot(slotKey, parsedSlot, fallbackFlowValue) {
+    if (!hasRenderableTripSlot(parsedSlot)) {
+        return false;
+    }
+
+    if (!['lunch', 'dinner', 'stay'].includes(String(slotKey || '').toLowerCase())) {
+        return true;
+    }
+
+    return parsedTripSlotMatchesExpectedVenue(slotKey, parsedSlot, fallbackFlowValue);
+}
+
+function parsedTripSlotMatchesExpectedVenue(slotKey, parsedSlot, fallbackFlowValue) {
+    if (!fallbackFlowValue || typeof fallbackFlowValue !== 'object') {
+        return hasRenderableTripSlot(parsedSlot);
+    }
+
+    const expectedName = String(
+        slotKey === 'stay'
+            ? (fallbackFlowValue.hotel_name || '')
+            : (fallbackFlowValue.restaurant_name || '')
+    ).trim();
+
+    if (!expectedName) {
+        return hasRenderableTripSlot(parsedSlot);
+    }
+
+    const parsedText = normalizeTripEntityText(
+        `${String(parsedSlot?.title || '')} ${String(parsedSlot?.content || '')}`
+    );
+
+    return parsedText.includes(normalizeTripEntityText(expectedName));
 }
 
 function buildFallbackTripSlot(slotKey, slotValue) {
@@ -797,6 +946,11 @@ function detectExplicitTripSlot(line) {
         const rest = prefixedSlotMatch[2].trim();
         const fullLine = line.trim();
         const headingOnly = isShortTripSlotHeading(rest);
+        const restLooksLikeSlotText = /^(in\b|at\b|Start\b|Begin\b|Head\b|For\b|Enjoy\b|Spend\b|As\b|Keep\b|Take\b|Cap\b|End\b|Stay\b|You'll\b|You\b|Final\b|Wrap\b|Overnight\b)/i.test(rest);
+
+        if (!headingOnly && !restLooksLikeSlotText) {
+            return null;
+        }
 
         return {
             label,
@@ -848,7 +1002,7 @@ function stripTripSlotLabelPrefix(value, label) {
     }
 
     return text
-        .replace(new RegExp(`^${escapeRegExp(label)}\\b\\s*[:-]?\\s*`, 'i'), '')
+        .replace(new RegExp(`^${escapeRegExp(label)}\\b\\s*[:\\-]\\s*`, 'i'), '')
         .trim();
 }
 
@@ -982,6 +1136,13 @@ function normalizeTripLine(line) {
         .trim()
         .replace(/[:.]+$/, '')
         .toLowerCase();
+}
+
+function normalizeTripEntityText(value) {
+    return String(value || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
 }
 
 function capitalizeLabel(value) {

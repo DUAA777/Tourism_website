@@ -94,15 +94,24 @@
                                     <option value="">Select Price Range</option>
                                     @foreach($priceTiers as $tier => $label)
                                         <option value="{{ $tier }}" {{ old('price_tier', $restaurant->price_tier) == $tier ? 'selected' : '' }}>
-                                            {{ $tier }} - {{ $label }}
+                                            {{ $tier === $label ? $tier : $tier . ' - ' . $label }}
                                         </option>
                                     @endforeach
                                 </select>
-                                <div class="price-indicator" id="priceIndicator" style="width: 
-                                    @if(old('price_tier', $restaurant->price_tier) == '$') 33%
-                                    @elseif(old('price_tier', $restaurant->price_tier) == '$$') 66%
-                                    @elseif(old('price_tier', $restaurant->price_tier) == '$$$') 100%
-                                    @else 0% @endif"></div>
+                                @php
+                                    $selectedPriceTier = old('price_tier', $restaurant->price_tier);
+                                    $priceIndicatorWidth = [
+                                        '$' => '25%',
+                                        '$$' => '50%',
+                                        '$$$' => '75%',
+                                        '$$$$' => '100%',
+                                        'Budget' => '25%',
+                                        'Mid-range' => '50%',
+                                        'Premium' => '75%',
+                                        'Luxury' => '100%',
+                                    ][$selectedPriceTier] ?? '0%';
+                                @endphp
+                                <div class="price-indicator" id="priceIndicator" style="width: {{ $priceIndicatorWidth }}"></div>
                             </div>
                         </div>
                         
@@ -156,9 +165,12 @@
                                 <p>Click or drag to upload new image</p>
                                 <small>PNG, JPG, WEBP (Max 5MB)</small>
                             </div>
-                            <div class="image-preview" id="imagePreview" style="{{ $restaurant->image ? 'display: block;' : 'display: none;' }}">
+                            <div class="image-preview restaurant-image-preview" id="imagePreview" style="{{ $restaurant->image ? 'display: flex;' : 'display: none;' }}">
                                 <img src="{{ $restaurant->image ? asset($restaurant->image) : '' }}" alt="Current Image" id="previewImg">
-                                <button type="button" class="remove-image" id="removeImageBtn">Remove</button>
+                                <button type="button" class="remove-image" id="removeImageBtn">
+                                    <i class="ri-close-line"></i>
+                                    Remove image
+                                </button>
                             </div>
                         </div>
                         @error('image') <div class="invalid-feedback">{{ $message }}</div> @enderror
@@ -203,19 +215,36 @@
                     <div class="form-group">
                         <label for="tags">Tags</label>
                         <div class="tags-input-container">
+                            @php
+                                $rawTags = old('tags');
+
+                                if ($rawTags === null) {
+                                    $rawTags = $tagsArray ?? $restaurant->tags_array ?? [];
+                                }
+
+                                if (is_array($rawTags)) {
+                                    $normalizedTags = $rawTags;
+                                } else {
+                                    $decodedTags = json_decode((string) $rawTags, true);
+                                    $normalizedTags = is_array($decodedTags) ? $decodedTags : explode(',', (string) $rawTags);
+                                }
+
+                                $normalizedTags = collect($normalizedTags)
+                                    ->map(fn ($tag) => trim((string) $tag))
+                                    ->filter()
+                                    ->values()
+                                    ->all();
+
+                                $tagsValue = implode(',', $normalizedTags);
+                            @endphp
                             <input type="text" id="tagsInput" placeholder="Type tag and press Enter">
-                            <input type="hidden" id="tags" name="tags" value="{{ old('tags', $restaurant->tags) }}">
+                            <input type="hidden" id="tags" name="tags" value="{{ $tagsValue }}">
                             <div class="tags-list" id="tagsList">
-                                @php
-                                    $tagsArray = old('tags', $restaurant->tags) ? explode(',', old('tags', $restaurant->tags)) : [];
-                                @endphp
-                                @foreach($tagsArray as $tag)
-                                    @if(trim($tag))
-                                        <div class="tag">
-                                            {{ trim($tag) }}
-                                            <i class="ri-close-line"></i>
-                                        </div>
-                                    @endif
+                                @foreach($normalizedTags as $tag)
+                                    <div class="tag">
+                                        {{ $tag }}
+                                        <i class="ri-close-line"></i>
+                                    </div>
                                 @endforeach
                             </div>
                         </div>
@@ -226,7 +255,11 @@
         </div>
         
         <div class="form-actions">
-            <button type="button" class="btn-danger" id="deleteBtn">
+            <button type="button" class="btn-danger"
+                    data-delete-target="deleteRestaurantForm"
+                    data-delete-title="Delete restaurant?"
+                    data-delete-message="Delete {{ $restaurant->restaurant_name }}? This removes it from the restaurant listings."
+                    data-delete-confirm="Delete Restaurant">
                 <i class="ri-delete-bin-line"></i> Delete Restaurant
             </button>
             <div class="action-buttons">
@@ -239,29 +272,13 @@
             </div>
         </div>
     </form>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="modal-overlay" style="display: none;">
-    <div class="modal-container">
-        <div class="modal-header">
-            <i class="ri-delete-bin-line"></i>
-            <h3>Delete Restaurant</h3>
-            <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p>Are you sure you want to delete <strong>{{ $restaurant->restaurant_name }}</strong>?</p>
-            <p class="warning-text">This action cannot be undone. All data associated with this restaurant will be permanently removed.</p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-secondary modal-cancel">Cancel</button>
-            <form action="{{ route('admin.restaurants.destroy', $restaurant) }}" method="POST" style="display: inline;">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn-danger">Yes, Delete Restaurant</button>
-            </form>
-        </div>
-    </div>
+    <form id="deleteRestaurantForm" action="{{ route('admin.restaurants.destroy', $restaurant) }}" method="POST" class="js-delete-form" style="display: none;"
+          data-delete-title="Delete restaurant?"
+          data-delete-message="Delete {{ $restaurant->restaurant_name }}? This removes it from the restaurant listings."
+          data-delete-confirm="Delete Restaurant">
+        @csrf
+        @method('DELETE')
+    </form>
 </div>
 
 @push('styles')
@@ -848,13 +865,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (priceTier) {
         priceTier.addEventListener('change', function() {
             const value = this.value;
-            let width = '0%';
+            const priceWidths = {
+                '$': '25%',
+                '$$': '50%',
+                '$$$': '75%',
+                '$$$$': '100%',
+                'Budget': '25%',
+                'Mid-range': '50%',
+                'Premium': '75%',
+                'Luxury': '100%',
+            };
             
-            if (value === '$') width = '33%';
-            else if (value === '$$') width = '66%';
-            else if (value === '$$$') width = '100%';
-            
-            priceIndicator.style.width = width;
+            priceIndicator.style.width = priceWidths[value] || '0%';
         });
     }
     
@@ -903,8 +925,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const reader = new FileReader();
         reader.onload = function(e) {
             previewImg.src = e.target.result;
-            uploadArea.style.display = 'none';
-            imagePreview.style.display = 'block';
+            imagePreview.style.display = 'flex';
         };
         reader.readAsDataURL(file);
     }
@@ -918,7 +939,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 hiddenInput.value = '1';
                 document.getElementById('restaurantForm').appendChild(hiddenInput);
                 
-                uploadArea.style.display = 'block';
                 imagePreview.style.display = 'none';
                 previewImg.src = '';
                 imageInput.value = '';

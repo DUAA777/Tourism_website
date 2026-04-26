@@ -39,10 +39,11 @@
             <input type="password" id="password_confirmation" name="password_confirmation">
         </div>
         
-        <div class="form-group checkbox">
-            <label>
-                <input type="checkbox" name="is_admin" {{ old('is_admin', $user->is_admin ?? false) ? 'checked' : '' }}>
-                Admin Access
+        <div class="form-group">
+            <input type="hidden" name="is_admin" value="0">
+            <label class="admin-access-check" for="is_admin">
+                <input type="checkbox" id="is_admin" name="is_admin" value="1" {{ old('is_admin', $user->is_admin ?? false) ? 'checked' : '' }}>
+                <span>Admin Access</span>
             </label>
         </div>
         

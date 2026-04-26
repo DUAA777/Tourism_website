@@ -51,15 +51,23 @@
                         <i class="ri-restart-line"></i> Restore
                     </button>
                 </form>
-                <form action="{{ route('admin.hotels.force-delete', $hotel->id) }}" method="POST" class="inline-form">
+                <form action="{{ route('admin.hotels.force-delete', $hotel->id) }}" method="POST" class="inline-form js-delete-form"
+                      data-delete-title="Permanently delete hotel?"
+                      data-delete-message="Permanently delete {{ $hotel->hotel_name }}? This cannot be undone."
+                      data-delete-confirm="Delete Permanently">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn-danger" onclick="return confirm('Permanently delete this hotel? This cannot be undone.')">
+                    <button type="submit" class="btn-danger">
                         <i class="ri-delete-bin-7-line"></i> Delete Permanently
                     </button>
                 </form>
             @else
-                <button type="button" class="btn-danger" id="deleteBtn">
+                <button type="button" class="btn-danger"
+                        data-delete-target="deleteHotelShowForm"
+                        data-delete-title="Move hotel to trash?"
+                        data-delete-message="Move {{ $hotel->hotel_name }} to trash? You can restore it later from the trash section."
+                        data-delete-confirm="Move to Trash"
+                        data-delete-confirm-class="btn-warning">
                     <i class="ri-delete-bin-line"></i> Move to Trash
                 </button>
             @endif
@@ -323,27 +331,14 @@
     </div>
 </div>
 
-<!-- Delete Modal -->
-<div id="deleteModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Move to Trash</h3>
-            <button class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p>Are you sure you want to move <strong>{{ $hotel->hotel_name }}</strong> to trash?</p>
-            <p class="text-warning">You can restore it later from the trash section.</p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-secondary modal-cancel">Cancel</button>
-            <form action="{{ route('admin.hotels.destroy', $hotel) }}" method="POST" style="display: inline;">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn-warning">Move to Trash</button>
-            </form>
-        </div>
-    </div>
-</div>
+<form id="deleteHotelShowForm" action="{{ route('admin.hotels.destroy', $hotel) }}" method="POST" class="js-delete-form" style="display: none;"
+      data-delete-title="Move hotel to trash?"
+      data-delete-message="Move {{ $hotel->hotel_name }} to trash? You can restore it later from the trash section."
+      data-delete-confirm="Move to Trash"
+      data-delete-confirm-class="btn-warning">
+    @csrf
+    @method('DELETE')
+</form>
 @endsection
 
 @push('scripts')

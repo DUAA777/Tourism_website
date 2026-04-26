@@ -29,25 +29,25 @@
   <div class="nav__panel" id="nav-links">
     <ul class="nav__links nav__links--primary">
       <li>
-        <a href="{{ route('home') }}" class="{{ $homeActive ? 'is-active' : '' }}" @if($homeActive) aria-current="page" @endif>HOME</a>
+        <a href="{{ route('home') }}" class="{{ $homeActive ? 'is-active' : '' }}" @if($homeActive) aria-current="page" @endif>Home</a>
       </li>
       <li>
-        <a href="{{ route('aboutUs') }}" class="{{ $aboutActive ? 'is-active' : '' }}" @if($aboutActive) aria-current="page" @endif>ABOUT</a>
+        <a href="{{ route('aboutUs') }}" class="{{ $aboutActive ? 'is-active' : '' }}" @if($aboutActive) aria-current="page" @endif>About</a>
       </li>
       <li>
         <a href="{{ route('chatbot') }}" class="nav__link--plan {{ $chatbotActive ? 'is-active' : '' }}" @if($chatbotActive) aria-current="page" @endif>
           <span class="nav__link-plan-star" aria-hidden="true"><i class="ri-sparkling-2-fill"></i></span>
-          <span>PLAN</span>
+          <span>Plan</span>
         </a>
       </li>
       <li>
-        <a href="{{ route('restaurants.index') }}" class="{{ $restaurantsActive ? 'is-active' : '' }}" @if($restaurantsActive) aria-current="page" @endif>RESTAURANTS</a>
+        <a href="{{ route('restaurants.index') }}" class="{{ $restaurantsActive ? 'is-active' : '' }}" @if($restaurantsActive) aria-current="page" @endif>Restaurants</a>
       </li>
       <li>
-        <a href="{{ route('hotels.index') }}" class="{{ $hotelsActive ? 'is-active' : '' }}" @if($hotelsActive) aria-current="page" @endif>HOTELS</a>
+        <a href="{{ route('hotels.index') }}" class="{{ $hotelsActive ? 'is-active' : '' }}" @if($hotelsActive) aria-current="page" @endif>Hotels</a>
       </li>
       <li>
-        <a href="{{ route('contactUs') }}" class="{{ $contactActive ? 'is-active' : '' }}" @if($contactActive) aria-current="page" @endif>CONTACT</a>
+        <a href="{{ route('contactUs') }}" class="{{ $contactActive ? 'is-active' : '' }}" @if($contactActive) aria-current="page" @endif>Contact</a>
       </li>
     </ul>
 
@@ -56,10 +56,10 @@
     <ul class="nav__links nav__links--account">
       @guest
         <li>
-          <a href="{{ route('login') }}" class="{{ $loginActive ? 'is-active' : '' }}" @if($loginActive) aria-current="page" @endif>LOGIN</a>
+          <a href="{{ route('login') }}" class="nav__auth-link nav__auth-link--login {{ $loginActive ? 'is-active' : '' }}" @if($loginActive) aria-current="page" @endif>LOGIN</a>
         </li>
         <li>
-          <a href="{{ route('register') }}" class="{{ $registerActive ? 'is-active' : '' }}" @if($registerActive) aria-current="page" @endif>REGISTER</a>
+          <a href="{{ route('register') }}" class="nav__auth-link nav__auth-link--register {{ $registerActive ? 'is-active' : '' }}" @if($registerActive) aria-current="page" @endif>REGISTER</a>
         </li>
       @else
         @php

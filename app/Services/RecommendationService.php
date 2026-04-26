@@ -1193,6 +1193,12 @@ class RecommendationService
             case 'activities':
                 $merged['wants_activity'] = true;
                 break;
+            case 'current_categories':
+                $merged['wants_trip_plan'] = false;
+                $merged['wants_hotel'] = !empty($intent['wants_hotel']);
+                $merged['wants_restaurant'] = !empty($intent['wants_restaurant']);
+                $merged['wants_activity'] = !empty($intent['wants_activity']);
+                break;
             case 'trip_plan':
                 $merged['wants_trip_plan'] = true;
                 $merged['wants_hotel'] = !$merged['_suppress_stay'] && (
@@ -1287,6 +1293,23 @@ class RecommendationService
                 )));
                 $intent['requires_stay'] = $includeStay;
                 break;
+
+            case 'current_categories':
+                $requestedCategories = [];
+                if (!empty($intent['wants_hotel'])) {
+                    $requestedCategories[] = 'hotels';
+                }
+                if (!empty($intent['wants_restaurant'])) {
+                    $requestedCategories[] = 'restaurants';
+                }
+                if (!empty($intent['wants_activity'])) {
+                    $requestedCategories[] = 'activities';
+                }
+
+                $intent['wants_trip_plan'] = false;
+                $intent['requires_stay'] = !empty($intent['wants_hotel']);
+                $intent['requested_categories'] = $requestedCategories;
+                break;
         }
 
         $intent['message_type'] = $this->deriveMessageType($intent);
@@ -1332,11 +1355,17 @@ class RecommendationService
             return 'carry_previous';
         }
 
-        if (
-            $this->messageExplicitlyRequestsCategory($message, 'hotels')
-            || $this->messageExplicitlyRequestsCategory($message, 'restaurants')
-            || $this->messageExplicitlyRequestsCategory($message, 'activities')
-        ) {
+        $explicitCategoryRequests = array_values(array_filter([
+            $this->messageExplicitlyRequestsCategory($message, 'hotels') ? 'hotels' : null,
+            $this->messageExplicitlyRequestsCategory($message, 'restaurants') ? 'restaurants' : null,
+            $this->messageExplicitlyRequestsCategory($message, 'activities') ? 'activities' : null,
+        ]));
+
+        if (!empty($explicitCategoryRequests)) {
+            if (count($explicitCategoryRequests) > 1) {
+                return 'current_categories';
+            }
+
             if (
                 $this->messageExplicitlyRequestsCategory($message, 'hotels')
                 && !$this->messageExplicitlyRequestsCategory($message, 'restaurants')

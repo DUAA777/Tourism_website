@@ -274,6 +274,80 @@
   border-color: #cfd4dc;
 }
 
+.profile-modal-open {
+  overflow: hidden;
+}
+
+.profile-confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.44);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.profile-confirm-modal.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.profile-confirm-dialog {
+  width: min(430px, 100%);
+  padding: 1.35rem;
+  border: 1px solid rgba(16, 42, 67, 0.12);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.22);
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.18s ease;
+}
+
+.profile-confirm-modal.is-open .profile-confirm-dialog {
+  transform: translateY(0) scale(1);
+}
+
+.profile-confirm-icon {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.9rem;
+  border-radius: 16px;
+  background: #fff4ed;
+  color: var(--profile-primary);
+  font-size: 1.3rem;
+}
+
+.profile-confirm-dialog h3 {
+  margin: 0 0 0.45rem;
+  color: var(--profile-text-dark);
+  font-size: 1.16rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.profile-confirm-dialog p {
+  margin: 0;
+  color: var(--profile-text-soft);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.profile-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
 @media (max-width: 900px) {
   .profile-grid {
     grid-template-columns: 1fr;
@@ -292,5 +366,13 @@
   .profile-card {
     padding: 18px;
     border-radius: 16px;
+  }
+
+  .profile-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .profile-confirm-actions .profile-btn {
+    width: 100%;
   }
 }

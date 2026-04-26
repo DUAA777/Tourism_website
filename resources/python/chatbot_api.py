@@ -8,7 +8,7 @@ from config import ENV
 
 app = Flask(__name__)
 
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", ENV.get("GEMINI_MODEL", "gemini-2.5-flash"))
 api_key = os.getenv("GEMINI_API_KEY", ENV.get("GEMINI_API_KEY"))
 
 if not api_key:
@@ -784,6 +784,64 @@ def normalize_trip_slot_line_breaks(text):
     return text.strip()
 
 
+def trim_trip_reply_for_structured_ui(text, trip_plan=None):
+    if not trip_plan:
+        return clean_text(text)
+
+    text = (text or "").strip()
+    if not text:
+        return ""
+
+    structural_markers = [
+        r"\bDay\s+1\b",
+        r"(?:^|\n)\s*Morning\s*:?",
+        r"(?:^|\n)\s*Lunch\s*:?",
+        r"(?:^|\n)\s*Afternoon\s*:?",
+        r"(?:^|\n)\s*Evening\s*:?",
+        r"(?:^|\n)\s*Dinner\s*:?",
+        r"(?:^|\n)\s*Stay\s*:?",
+    ]
+
+    cut_index = None
+    for pattern in structural_markers:
+        match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
+        if match and match.start() > 0:
+            cut_index = match.start() if cut_index is None else min(cut_index, match.start())
+
+    if cut_index is not None:
+        text = text[:cut_index].strip()
+
+    paragraphs = [
+        paragraph.strip()
+        for paragraph in split_paragraphs(text)
+        if paragraph.strip()
+    ]
+
+    cleaned = []
+    title_norm = normalize_compare_text((trip_plan or {}).get("title", ""))
+
+    for paragraph in paragraphs:
+        paragraph_norm = normalize_compare_text(paragraph)
+        if not paragraph_norm:
+            continue
+
+        if title_norm and paragraph_norm == title_norm:
+            continue
+
+        if re.match(r"^day\s+\d+\b", paragraph, re.IGNORECASE):
+            continue
+
+        cleaned.append(paragraph)
+
+    if not cleaned:
+        fallback_intro = build_trip_fallback_intro({}, trip_plan)
+        return fallback_intro.strip() if fallback_intro else ""
+
+    cleaned = cleaned[:2]
+
+    return "\n\n".join(cleaned).strip()
+
+
 def polish_generated_reply(text, trip_plan=None):
     text = (text or "").replace("**", "").strip()
     if not text:
@@ -833,6 +891,19 @@ def build_trip_fallback_intro(intent, trip_plan):
     return ensure_sentence(f"Here is a clear {days}-day plan {place_part}")
 
 
+def render_trip_plan_companion_reply(intent, trip_plan):
+    intro = build_trip_fallback_intro(intent or {}, trip_plan)
+    title = clean_text((trip_plan or {}).get("title"))
+
+    if not intro and title:
+        intro = ensure_sentence(f"Here is your {title.lower()}")
+
+    if not intro:
+        return "I put together a grounded trip plan for you below."
+
+    return intro
+
+
 def build_no_match_reply(intent):
     city = display_city(intent.get("city"))
     wants_trip_plan = bool(intent.get("wants_trip_plan"))
@@ -873,8 +944,7 @@ def build_no_match_reply(intent):
 
 
 def render_hotel_fallback_reply(intent, hotels):
-    city = display_city(intent.get("city")) or display_city((hotels[0] or {}).get("city"))
-    city_part = f" in {city}" if city else ""
+    city_part = fallback_scope_phrase(intent, hotels)
     intro = f"For stays{city_part}, these are the clearest options I can still stand behind right now."
     lines = [ensure_sentence(intro)]
 
@@ -904,8 +974,7 @@ def render_hotel_fallback_reply(intent, hotels):
 
 
 def render_restaurant_fallback_reply(intent, restaurants):
-    city = display_city(intent.get("city")) or display_city((restaurants[0] or {}).get("city"))
-    city_part = f" in {city}" if city else ""
+    city_part = fallback_scope_phrase(intent, restaurants)
     intro = f"For food spots{city_part}, these are the clearest matches I can still stand behind right now."
     lines = [ensure_sentence(intro)]
 
@@ -939,6 +1008,33 @@ def activity_city_list(activities, limit=3):
 
     for activity in (activities or [])[:limit]:
         city = display_city(activity.get("city"))
+        if city and city not in cities:
+            cities.append(city)
+
+    return cities
+
+
+def fallback_scope_phrase(intent, items, limit=3):
+    explicit_city = display_city(intent.get("city") or intent.get("resolved_city"))
+    result_cities = item_city_list(items, limit)
+
+    if len(result_cities) > 1:
+        return " across Lebanon"
+
+    if explicit_city:
+        return f" in {explicit_city}"
+
+    if len(result_cities) == 1:
+        return f" in {result_cities[0]}"
+
+    return ""
+
+
+def item_city_list(items, limit=3):
+    cities = []
+
+    for item in (items or [])[:limit]:
+        city = display_city(item.get("city"))
         if city and city not in cities:
             cities.append(city)
 
@@ -1244,6 +1340,74 @@ def trip_plan_reply_is_complete(reply, trip_plan):
     return True
 
 
+def trip_slot_expected_name(key, value):
+    if not isinstance(value, dict):
+        return ""
+
+    if key == "stay":
+        return clean_text(value.get("hotel_name"))
+
+    if key in {"lunch", "dinner"}:
+        return clean_text(value.get("restaurant_name"))
+
+    return ""
+
+
+def extract_labeled_slot_block(day_section, label):
+    pattern = rf"\b{re.escape(label)}\b\s*:?"
+    match = re.search(pattern, day_section or "", re.IGNORECASE)
+    if not match:
+        return ""
+
+    next_match = re.search(
+        r"\b(Morning|Lunch|Afternoon|Evening|Dinner|Stay|Day\s+\d+)\b\s*:?",
+        day_section[match.end():],
+        re.IGNORECASE,
+    )
+    end = match.end() + next_match.start() if next_match else len(day_section)
+
+    return day_section[match.start():end]
+
+
+def trip_plan_reply_has_ungrounded_slots(reply, trip_plan):
+    if not trip_plan:
+        return False
+
+    day_sections = split_reply_into_day_sections(reply or "")
+    grounded_slot_keys = {"lunch", "dinner", "stay"}
+
+    for day in trip_plan.get("days", []):
+        day_number = day.get("day")
+        if day_number is None:
+            continue
+
+        day_section = day_sections.get(str(day_number), "")
+        if not day_section:
+            continue
+
+        flow = day.get("flow", {}) if isinstance(day, dict) else {}
+        if not isinstance(flow, dict):
+            continue
+
+        expected_labels = {label.lower(): label for label in expected_trip_slot_labels(day)}
+
+        for key in grounded_slot_keys:
+            label = key.replace("_", " ").title()
+            slot_block = extract_labeled_slot_block(day_section, label)
+
+            if not slot_block:
+                continue
+
+            if key not in expected_labels:
+                return True
+
+            expected_name = trip_slot_expected_name(key, flow.get(key))
+            if expected_name and normalize_compare_text(expected_name) not in normalize_compare_text(slot_block):
+                return True
+
+    return False
+
+
 def build_guidance_reply(intent, conversation_notes, diagnostics=None):
     diagnostics = diagnostics or {}
     guidance = diagnostics.get("guidance") or {}
@@ -1360,6 +1524,10 @@ IMPORTANT RULES:
 38. If a trip day is missing a dinner, stay, or another slot in the data, simply leave that slot out instead of inventing one.
 39. When a place location starts with the same place name, avoid repeating the name twice in the same sentence.
 40. If intent.follow_up_context.is_follow_up is true, treat the reply as a continuation of the same request. Do not reset the conversation or ask the user to repeat details that are already present unless the new request is still ambiguous after the carried context.
+41. Never write vague grounded-sounding placeholders such as "a local spot", "a nearby restaurant", "a nice hotel", or "fresh catches" unless that exact place is provided by name in the data.
+42. For lunch and dinner in trip plans, mention the exact restaurant_name from the slot. If the slot has no restaurant_name, omit that meal slot completely.
+43. For stays in trip plans, mention the exact hotel_name from the slot. If the slot has no hotel_name, omit the stay slot completely.
+44. If the results cover more than one city and the user did not explicitly choose a city, say the options are across Lebanon instead of pretending they are all in the first result city.
 
 FOR TRIP PLANS:
 - Structure the answer clearly by Day 1, Day 2, Day 3
@@ -1495,7 +1663,7 @@ RESPONSE BEHAVIOR:
         reply = generate_reply(contents, prompt_trip_plan)
 
         incomplete_endings = ("and", "then", "with", "to", "for", "in", "at", "of", "Day", "Morning", "Afternoon", "Evening")
-        should_retry_for_completeness = bool(prompt_trip_plan) or not prompt_data["conversation_notes"].get("should_hold_recommendation_results")
+        should_retry_for_completeness = not prompt_data["conversation_notes"].get("should_hold_recommendation_results")
         if should_retry_for_completeness and (
             len(reply) < 80
             or reply.endswith(incomplete_endings)
@@ -1513,12 +1681,8 @@ RESPONSE BEHAVIOR:
             if retry_reply:
                 reply = retry_reply
 
-        if prompt_trip_plan and reply and not trip_plan_reply_is_complete(reply, prompt_trip_plan):
-            reply = render_trip_plan_text(
-                prompt_trip_plan,
-                intent=intent,
-                prefix="Here is a complete itinerary built from your matched places"
-            )
+        if prompt_trip_plan and reply and trip_plan_reply_has_ungrounded_slots(reply, prompt_trip_plan):
+            print("TRIP SLOT VALIDATION WARNING: Gemini reply had ungrounded meal/stay text; keeping reply and letting structured UI fall back per slot.")
 
         if not reply:
             return handle_fallback(

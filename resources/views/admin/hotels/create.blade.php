@@ -71,10 +71,10 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="rating_score">Rating Score (0-5)</label>
+                        <label for="rating_score">Rating Score (0-10)</label>
                         <div class="rating-input">
                             <input type="number" id="rating_score" name="rating_score" 
-                                   step="0.1" min="0" max="5"
+                                   step="0.1" min="0" max="10"
                                    value="{{ old('rating_score') }}">
                             <div class="star-rating" id="ratingStars">
                                 @for($i = 1; $i <= 5; $i++)
@@ -991,11 +991,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         function updateStars(value) {
             const rating = parseFloat(value) || 0;
+            const starRating = Math.min(5, Math.max(0, rating / 2));
             stars.forEach((star, index) => {
                 const starValue = index + 1;
-                if (starValue <= Math.floor(rating)) {
+                if (starValue <= Math.floor(starRating)) {
                     star.className = 'ri-star-fill';
-                } else if (starValue - 0.5 <= rating) {
+                } else if (starValue - 0.5 <= starRating) {
                     star.className = 'ri-star-half-fill';
                 } else {
                     star.className = 'ri-star-line';
@@ -1005,7 +1006,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         stars.forEach(star => {
             star.addEventListener('click', function() {
-                const rating = this.getAttribute('data-rating');
+                const rating = parseInt(this.getAttribute('data-rating'), 10) * 2;
                 ratingInput.value = rating;
                 updateStars(rating);
             });
@@ -1035,7 +1036,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ratingInput.addEventListener('input', function() {
             let value = parseFloat(this.value);
             if (isNaN(value)) value = 0;
-            value = Math.min(5, Math.max(0, value));
+            value = Math.min(10, Math.max(0, value));
             this.value = value.toFixed(1);
             updateStars(value);
         });

@@ -1,6 +1,10 @@
 <aside class="admin-sidebar">
     <div class="sidebar-header">
-        <h2>Admin Panel</h2>
+        <div class="sidebar-brand-mark">YN</div>
+        <div>
+            <h2>Yalla Nemshi</h2>
+            <p>Admin workspace</p>
+        </div>
     </div>
     <nav class="sidebar-nav">
         <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -20,4 +24,13 @@
             <span>Hotels</span>
         </a>
     </nav>
+    <a href="{{ route('home') }}" class="sidebar-return">
+        <span class="sidebar-return-icon">
+            <i class="ri-arrow-left-line"></i>
+        </span>
+        <span>
+            <strong>Return</strong>
+            <small>Back to website</small>
+        </span>
+    </a>
 </aside>

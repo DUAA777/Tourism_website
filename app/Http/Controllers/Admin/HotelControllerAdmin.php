@@ -88,7 +88,7 @@ class HotelControllerAdmin extends Controller
             'distance_from_center' => 'nullable|string|max:255',
             'nearby_landmark' => 'nullable|string|max:255',
             'distance_from_beach' => 'nullable|string|max:255',
-            'rating_score' => 'nullable|numeric|min:0|max:5',
+            'rating_score' => 'nullable|numeric|min:0|max:10',
             'review_text' => 'nullable|string',
             'room_type' => 'nullable|string|max:255',
             'bed_info' => 'nullable|string|max:255',
@@ -97,7 +97,12 @@ class HotelControllerAdmin extends Controller
             'review_count' => 'nullable|integer|min:0',
             'stay_details' => 'nullable|string',
             'description' => 'nullable|string',
+            'vibe_tags' => 'nullable|string',
+            'audience_tags' => 'nullable|string',
         ]);
+
+        $validated['vibe_tags'] = $this->normalizeTagInput($request->input('vibe_tags'));
+        $validated['audience_tags'] = $this->normalizeTagInput($request->input('audience_tags'));
 
         // Handle image upload
         if ($request->hasFile('hotel_image')) {
@@ -136,7 +141,7 @@ class HotelControllerAdmin extends Controller
             'distance_from_center' => 'nullable|string|max:255',
             'nearby_landmark' => 'nullable|string|max:255',
             'distance_from_beach' => 'nullable|string|max:255',
-            'rating_score' => 'nullable|numeric|min:0|max:5',
+            'rating_score' => 'nullable|numeric|min:0|max:10',
             'review_text' => 'nullable|string',
             'room_type' => 'nullable|string|max:255',
             'bed_info' => 'nullable|string|max:255',
@@ -145,7 +150,12 @@ class HotelControllerAdmin extends Controller
             'review_count' => 'nullable|integer|min:0',
             'stay_details' => 'nullable|string',
             'description' => 'nullable|string',
+            'vibe_tags' => 'nullable|string',
+            'audience_tags' => 'nullable|string',
         ]);
+
+        $validated['vibe_tags'] = $this->normalizeTagInput($request->input('vibe_tags'));
+        $validated['audience_tags'] = $this->normalizeTagInput($request->input('audience_tags'));
 
         // Handle image upload
         if ($request->hasFile('hotel_image')) {
@@ -222,5 +232,24 @@ class HotelControllerAdmin extends Controller
         Hotel::withTrashed()->whereIn('id', $ids)->restore();
         
         return response()->json(['success' => 'Hotels restored successfully']);
+    }
+
+    private function normalizeTagInput($value): array
+    {
+        if (is_array($value)) {
+            $tags = $value;
+        } elseif (is_string($value) && trim($value) !== '') {
+            $decoded = json_decode($value, true);
+            $tags = is_array($decoded) ? $decoded : explode(',', $value);
+        } else {
+            $tags = [];
+        }
+
+        return collect($tags)
+            ->map(fn ($tag) => trim((string) $tag))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 }
