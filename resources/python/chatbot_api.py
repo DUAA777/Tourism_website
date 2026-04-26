@@ -1719,5 +1719,28 @@ RESPONSE BEHAVIOR:
         }), 500
 
 
+@app.route("/", methods=["GET"])
+def root():
+    return jsonify({
+        "service": "chatbot",
+        "status": "ok",
+        "model": GEMINI_MODEL,
+    })
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({
+        "service": "chatbot",
+        "status": "ok",
+        "model": GEMINI_MODEL,
+        "has_api_key": bool(GEMINI_API_KEY),
+    })
+
+
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(
+        host=os.getenv("CHATBOT_SERVICE_HOST", "127.0.0.1"),
+        port=int(os.getenv("CHATBOT_SERVICE_PORT", "5000")),
+        debug=os.getenv("CHATBOT_SERVICE_DEBUG", "false").lower() == "true",
+    )

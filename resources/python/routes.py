@@ -19,6 +19,30 @@ hotel_service = HotelService()
 
 
 def register_routes(app):
+    @app.route("/", methods=["GET"])
+    def root():
+        rest_count = len(restaurant_service.restaurants_df) if restaurant_service.restaurants_df is not None else 0
+        hotel_count = len(hotel_service.hotels_df) if hotel_service.hotels_df is not None else 0
+
+        return jsonify({
+            "service": "similarity",
+            "status": "ok",
+            "restaurants_loaded": rest_count,
+            "hotels_loaded": hotel_count,
+        })
+
+    @app.route("/health", methods=["GET"])
+    def health():
+        rest_count = len(restaurant_service.restaurants_df) if restaurant_service.restaurants_df is not None else 0
+        hotel_count = len(hotel_service.hotels_df) if hotel_service.hotels_df is not None else 0
+
+        return jsonify({
+            "service": "similarity",
+            "status": "ok",
+            "restaurants_loaded": rest_count,
+            "hotels_loaded": hotel_count,
+        })
+
     # Restaurant Routes
     @app.route("/recommend", methods=["POST"])
     def recommend():
