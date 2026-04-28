@@ -72,6 +72,8 @@
         </table>
     </div>
     
+    <div class="pagination-container">
     {{ $users->appends(request()->query())->links() }}
+</div>
 </div>
 @endsection

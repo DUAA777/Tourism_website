@@ -156,7 +156,7 @@ body.chatbot-layout #main {
 }
 
 .chatbot-screen__body {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(360px, 400px) minmax(0, 1fr);
@@ -1217,6 +1217,7 @@ body.chatbot-layout #main {
   }
 
   .chatbot-chat-panel {
+    height: min(72dvh, 780px);
     min-height: 720px;
   }
 }
@@ -1259,7 +1260,8 @@ body.chatbot-layout #main {
   }
 
   .chatbot-chat-panel {
-    min-height: 640px;
+    height: min(68dvh, 700px);
+    min-height: 620px;
   }
 
   .chatbot-prompt-grid {

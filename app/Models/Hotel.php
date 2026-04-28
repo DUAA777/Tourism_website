@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes; // Add this line
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Hotel extends Model
 {
-    use HasFactory, SoftDeletes; // Add SoftDeletes here
+    use HasFactory, SoftDeletes;
 
     protected $table = 'hotels';
 
@@ -44,42 +45,81 @@ class Hotel extends Model
         'review_count' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-        'deleted_at' => 'datetime', // Add this for soft deletes
+        'deleted_at' => 'datetime',
         'vibe_tags' => 'array',
         'audience_tags' => 'array',
     ];
-    
+
+    /**
+     * Returns a database-safe SQL expression for extracting a numeric hotel price.
+     *
+     * SQLite does not support REGEXP_REPLACE, while MySQL does.
+     * This keeps the price filters working locally with SQLite and online with MySQL.
+     */
+    public static function numericPriceExpression(): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            return "CAST(
+                REPLACE(
+                    REPLACE(
+                        REPLACE(
+                            REPLACE(
+                                REPLACE(price_per_night, '$', ''),
+                            ',', ''),
+                        'USD', ''),
+                    'usd', ''),
+                ' ', '')
+            AS INTEGER)";
+        }
+
+        return "CAST(REGEXP_REPLACE(price_per_night, '[^0-9]', '') AS UNSIGNED)";
+    }
+
     // Accessors
     public function getFormattedRatingAttribute()
     {
-        return number_format($this->rating_score, 1);
+        return number_format((float) $this->rating_score, 1);
     }
 
     public function getTotalPriceAttribute()
     {
-        $price = preg_replace('/[^0-9]/', '', $this->price_per_night);
-        $taxes = preg_replace('/[^0-9]/', '', $this->taxes_fees);
-        
+        $price = preg_replace('/[^0-9]/', '', (string) $this->price_per_night);
+        $taxes = preg_replace('/[^0-9]/', '', (string) $this->taxes_fees);
+
+        $price = $price !== '' ? (int) $price : 0;
+        $taxes = $taxes !== '' ? (int) $taxes : 0;
+
         return ($price + $taxes) . ' ' . $this->getCurrencySymbol();
     }
 
     public function getCurrencySymbol()
     {
-        return '$'; // You can make this dynamic based on location
+        return '$';
     }
 
     public function getShortDescriptionAttribute()
     {
-        return Str::limit($this->description, 150);
+        return Str::limit((string) $this->description, 150);
     }
 
     public function getAmenitiesListAttribute()
     {
         $amenities = [];
-        if ($this->distance_from_beach) $amenities[] = 'Near Beach';
-        if ($this->nearby_landmark) $amenities[] = 'Near Landmarks';
-        if ($this->distance_from_center) $amenities[] = 'City Center Access';
-        
+
+        if ($this->distance_from_beach) {
+            $amenities[] = 'Near Beach';
+        }
+
+        if ($this->nearby_landmark) {
+            $amenities[] = 'Near Landmarks';
+        }
+
+        if ($this->distance_from_center) {
+            $amenities[] = 'City Center Access';
+        }
+
         return $amenities;
     }
 
@@ -91,6 +131,9 @@ class Hotel extends Model
 
     public function scopeByPriceRange($query, $min, $max)
     {
-        return $query->whereRaw('CAST(REGEXP_REPLACE(price_per_night, "[^0-9]", "") AS UNSIGNED) BETWEEN ? AND ?', [$min, $max]);
+        return $query->whereRaw(
+            self::numericPriceExpression() . ' BETWEEN ? AND ?',
+            [$min, $max]
+        );
     }
 }

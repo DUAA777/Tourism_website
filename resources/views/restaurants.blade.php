@@ -3,7 +3,6 @@
 @section('bodyClass', 'restaurants-page')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('assets/css/chatbot.css') }}">
 <style>
     :root {
         --bg-color: #f8f9fc;

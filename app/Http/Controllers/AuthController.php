@@ -78,26 +78,35 @@ class AuthController extends Controller
     }
 
     public function handleGoogleCallback()
-    {
-        try {
-            $googleUser = Socialite::driver('google')->user();
-            
-            // Find or Create user based on Google Email
-            $user = User::updateOrCreate([
-                'email' => $googleUser->email,
-            ], [
+{
+    try {
+        $googleUser = Socialite::driver('google')->user();
+
+        $user = User::firstOrCreate(
+            ['email' => $googleUser->email],
+            [
                 'name' => $googleUser->name,
                 'is_admin' => 0,
-                'password' => Hash::make(Str::random(24)), 
-            ]);
+                'password' => Hash::make(Str::random(24)),
+            ]
+        );
 
-            Auth::login($user);
-            return redirect()->route('home');
+        $user->update([
+            'name' => $googleUser->name,
+        ]);
 
-        } catch (Exception $e) {
-            return redirect('/login')->with('error', 'Google authentication failed.');
+        Auth::login($user);
+
+        if ($user->is_admin == 1) {
+            return redirect()->intended('/admin/');
         }
+
+        return redirect()->route('home');
+
+    } catch (Exception $e) {
+        return redirect('/login')->with('error', 'Google authentication failed.');
     }
+}
 
     /**
      * Logout
